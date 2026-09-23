@@ -118,9 +118,27 @@ document.addEventListener("DOMContentLoaded", () => {
   const viewerSlipImg = document.getElementById("viewerSlipImg");
   const viewerSlipMeta = document.getElementById("viewerSlipMeta");
 
+  // DOM Elements - Bad Debt Feature
+  const menuBadDebt = document.getElementById("menuBadDebt");
+  const badDebtBadgeCount = document.getElementById("badDebtBadgeCount");
+  const btnOpenAddBadDebt = document.getElementById("btnOpenAddBadDebt");
+  const badDebtModal = document.getElementById("badDebtModal");
+  const btnCloseBadDebtModal = document.getElementById("btnCloseBadDebtModal");
+  const badDebtForm = document.getElementById("badDebtForm");
+  const badDebtModalTitle = document.getElementById("badDebtModalTitle");
+  const formBadDebtId = document.getElementById("formBadDebtId");
+  const formBdName = document.getElementById("formBdName");
+  const formBdIdCard = document.getElementById("formBdIdCard");
+  const formBdPhone = document.getElementById("formBdPhone");
+  const formBdAmount = document.getElementById("formBdAmount");
+  const formBdAddress = document.getElementById("formBdAddress");
+  const formBdItemDescription = document.getElementById("formBdItemDescription");
+  const formBdRecordedAt = document.getElementById("formBdRecordedAt");
+  const formBdNote = document.getElementById("formBdNote");
+
   // State
-  let currentTab = "daily"; // 'overview' | 'daily' | 'weekly' | 'monthly' | 'all'
-  let currentSubFilter = "all"; // 'all' | 'paid' | 'pending'
+  let currentTab = "daily"; // 'overview' | 'daily' | 'weekly' | 'monthly' | 'all' | 'bad_debt'
+  let currentSubFilter = "all"; // 'all' | 'paid' | 'pending' | 'bad_debt' | 'blacklist' | 'delayed'
   let selectedDailyDate = new Date().toISOString().slice(0, 10); // วันที่เลือกสำหรับสรุปยอดรายวัน (YYYY-MM-DD)
   let currentViewingContractId = null;
   let tempUploadedQrBase64 = null;
@@ -166,6 +184,12 @@ document.addEventListener("DOMContentLoaded", () => {
     renderStatsCounters();
     renderSubTabs();
     renderActiveTabTable();
+
+    const allBadDebts = window.easyFinanceDB.getBadDebts ? window.easyFinanceDB.getBadDebts() : [];
+    if (badDebtBadgeCount) {
+      badDebtBadgeCount.textContent = allBadDebts.length;
+      badDebtBadgeCount.style.display = allBadDebts.length > 0 ? "inline-flex" : "none";
+    }
   }
 
   function updateCloudStatus() {
@@ -380,7 +404,8 @@ document.addEventListener("DOMContentLoaded", () => {
       daily: "สรุปการเก็บเงินรายวัน (Daily Tracker)",
       weekly: "สรุปการเก็บเงินรายอาทิตย์ (Weekly Tracker)",
       monthly: "สรุปการเก็บเงินรายเดือน (Monthly Tracker)",
-      all: "จัดการสัญญาทั้งหมด (Contracts Management)"
+      all: "จัดการสัญญาทั้งหมด (Contracts Management)",
+      bad_debt: "ประวัติหนี้เสียและแบล็กลิสต์ (Bad Debt & Blacklist Tracker)"
     };
     activeTabTitle.textContent = titles[tabName] || "จัดการสัญญา";
 
@@ -394,6 +419,23 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    // Toggle elements for bad_debt tab
+    if (tabName === "bad_debt") {
+      if (summaryQuickPills) summaryQuickPills.style.display = "none";
+      if (dateFilterBar) dateFilterBar.style.display = "none";
+      if (btnOpenAddContract) btnOpenAddContract.style.display = "none";
+      if (btnOpenDashboardOverview) btnOpenDashboardOverview.style.display = "none";
+      if (btnOpenAddBadDebt) btnOpenAddBadDebt.style.display = "inline-flex";
+      if (adminSearchInput) adminSearchInput.placeholder = "ค้นหาชื่อลูกหนี้, เลขบัตรประชาชน, หรือเบอร์โทรศัพท์...";
+    } else {
+      if (summaryQuickPills) summaryQuickPills.style.display = "flex";
+      if (btnOpenAddContract) btnOpenAddContract.style.display = "inline-flex";
+      if (btnOpenDashboardOverview) btnOpenDashboardOverview.style.display = "inline-flex";
+      if (btnOpenAddBadDebt) btnOpenAddBadDebt.style.display = "none";
+      if (adminSearchInput) adminSearchInput.placeholder = "ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์, หรืออีเมล...";
+    }
+
+    renderStatsCounters();
     renderSubTabs();
     renderActiveTabTable();
 
@@ -492,6 +534,42 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 3. STATS COUNTERS & QUICK PILLS ---
 
   function renderStatsCounters() {
+    const statLabelFinanced = document.getElementById("statLabelFinanced");
+    const statLabelCollected = document.getElementById("statLabelCollected");
+    const statLabelOutstanding = document.getElementById("statLabelOutstanding");
+    const statLabelCount = document.getElementById("statLabelCount");
+
+    if (currentTab === "bad_debt") {
+      const allBadDebts = window.easyFinanceDB.getBadDebts ? window.easyFinanceDB.getBadDebts() : [];
+      let totalBadAmount = 0;
+      let badDebtCount = 0;
+      let blacklistCount = 0;
+      let delayedCount = 0;
+
+      allBadDebts.forEach((b) => {
+        totalBadAmount += Number(b.amount) || 0;
+        if (b.category === "bad_debt") badDebtCount++;
+        else if (b.category === "blacklist") blacklistCount++;
+        else if (b.category === "delayed") delayedCount++;
+      });
+
+      if (statLabelFinanced) statLabelFinanced.textContent = "ยอดหนี้เสียคงค้างรวม";
+      if (statLabelCollected) statLabelCollected.textContent = "จำนวนลูกหนี้เสีย (NPL)";
+      if (statLabelOutstanding) statLabelOutstanding.textContent = "ติดสถานะแบล็คลิส";
+      if (statLabelCount) statLabelCount.textContent = "ประวัติผ่อนล่าช้า";
+
+      statTotalFinanced.textContent = `฿${totalBadAmount.toLocaleString()}`;
+      statTotalCollected.textContent = `${badDebtCount} ราย`;
+      statTotalOutstanding.textContent = `${blacklistCount} ราย`;
+      statContractsCount.textContent = `${delayedCount} ราย`;
+      return;
+    }
+
+    if (statLabelFinanced) statLabelFinanced.textContent = "ยอดปล่อยสินเชื่อรวม";
+    if (statLabelCollected) statLabelCollected.textContent = "ยอดเก็บเงินได้แล้ว";
+    if (statLabelOutstanding) statLabelOutstanding.textContent = "ยอดคงค้างรอเก็บ";
+    if (statLabelCount) statLabelCount.textContent = "สัญญาทั้งหมด";
+
     const contracts = window.easyFinanceDB.getContracts();
     let totalFinanced = 0;
     let totalCollected = 0;
@@ -782,6 +860,39 @@ document.addEventListener("DOMContentLoaded", () => {
           <span class="tab-count-badge">${monthlyStats.contractsCount}</span>
         </button>
       `;
+    } else if (currentTab === "bad_debt") {
+      const allBadDebts = window.easyFinanceDB.getBadDebts ? window.easyFinanceDB.getBadDebts() : [];
+      const badDebtCount = allBadDebts.filter((b) => b.category === "bad_debt").length;
+      const blacklistCount = allBadDebts.filter((b) => b.category === "blacklist").length;
+      const delayedCount = allBadDebts.filter((b) => b.category === "delayed").length;
+
+      if (badDebtBadgeCount) {
+        badDebtBadgeCount.textContent = allBadDebts.length;
+        badDebtBadgeCount.style.display = allBadDebts.length > 0 ? "inline-flex" : "none";
+      }
+
+      adminSubTabNav.innerHTML = `
+        <button class="tab-btn ${currentSubFilter === "all" ? "active" : ""}" onclick="setSubFilter('all')">
+          <i class="fa-solid fa-list-ul"></i>
+          <span>ทั้งหมด</span>
+          <span class="tab-count-badge">${allBadDebts.length}</span>
+        </button>
+        <button class="tab-btn ${currentSubFilter === "bad_debt" ? "active" : ""}" onclick="setSubFilter('bad_debt')">
+          <i class="fa-solid fa-circle-exclamation" style="color: #f87171;"></i>
+          <span>หนี้เสีย</span>
+          <span class="tab-count-badge" style="background: rgba(239, 68, 68, 0.25); color: #fca5a5;">${badDebtCount}</span>
+        </button>
+        <button class="tab-btn ${currentSubFilter === "blacklist" ? "active" : ""}" onclick="setSubFilter('blacklist')">
+          <i class="fa-solid fa-ban" style="color: #fb923c;"></i>
+          <span>แบล็คลิส</span>
+          <span class="tab-count-badge" style="background: rgba(249, 115, 22, 0.25); color: #fdba74;">${blacklistCount}</span>
+        </button>
+        <button class="tab-btn ${currentSubFilter === "delayed" ? "active" : ""}" onclick="setSubFilter('delayed')">
+          <i class="fa-solid fa-clock-rotate-left" style="color: #fcd34d;"></i>
+          <span>ผ่อนล่าช้า</span>
+          <span class="tab-count-badge" style="background: rgba(245, 158, 11, 0.25); color: #fde68a;">${delayedCount}</span>
+        </button>
+      `;
     } else {
       // currentTab === 'all' (Requirement 3: ยอด Badge และแถวตารางต้องตรงกัน 100%)
       adminSubTabNav.innerHTML = `
@@ -807,8 +918,41 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 4. RENDER DATA TABLE BY TAB & SUB-FILTER ---
 
   function renderActiveTabTable() {
-    const contracts = window.easyFinanceDB.getContracts();
     const query = adminSearchInput.value.trim().toLowerCase();
+    const qClean = query.replace(/[^0-9]/g, "");
+
+    // หากเปิดอยู่ในแท็บประวัติหนี้เสีย (Bad Debt)
+    if (currentTab === "bad_debt") {
+      const badDebts = window.easyFinanceDB.getBadDebts ? window.easyFinanceDB.getBadDebts() : [];
+      let filtered = badDebts.filter((b) => {
+        if (!query) return true;
+        const nameMatch = b.name && b.name.toLowerCase().includes(query);
+        const noteMatch = b.note && b.note.toLowerCase().includes(query);
+        const itemMatch = b.itemDescription && b.itemDescription.toLowerCase().includes(query);
+        const addressMatch = b.address && b.address.toLowerCase().includes(query);
+        let idCardMatch = false;
+        if (b.idCard) {
+          if (b.idCard.toLowerCase().includes(query)) idCardMatch = true;
+          else if (qClean.length > 0 && b.idCard.replace(/[^0-9]/g, "").includes(qClean)) idCardMatch = true;
+        }
+        let phoneMatch = false;
+        if (b.phone) {
+          if (b.phone.toLowerCase().includes(query)) phoneMatch = true;
+          else if (qClean.length > 0 && b.phone.replace(/[^0-9]/g, "").includes(qClean)) phoneMatch = true;
+        }
+        return nameMatch || idCardMatch || phoneMatch || noteMatch || itemMatch || addressMatch;
+      });
+
+      // กรองตาม 3 หมวดหมู่ (หนี้เสีย, แบล็คลิส, ผ่อนล่าช้า) หรือ ทั้งหมด
+      if (currentSubFilter !== "all") {
+        filtered = filtered.filter((b) => b.category === currentSubFilter);
+      }
+
+      renderBadDebtTable(filtered);
+      return;
+    }
+
+    const contracts = window.easyFinanceDB.getContracts();
     const qPhoneClean = query.replace(/[^0-9]/g, "");
 
     // 1. Filter by search query (Requirement 4: ค้นหาได้เฉพาะ "ชื่อ", "เบอร์โทรศัพท์", หรือ "อีเมล" เท่านั้น)
@@ -1233,6 +1377,87 @@ document.addEventListener("DOMContentLoaded", () => {
               <i class="fa-solid fa-pen-to-square"></i>
             </button>
             <button class="btn-table-action" onclick="deleteContractConfirm('${c.id}')" title="ลบสัญญา" style="color: #f87171;">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      `;
+      tableBody.appendChild(tr);
+    });
+  }
+
+  // --- 4.5 BAD DEBTS TABLE (ประวัติหนี้เสีย / แบล็คลิส / ผ่อนล่าช้า) ---
+  function renderBadDebtTable(badDebtsList) {
+    if (dateFilterBar) dateFilterBar.style.display = "none";
+
+    tableHeaderRow.innerHTML = `
+      <th>วันที่บันทึก</th>
+      <th>ชื่อลูกหนี้ & เลขบัตร ปชช.</th>
+      <th>เบอร์โทร & ที่อยู่</th>
+      <th>สิ่งที่ผ่อน / ยอดหนี้คงค้าง</th>
+      <th>หมวดหมู่</th>
+      <th>หมายเหตุพฤติกรรม</th>
+      <th>จัดการ</th>
+    `;
+
+    if (badDebtsList.length === 0) {
+      const categoryNames = {
+        bad_debt: "หนี้เสีย",
+        blacklist: "แบล็คลิส",
+        delayed: "ผ่อนล่าช้า",
+        all: "ทั้งหมด"
+      };
+      const catLabel = categoryNames[currentSubFilter] || "ทั้งหมด";
+      tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 36px;">ไม่พบรายการประวัติลูกหนี้ (${catLabel})</td></tr>`;
+      return;
+    }
+
+    tableBody.innerHTML = "";
+    badDebtsList.forEach((b) => {
+      const categoryBadges = {
+        bad_debt: '<span class="status-badge badge-bad-debt"><i class="fa-solid fa-circle-exclamation"></i> หนี้เสีย</span>',
+        blacklist: '<span class="status-badge badge-blacklist"><i class="fa-solid fa-ban"></i> แบล็คลิส</span>',
+        delayed: '<span class="status-badge badge-delayed"><i class="fa-solid fa-clock-rotate-left"></i> ผ่อนล่าช้า</span>'
+      };
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>
+          <span style="font-size: 0.82rem; color: var(--text-muted);">${formatDateThai(b.recordedAt) || "-"}</span>
+          <div style="font-size: 0.7rem; color: var(--text-dim); font-family: monospace;">${b.id}</div>
+        </td>
+        <td>
+          <div class="customer-info">
+            <div class="name" style="font-weight: 600; color: #fff; font-size: 0.92rem;">${b.name}</div>
+            <div style="margin-top: 4px;">
+              <span class="id-card-pill"><i class="fa-regular fa-id-card"></i> ${b.idCard || "-"}</span>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div style="font-size: 0.85rem; color: #38bdf8;"><i class="fa-solid fa-phone"></i> ${b.phone || "-"}</div>
+          <div style="font-size: 0.75rem; color: var(--text-dim); max-width: 200px; margin-top: 3px; line-height: 1.3;" title="${b.address || "-"}">
+            <i class="fa-solid fa-location-dot"></i> ${b.address || "-"}
+          </div>
+        </td>
+        <td>
+          <strong style="color: #f87171; font-size: 0.95rem;">฿${Number(b.amount || 0).toLocaleString()}</strong>
+          <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 2px;">${b.itemDescription || "-"}</div>
+        </td>
+        <td>
+          ${categoryBadges[b.category] || '<span class="status-badge badge-bad-debt">หนี้เสีย</span>'}
+        </td>
+        <td>
+          <div style="font-size: 0.8rem; color: #e2e8f0; max-width: 260px; line-height: 1.4; background: rgba(0,0,0,0.2); padding: 6px 10px; border-radius: var(--radius-sm); border-left: 3px solid #ef4444;">
+            ${b.note || "-"}
+          </div>
+        </td>
+        <td>
+          <div class="table-actions">
+            <button class="btn-table-action" onclick="editBadDebt('${b.id}')" title="แก้ไขข้อมูล">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button class="btn-table-action" onclick="deleteBadDebtConfirm('${b.id}')" title="ลบรายการ" style="color: #f87171;">
               <i class="fa-solid fa-trash"></i>
             </button>
           </div>
@@ -1707,6 +1932,94 @@ document.addEventListener("DOMContentLoaded", () => {
     showAdminToast("บันทึกการตั้งค่า Bank API ตรวจสลิปเรียบร้อยแล้ว", "success");
   });
 
+  // --- 8.1 BAD DEBT EVENT HANDLERS (ประวัติหนี้เสีย / แบล็คลิส / ผ่อนล่าช้า) ---
+
+  if (btnOpenAddBadDebt) {
+    btnOpenAddBadDebt.addEventListener("click", () => {
+      formBadDebtId.value = "";
+      badDebtForm.reset();
+      badDebtModalTitle.textContent = "เพิ่มประวัติหนี้เสีย / แบล็คลิส";
+      if (formBdRecordedAt) formBdRecordedAt.value = new Date().toISOString().slice(0, 10);
+      badDebtModal.classList.add("active");
+    });
+  }
+
+  if (btnCloseBadDebtModal) {
+    btnCloseBadDebtModal.addEventListener("click", () => {
+      badDebtModal.classList.remove("active");
+    });
+  }
+
+  // Global Edit Bad Debt
+  window.editBadDebt = function (id) {
+    const item = window.easyFinanceDB.getBadDebtById(id);
+    if (!item) return;
+
+    formBadDebtId.value = item.id;
+    formBdName.value = item.name || "";
+    formBdIdCard.value = item.idCard || "";
+    formBdPhone.value = item.phone || "";
+    formBdAmount.value = item.amount || 0;
+    formBdAddress.value = item.address || "";
+    formBdItemDescription.value = item.itemDescription || "";
+    formBdNote.value = item.note || "";
+    if (formBdRecordedAt) formBdRecordedAt.value = item.recordedAt || new Date().toISOString().slice(0, 10);
+
+    const radio = badDebtForm.querySelector(`input[name="bdCategory"][value="${item.category || "bad_debt"}"]`);
+    if (radio) radio.checked = true;
+
+    badDebtModalTitle.textContent = `แก้ไขประวัติหนี้เสีย: ${item.name}`;
+    badDebtModal.classList.add("active");
+  };
+
+  // Global Delete Bad Debt
+  window.deleteBadDebtConfirm = async function (id) {
+    if (confirm(`คุณต้องการลบประวัติหนี้เสียรายการนี้ (${id}) ใช่หรือไม่?`)) {
+      await window.easyFinanceDB.deleteBadDebt(id);
+      showAdminToast(`ลบประวัติหนี้เสียสำเร็จ`, "success");
+      renderSubTabs();
+      renderActiveTabTable();
+    }
+  };
+
+  // Bad Debt Form Submit
+  if (badDebtForm) {
+    badDebtForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const id = formBadDebtId.value || `BD-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+      const name = formBdName.value.trim();
+      const idCard = formBdIdCard.value.trim();
+      const phone = formBdPhone.value.trim();
+      const amount = parseFloat(formBdAmount.value) || 0;
+      const address = formBdAddress.value.trim();
+      const itemDescription = formBdItemDescription.value.trim();
+      const note = formBdNote.value.trim();
+      const recordedAt = formBdRecordedAt.value || new Date().toISOString().slice(0, 10);
+      const selectedCategoryRadio = badDebtForm.querySelector('input[name="bdCategory"]:checked');
+      const category = selectedCategoryRadio ? selectedCategoryRadio.value : "bad_debt";
+
+      const record = {
+        id,
+        name,
+        idCard,
+        phone,
+        amount,
+        address,
+        category,
+        itemDescription,
+        note,
+        recordedAt
+      };
+
+      await window.easyFinanceDB.saveBadDebt(record);
+      badDebtModal.classList.remove("active");
+      showAdminToast(`บันทึกประวัติ ${name} เรียบร้อยแล้ว`, "success");
+      renderSubTabs();
+      renderActiveTabTable();
+    });
+  }
+
   // --- 9. REAL-TIME OBSERVER & HELPERS ---
 
   window.easyFinanceDB.subscribe(() => {
@@ -1715,6 +2028,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (currentTab === "overview") renderOverviewCards();
     renderActiveTabTable();
     updateCloudStatus();
+
+    const allBadDebts = window.easyFinanceDB.getBadDebts ? window.easyFinanceDB.getBadDebts() : [];
+    if (badDebtBadgeCount) {
+      badDebtBadgeCount.textContent = allBadDebts.length;
+      badDebtBadgeCount.style.display = allBadDebts.length > 0 ? "inline-flex" : "none";
+    }
   });
 
   function showAdminToast(message, type = "success") {

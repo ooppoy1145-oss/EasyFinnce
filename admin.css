@@ -1473,4 +1473,99 @@ table.admin-table tr:hover td {
   line-height: 1.45;
 }
 
+/* ====================================================================
+   BAD DEBT FEATURE STYLES (ประวัติหนี้เสีย / แบล็คลิส / ผ่อนล่าช้า)
+   ==================================================================== */
+/* Category Radio Group in Modal */
+.category-radio-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.category-radio-label {
+  cursor: pointer;
+  display: block;
+}
+
+.category-radio-label input[type="radio"] {
+  display: none;
+}
+
+.category-radio-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--admin-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-dim);
+  font-size: 0.86rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.category-radio-label.radio-bad-debt input[type="radio"]:checked + .category-radio-btn {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #fca5a5;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.3);
+}
+
+.category-radio-label.radio-blacklist input[type="radio"]:checked + .category-radio-btn {
+  background: rgba(17, 24, 39, 0.8);
+  border-color: #f97316;
+  color: #fdba74;
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.3);
+}
+
+.category-radio-label.radio-delayed input[type="radio"]:checked + .category-radio-btn {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: #f59e0b;
+  color: #fcd34d;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+}
+
+/* Badges for Bad Debt Categories */
+.badge-bad-debt {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.badge-blacklist {
+  background: rgba(15, 23, 42, 0.85);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.5);
+}
+
+.badge-delayed {
+  background: rgba(245, 158, 11, 0.18);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+/* Bad Debt ID Card Badge */
+.id-card-pill {
+  font-family: monospace;
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 2px 7px;
+  border-radius: 4px;
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: inline-block;
+}
+
+@media (max-width: 600px) {
+  .category-radio-group {
+    grid-template-columns: 1fr;
+  }
+}
+
 

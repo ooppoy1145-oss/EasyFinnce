@@ -333,6 +333,58 @@ const INITIAL_BANK_API_SETTINGS = {
   autoApproveOnMatch: true
 };
 
+// ⚠️ INITIAL BAD DEBTS (ข้อมูลตัวอย่างประวัติหนี้เสีย, แบล็คลิส, ผ่อนล่าช้า)
+const INITIAL_BAD_DEBTS = [
+  {
+    id: "BD-2026-001",
+    name: "นายวิเชียร ทองหล่อ",
+    idCard: "1-1020-00345-67-8",
+    phone: "089-445-5667",
+    address: "99/12 หมู่ 4 ต.บางกรวย อ.บางกรวย จ.นนทบุรี 11130",
+    category: "bad_debt", // "bad_debt" (หนี้เสีย) | "blacklist" (แบล็คลิส) | "delayed" (ผ่อนล่าช้า)
+    amount: 35000,
+    itemDescription: "ผ่อนรถจักรยานยนต์ Honda Wave 110i",
+    note: "ขาดการติดต่อเกิน 90 วัน ย้ายที่อยู่หนี ไม่สามารถติดต่อผู้ค้ำประกันได้",
+    recordedAt: "2026-06-15"
+  },
+  {
+    id: "BD-2026-002",
+    name: "นางสาวพิมลวรรณ สุขเกษม",
+    idCard: "3-4015-00892-11-4",
+    phone: "092-334-1122",
+    address: "142/5 ถนนสุขุมวิท 71 แขวงพระโขนงเหนือ เขตวัฒนา กทม. 10110",
+    category: "blacklist", // "blacklist" (แบล็คลิส)
+    amount: 52000,
+    itemDescription: "สินเชื่อเงินสดหมุนเวียนธุรกิจ",
+    note: "ปลอมแปลงเอกสารสลิปเงินเดือนและถูกฟ้องดำเนินคดี ติดสถานะแบล็กลิสต์ถาวร",
+    recordedAt: "2026-07-20"
+  },
+  {
+    id: "BD-2026-003",
+    name: "นายอนุชา มั่นประสิทธิ์",
+    idCard: "1-5099-00213-44-9",
+    phone: "081-778-9900",
+    address: "55/8 หมู่ 2 ต.หนองปรือ อ.บางละมุง จ.ชลบุรี 20150",
+    category: "delayed", // "delayed" (ผ่อนล่าช้า)
+    amount: 14000,
+    itemDescription: "ผ่อนทองคำแท่ง 1 สลึง",
+    note: "ผลัดผ่อนชำระเกินกำหนดทุกงวด ต้องโทรติดตามมากกว่า 5 ครั้ง/งวด อยู่ในกลุ่มเฝ้าระวังพิเศษ",
+    recordedAt: "2026-08-10"
+  },
+  {
+    id: "BD-2026-004",
+    name: "นายศักดิ์ดา เลิศวิริยะ",
+    idCard: "3-1006-00782-33-1",
+    phone: "095-882-1234",
+    address: "210/14 ถนนมิตรภาพ ต.ในเมือง อ.เมือง จ.ขอนแก่น 40000",
+    category: "bad_debt", // "bad_debt" (หนี้เสีย)
+    amount: 28000,
+    itemDescription: "ผ่อน iPhone 15 Pro Max",
+    note: "ส่งงวดแรกงวดเดียวแล้วตัดสัญญาณเบอร์ติดต่อ บล็อคทุกช่องทาง",
+    recordedAt: "2026-09-01"
+  }
+];
+
 class EasyFinanceDatabase {
   constructor() {
     this.storageKeyPrefix = "easyfinance_";
@@ -346,29 +398,56 @@ class EasyFinanceDatabase {
 
   initDatabase() {
     // 1. ตรวจสอบการตั้งค่าใน LocalStorage
-    const isInitialized = localStorage.getItem(this.storageKeyPrefix + "initialized");
-    if (!isInitialized) {
+    const hasFirebase = defaultFirebaseConfig && defaultFirebaseConfig.projectId;
+
+    if (hasFirebase) {
+      // ⚡ โหมด Cloud เชื่อมต่อจริง:
+      // ป้องกันไม่ให้เครื่องใหม่แอบใส่ INITIAL_CONTRACTS / INITIAL_BAD_DEBTS จำลองลงเครื่อง
+      // เพื่อให้ทุกเครื่องที่เปิดลิงก์แสดงเฉพาะข้อมูลจริงล่าสุดจาก Cloud เท่านั้น
       if (!localStorage.getItem(this.storageKeyPrefix + "contracts")) {
+        localStorage.setItem(this.storageKeyPrefix + "contracts", JSON.stringify([]));
+      }
+      if (!localStorage.getItem(this.storageKeyPrefix + "bad_debts")) {
+        localStorage.setItem(this.storageKeyPrefix + "bad_debts", JSON.stringify([]));
+      }
+      if (!localStorage.getItem(this.storageKeyPrefix + "settings")) {
+        localStorage.setItem(this.storageKeyPrefix + "settings", JSON.stringify(INITIAL_PAYMENT_SETTINGS));
+      }
+      if (!localStorage.getItem(this.storageKeyPrefix + "bank_api_settings")) {
+        localStorage.setItem(this.storageKeyPrefix + "bank_api_settings", JSON.stringify(INITIAL_BANK_API_SETTINGS));
+      }
+    } else {
+      // โหมด Local Offline (เฉพาะเมื่อไม่มี Firebase Key เท่านั้น)
+      const isInitialized = localStorage.getItem(this.storageKeyPrefix + "initialized");
+      if (!isInitialized) {
+        if (!localStorage.getItem(this.storageKeyPrefix + "contracts")) {
+          localStorage.setItem(
+            this.storageKeyPrefix + "contracts",
+            JSON.stringify(INITIAL_CONTRACTS)
+          );
+        }
+        if (!localStorage.getItem(this.storageKeyPrefix + "bad_debts")) {
+          localStorage.setItem(
+            this.storageKeyPrefix + "bad_debts",
+            JSON.stringify(INITIAL_BAD_DEBTS)
+          );
+        }
+        localStorage.setItem(this.storageKeyPrefix + "initialized", "true");
+      }
+
+      if (!localStorage.getItem(this.storageKeyPrefix + "settings")) {
         localStorage.setItem(
-          this.storageKeyPrefix + "contracts",
-          JSON.stringify(INITIAL_CONTRACTS)
+          this.storageKeyPrefix + "settings",
+          JSON.stringify(INITIAL_PAYMENT_SETTINGS)
         );
       }
-      localStorage.setItem(this.storageKeyPrefix + "initialized", "true");
-    }
 
-    if (!localStorage.getItem(this.storageKeyPrefix + "settings")) {
-      localStorage.setItem(
-        this.storageKeyPrefix + "settings",
-        JSON.stringify(INITIAL_PAYMENT_SETTINGS)
-      );
-    }
-
-    if (!localStorage.getItem(this.storageKeyPrefix + "bank_api_settings")) {
-      localStorage.setItem(
-        this.storageKeyPrefix + "bank_api_settings",
-        JSON.stringify(INITIAL_BANK_API_SETTINGS)
-      );
+      if (!localStorage.getItem(this.storageKeyPrefix + "bank_api_settings")) {
+        localStorage.setItem(
+          this.storageKeyPrefix + "bank_api_settings",
+          JSON.stringify(INITIAL_BANK_API_SETTINGS)
+        );
+      }
     }
 
     // 2. ลองเชื่อมต่อ Firebase หากมี config ที่ผู้ใช้บันทึกไว้
@@ -433,39 +512,20 @@ class EasyFinanceDatabase {
   setupFirestoreListeners() {
     if (!this.firestore) return;
 
-    // Listen to Contracts (ซิงค์สัญญาทั้งหมดแบบ Real-time)
-    this.firestore.collection("contracts").onSnapshot(async (snapshot) => {
+    // Listen to Contracts (ซิงค์สัญญาทั้งหมดแบบ Real-time ตรงจาก Cloud 100%)
+    this.firestore.collection("contracts").onSnapshot((snapshot) => {
       const contracts = [];
       snapshot.forEach((doc) => {
         if (doc.id.startsWith("_")) return; // ข้ามเอกสาร config ภายใน
         contracts.push({ id: doc.id, ...doc.data() });
       });
 
-      const hasCloudSeeded = localStorage.getItem(this.storageKeyPrefix + "cloud_seeded");
-
-      if (contracts.length > 0) {
-        // มีข้อมูลใน Cloud แล้ว ให้อัปเดตลงเครื่องทันที
-        localStorage.setItem(
-          this.storageKeyPrefix + "contracts",
-          JSON.stringify(contracts)
-        );
-        localStorage.setItem(this.storageKeyPrefix + "cloud_seeded", "true");
-        this.notifyListeners();
-      } else if (!hasCloudSeeded) {
-        // Cloud ว่างเปล่าในการเชื่อมต่อครั้งแรก ให้นำข้อมูลจากเครื่องนี้ขึ้นไป Seed
-        const localContracts = this.getContracts();
-        if (localContracts.length > 0) {
-          console.log("☁️ Seeding initial contracts to Firestore...");
-          for (const c of localContracts) {
-            await this.firestore.collection("contracts").doc(c.id).set(c, { merge: true });
-          }
-          localStorage.setItem(this.storageKeyPrefix + "cloud_seeded", "true");
-        }
-      } else {
-        // Cloud ว่างเปล่าเพราะถูกลบจนหมด
-        localStorage.setItem(this.storageKeyPrefix + "contracts", JSON.stringify([]));
-        this.notifyListeners();
-      }
+      // ซิงค์ตรงจาก Cloud ลงเครื่องเสมอ (Cloud คือข้อมูลจริงชุดเดียว ไม่มีการดัน Mock data กลับขึ้นไปเด็ดขาด)
+      localStorage.setItem(
+        this.storageKeyPrefix + "contracts",
+        JSON.stringify(contracts)
+      );
+      this.notifyListeners();
     }, (error) => {
       console.error("❌ Firestore contracts snapshot error:", error);
       if (error && (error.code === "permission-denied" || (error.message && error.message.includes("permission")))) {
@@ -474,19 +534,31 @@ class EasyFinanceDatabase {
     });
 
     // Listen to Payment Settings (ซิงค์ QR และบัญชีธนาคารแบบ Real-time)
-    this.firestore.collection("settings").doc("payment").onSnapshot(async (doc) => {
+    this.firestore.collection("settings").doc("payment").onSnapshot((doc) => {
       if (doc.exists) {
         localStorage.setItem(
           this.storageKeyPrefix + "settings",
           JSON.stringify(doc.data())
         );
         this.notifyListeners();
-      } else {
-        const localSettings = this.getPaymentSettings();
-        await this.firestore.collection("settings").doc("payment").set(localSettings, { merge: true });
       }
     }, (error) => {
       console.error("❌ Firestore settings snapshot error:", error);
+    });
+
+    // Listen to Bad Debts (ซิงค์ประวัติหนี้เสีย / แบล็คลิส / ผ่อนล่าช้า แบบ Real-time ตรงจาก Cloud 100%)
+    this.firestore.collection("bad_debts").onSnapshot((snapshot) => {
+      const list = [];
+      snapshot.forEach((doc) => {
+        if (doc.id.startsWith("_")) return;
+        list.push({ id: doc.id, ...doc.data() });
+      });
+
+      // ซิงค์ตรงจาก Cloud ลงเครื่องเสมอ
+      localStorage.setItem(this.storageKeyPrefix + "bad_debts", JSON.stringify(list));
+      this.notifyListeners();
+    }, (error) => {
+      console.error("❌ Firestore bad_debts snapshot error:", error);
     });
   }
 
@@ -664,6 +736,74 @@ class EasyFinanceDatabase {
       JSON.stringify(updated)
     );
     return updated;
+  }
+
+  // --- BAD DEBTS METHODS (ประวัติหนี้เสีย / แบล็คลิส / ผ่อนล่าช้า) ---
+
+  getBadDebts() {
+    try {
+      const data = localStorage.getItem(this.storageKeyPrefix + "bad_debts");
+      return data ? JSON.parse(data) : [];
+    } catch (e) {
+      console.error("Error reading bad debts:", e);
+      return [];
+    }
+  }
+
+  getBadDebtById(id) {
+    const list = this.getBadDebts();
+    return list.find((b) => b.id === id) || null;
+  }
+
+  async saveBadDebt(record) {
+    let list = this.getBadDebts();
+    const index = list.findIndex((b) => b.id === record.id);
+
+    if (index >= 0) {
+      list[index] = { ...list[index], ...record, updatedAt: new Date().toISOString() };
+    } else {
+      record.createdAt = new Date().toISOString();
+      list.unshift(record);
+    }
+
+    localStorage.setItem(
+      this.storageKeyPrefix + "bad_debts",
+      JSON.stringify(list)
+    );
+
+    // ซิงค์ Firestore
+    if (this.isFirebaseConnected && this.firestore) {
+      try {
+        await this.firestore.collection("bad_debts").doc(record.id).set(record, { merge: true });
+        console.log(`☁️ Synced bad debt ${record.id} to Firestore`);
+      } catch (err) {
+        console.error("Firestore sync bad debt error:", err);
+      }
+    }
+
+    this.notifyListeners();
+    return record;
+  }
+
+  async deleteBadDebt(id) {
+    let list = this.getBadDebts();
+    list = list.filter((b) => b.id !== id);
+    localStorage.setItem(
+      this.storageKeyPrefix + "bad_debts",
+      JSON.stringify(list)
+    );
+
+    if (this.isFirebaseConnected && this.firestore) {
+      try {
+        await this.firestore.collection("bad_debts").doc(id).delete();
+        console.log(`🗑️ Deleted bad debt ${id} from Firestore`);
+      } catch (err) {
+        console.error("Firestore delete bad debt error:", err);
+      }
+    }
+
+    this.notifyListeners();
+    return true;
   }
 
   // --- REALTIME OBSERVER SUBSCRIBERS ---

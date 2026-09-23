@@ -95,6 +95,11 @@
           <i class="fa-solid fa-file-contract"></i>
           <span>สัญญาทั้งหมด (Contracts)</span>
         </a>
+        <a class="sidebar-item" data-tab="bad_debt" id="menuBadDebt">
+          <i class="fa-solid fa-triangle-exclamation" style="color: #f87171;"></i>
+          <span>ประวัติหนี้เสีย (Bad Debt)</span>
+          <span id="badDebtBadgeCount" class="tab-count-badge" style="margin-left: auto; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); display: none;">0</span>
+        </a>
 
         <div class="menu-category-label" style="margin-top: 16px;">การตั้งค่าระบบ</div>
         <a class="sidebar-item" id="btnMenuQrSettings">
@@ -148,40 +153,40 @@
         <div class="stats-counter-row">
           <div class="stat-counter-card">
             <div class="stat-info">
-              <div class="stat-label">ยอดปล่อยสินเชื่อรวม</div>
+              <div class="stat-label" id="statLabelFinanced">ยอดปล่อยสินเชื่อรวม</div>
               <div class="stat-val" id="statTotalFinanced">฿0</div>
             </div>
-            <div class="stat-icon-box stat-icon-emerald">
+            <div class="stat-icon-box stat-icon-emerald" id="statIconFinanced">
               <i class="fa-solid fa-vault"></i>
             </div>
           </div>
 
           <div class="stat-counter-card">
             <div class="stat-info">
-              <div class="stat-label">ยอดเก็บเงินได้แล้ว</div>
+              <div class="stat-label" id="statLabelCollected">ยอดเก็บเงินได้แล้ว</div>
               <div class="stat-val" id="statTotalCollected">฿0</div>
             </div>
-            <div class="stat-icon-box stat-icon-blue">
+            <div class="stat-icon-box stat-icon-blue" id="statIconCollected">
               <i class="fa-solid fa-circle-check"></i>
             </div>
           </div>
 
           <div class="stat-counter-card">
             <div class="stat-info">
-              <div class="stat-label">ยอดคงค้างรอเก็บ</div>
+              <div class="stat-label" id="statLabelOutstanding">ยอดคงค้างรอเก็บ</div>
               <div class="stat-val" id="statTotalOutstanding">฿0</div>
             </div>
-            <div class="stat-icon-box stat-icon-amber">
+            <div class="stat-icon-box stat-icon-amber" id="statIconOutstanding">
               <i class="fa-solid fa-clock-rotate-left"></i>
             </div>
           </div>
 
           <div class="stat-counter-card">
             <div class="stat-info">
-              <div class="stat-label">สัญญาทั้งหมด</div>
+              <div class="stat-label" id="statLabelCount">สัญญาทั้งหมด</div>
               <div class="stat-val" id="statContractsCount">0</div>
             </div>
-            <div class="stat-icon-box stat-icon-purple">
+            <div class="stat-icon-box stat-icon-purple" id="statIconCount">
               <i class="fa-solid fa-users"></i>
             </div>
           </div>
@@ -205,6 +210,11 @@
             <button id="btnOpenAddContract" class="btn-primary-action">
               <i class="fa-solid fa-user-plus"></i>
               <span>+ เพิ่มสัญญาใหม่</span>
+            </button>
+
+            <button id="btnOpenAddBadDebt" class="btn-primary-action" style="display: none; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.35);">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <span>+ เพิ่มประวัติหนี้เสีย</span>
             </button>
           </div>
         </div>
@@ -604,6 +614,110 @@
         <img id="viewerSlipImg" src="" alt="Slip Image" style="max-width: 100%; max-height: 450px; object-fit: contain; border-radius: var(--radius-sm);">
       </div>
       <div id="viewerSlipMeta" style="margin-top: 12px; font-size: 0.8rem; color: var(--text-muted);"></div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL 4: ADD / EDIT BAD DEBT (เพิ่ม/แก้ไขประวัติหนี้เสีย, แบล็คลิส, ผ่อนล่าช้า)
+       ==================================================================== -->
+  <div id="badDebtModal" class="admin-modal-overlay">
+    <div class="admin-modal-card" style="max-width: 620px;">
+      <div class="admin-modal-header">
+        <div class="admin-modal-title">
+          <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444;"></i>
+          <span id="badDebtModalTitle">เพิ่มประวัติหนี้เสีย / แบล็คลิส</span>
+        </div>
+        <button class="btn-close-modal" id="btnCloseBadDebtModal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="badDebtForm">
+        <input type="hidden" id="formBadDebtId">
+
+        <h4 style="font-size: 0.88rem; color: #f87171; margin-bottom: 12px; border-bottom: 1px solid var(--admin-border); padding-bottom: 6px;">
+          1. ข้อมูลส่วนบุคคลลูกหนี้
+        </h4>
+
+        <div class="form-grid-2">
+          <div class="form-group-admin">
+            <label class="form-label-admin">ชื่อ-นามสกุล *</label>
+            <input type="text" id="formBdName" class="input-admin" placeholder="เช่น นายสมชาย หนีหนี้" required>
+          </div>
+          <div class="form-group-admin">
+            <label class="form-label-admin">เลขบัตรประชาชน (13 หลัก) *</label>
+            <input type="text" id="formBdIdCard" class="input-admin" placeholder="เช่น 1-1020-00345-67-8" maxlength="17" required>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group-admin">
+            <label class="form-label-admin">เบอร์โทรศัพท์ *</label>
+            <input type="text" id="formBdPhone" class="input-admin" placeholder="เช่น 081-234-5678" required>
+          </div>
+          <div class="form-group-admin">
+            <label class="form-label-admin">ยอดหนี้ค้างชำระ (บาท) *</label>
+            <input type="number" id="formBdAmount" class="input-admin" min="0" placeholder="เช่น 35000" required>
+          </div>
+        </div>
+
+        <div class="form-group-admin">
+          <label class="form-label-admin">ที่อยู่ปัจจุบัน / ที่อยู่ตามบัตร *</label>
+          <input type="text" id="formBdAddress" class="input-admin" placeholder="เช่น 99/12 หมู่ 4 ต.บางกรวย อ.บางกรวย จ.นนทบุรี 11130" required>
+        </div>
+
+        <h4 style="font-size: 0.88rem; color: #f87171; margin-top: 14px; margin-bottom: 12px; border-bottom: 1px solid var(--admin-border); padding-bottom: 6px;">
+          2. สถานะและพฤติกรรมลูกหนี้
+        </h4>
+
+        <div class="form-group-admin">
+          <label class="form-label-admin">ประเภทหมวดหมู่ *</label>
+          <div class="category-radio-group">
+            <label class="category-radio-label radio-bad-debt">
+              <input type="radio" name="bdCategory" value="bad_debt" checked>
+              <div class="category-radio-btn">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>หนี้เสีย</span>
+              </div>
+            </label>
+            <label class="category-radio-label radio-blacklist">
+              <input type="radio" name="bdCategory" value="blacklist">
+              <div class="category-radio-btn">
+                <i class="fa-solid fa-ban"></i>
+                <span>แบล็คลิส</span>
+              </div>
+            </label>
+            <label class="category-radio-label radio-delayed">
+              <input type="radio" name="bdCategory" value="delayed">
+              <div class="category-radio-btn">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>ผ่อนล่าช้า</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group-admin">
+            <label class="form-label-admin">สิ่งที่ผ่อน / วัตถุประสงค์สินเชื่อ</label>
+            <input type="text" id="formBdItemDescription" class="input-admin" placeholder="เช่น ผ่อนรถมอเตอร์ไซค์, สินเชื่อเงินสด">
+          </div>
+          <div class="form-group-admin">
+            <label class="form-label-admin">วันที่บันทึกข้อมูล</label>
+            <input type="date" id="formBdRecordedAt" class="input-admin">
+          </div>
+        </div>
+
+        <div class="form-group-admin">
+          <label class="form-label-admin">หมายเหตุพฤติกรรม / ประวัติการติดตาม *</label>
+          <textarea id="formBdNote" class="input-admin" rows="3" style="resize: vertical;" placeholder="เช่น ย้ายที่อยู่หนี, ปลอมแปลงเอกสาร, เบี้ยวจ่ายงวด, ติดต่อไม่ได้" required></textarea>
+        </div>
+
+        <button type="submit" class="btn-primary-action" style="width: 100%; justify-content: center; margin-top: 16px; padding: 12px; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);">
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span>บันทึกประวัติลูกหนี้</span>
+        </button>
+      </form>
     </div>
   </div>
 
