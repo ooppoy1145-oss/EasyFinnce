@@ -989,13 +989,19 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="table-actions">
             ${
               !isPaid && dailyStatus.installment
-                ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${dailyStatus.installment.installmentNo}, '${selectedDailyDate}')">
+                ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${dailyStatus.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
                     <i class="fa-solid fa-check"></i> บันทึกรับชำระ
                    </button>`
                 : '<span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
             }
-            <button class="btn-table-action" onclick="openContractDetails('${c.id}')">
+            <button class="btn-table-action" onclick="openContractDetails('${c.id}')" title="ดูตารางงวด">
               <i class="fa-solid fa-table-list"></i> ดูงวด
+            </button>
+            <button class="btn-table-action" onclick="editContract('${c.id}')" title="แก้ไขสัญญา">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button class="btn-table-action" onclick="deleteContractConfirm('${c.id}')" title="ลบสัญญา" style="color: #f87171;">
+              <i class="fa-solid fa-trash"></i>
             </button>
           </div>
         </td>
@@ -1056,13 +1062,19 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="table-actions">
             ${
               pendingInst
-                ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${pendingInst.installmentNo})">
+                ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${pendingInst.installmentNo})" title="บันทึกรับชำระ">
                     <i class="fa-solid fa-check"></i> บันทึกรับชำระ
                    </button>`
                 : ""
             }
-            <button class="btn-table-action" onclick="openContractDetails('${c.id}')">
+            <button class="btn-table-action" onclick="openContractDetails('${c.id}')" title="ดูตารางงวด">
               <i class="fa-solid fa-table-list"></i> ดูงวด
+            </button>
+            <button class="btn-table-action" onclick="editContract('${c.id}')" title="แก้ไขสัญญา">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button class="btn-table-action" onclick="deleteContractConfirm('${c.id}')" title="ลบสัญญา" style="color: #f87171;">
+              <i class="fa-solid fa-trash"></i>
             </button>
           </div>
         </td>
@@ -1123,13 +1135,19 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="table-actions">
             ${
               pendingInst
-                ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${pendingInst.installmentNo})">
+                ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${pendingInst.installmentNo})" title="บันทึกรับชำระ">
                     <i class="fa-solid fa-check"></i> บันทึกรับชำระ
                    </button>`
                 : ""
             }
-            <button class="btn-table-action" onclick="openContractDetails('${c.id}')">
+            <button class="btn-table-action" onclick="openContractDetails('${c.id}')" title="ดูตารางงวด">
               <i class="fa-solid fa-table-list"></i> ดูงวด
+            </button>
+            <button class="btn-table-action" onclick="editContract('${c.id}')" title="แก้ไขสัญญา">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button class="btn-table-action" onclick="deleteContractConfirm('${c.id}')" title="ลบสัญญา" style="color: #f87171;">
+              <i class="fa-solid fa-trash"></i>
             </button>
           </div>
         </td>
@@ -1351,9 +1369,23 @@ document.addEventListener("DOMContentLoaded", () => {
     if (existing && existing.installments && existing.installments.length === totalInstallments) {
       // ใช้ตารางงวดเดิมเพื่อรักษาสถานะงวดที่จ่ายไปแล้ว และอัปเดตยอดค่างวดของงวดที่ค้าง
       installments = existing.installments.map((inst, idx) => {
+        let dueDateStr = inst.dueDate;
+        if (existing.paymentFrequency !== paymentFrequency && inst.status !== "paid") {
+          const d = new Date();
+          if (paymentFrequency === "daily") {
+            d.setDate(d.getDate() + idx);
+            dueDateStr = d.toISOString().slice(0, 10);
+          } else if (paymentFrequency === "weekly") {
+            dueDateStr = `งวดสัปดาห์ที่ ${inst.installmentNo}`;
+          } else {
+            d.setMonth(d.getMonth() + inst.installmentNo);
+            dueDateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+          }
+        }
         if (inst.status !== "paid") {
           return {
             ...inst,
+            dueDate: dueDateStr,
             amount: installmentAmount
           };
         }
@@ -1414,7 +1446,8 @@ document.addEventListener("DOMContentLoaded", () => {
       dueSchedule,
       duration,
       closedContractsCount,
-      status: "active",
+      status: (existing && existing.status) ? existing.status : "active",
+      createdAt: (existing && existing.createdAt) || new Date().toISOString(),
       installments
     };
 
@@ -1503,6 +1536,14 @@ document.addEventListener("DOMContentLoaded", () => {
         <div><strong>สิ่งที่ผ่อน:</strong> ${contract.itemFinanced}</div>
         <div><strong>ยอดรวม:</strong> ฿${Number(contract.totalAmount).toLocaleString()} (${contract.duration})</div>
         <div><strong>กำหนดชำระ:</strong> ${contract.dueSchedule}</div>
+      </div>
+      <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--admin-border); display: flex; gap: 8px; justify-content: flex-end;">
+        <button type="button" class="btn-table-action" onclick="contractDetailModal.classList.remove('active'); editContract('${contract.id}');" style="padding: 6px 14px; font-size: 0.8rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
+          <i class="fa-solid fa-pen-to-square"></i> แก้ไขสัญญานี้
+        </button>
+        <button type="button" class="btn-table-action" onclick="contractDetailModal.classList.remove('active'); deleteContractConfirm('${contract.id}');" style="padding: 6px 14px; font-size: 0.8rem; background: rgba(248, 113, 113, 0.15); color: #f87171;">
+          <i class="fa-solid fa-trash"></i> ลบสัญญา
+        </button>
       </div>
     `;
 

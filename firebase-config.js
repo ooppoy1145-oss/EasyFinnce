@@ -346,26 +346,15 @@ class EasyFinanceDatabase {
 
   initDatabase() {
     // 1. ตรวจสอบการตั้งค่าใน LocalStorage
-    const existingContractsRaw = localStorage.getItem(this.storageKeyPrefix + "contracts");
-    if (!existingContractsRaw) {
-      localStorage.setItem(
-        this.storageKeyPrefix + "contracts",
-        JSON.stringify(INITIAL_CONTRACTS)
-      );
-    } else {
-      try {
-        const list = JSON.parse(existingContractsRaw);
-        let modified = false;
-        INITIAL_CONTRACTS.forEach((initC) => {
-          if (!list.some((c) => c.id === initC.id)) {
-            list.push(initC);
-            modified = true;
-          }
-        });
-        if (modified) {
-          localStorage.setItem(this.storageKeyPrefix + "contracts", JSON.stringify(list));
-        }
-      } catch (e) { }
+    const isInitialized = localStorage.getItem(this.storageKeyPrefix + "initialized");
+    if (!isInitialized) {
+      if (!localStorage.getItem(this.storageKeyPrefix + "contracts")) {
+        localStorage.setItem(
+          this.storageKeyPrefix + "contracts",
+          JSON.stringify(INITIAL_CONTRACTS)
+        );
+      }
+      localStorage.setItem(this.storageKeyPrefix + "initialized", "true");
     }
 
     if (!localStorage.getItem(this.storageKeyPrefix + "settings")) {
@@ -446,28 +435,42 @@ class EasyFinanceDatabase {
 
     // Listen to Contracts (ซิงค์สัญญาทั้งหมดแบบ Real-time)
     this.firestore.collection("contracts").onSnapshot(async (snapshot) => {
-      if (!snapshot.empty) {
-        const contracts = [];
-        snapshot.forEach((doc) => {
-          contracts.push({ id: doc.id, ...doc.data() });
-        });
+      const contracts = [];
+      snapshot.forEach((doc) => {
+        if (doc.id.startsWith("_")) return; // ข้ามเอกสาร config ภายใน
+        contracts.push({ id: doc.id, ...doc.data() });
+      });
+
+      const hasCloudSeeded = localStorage.getItem(this.storageKeyPrefix + "cloud_seeded");
+
+      if (contracts.length > 0) {
+        // มีข้อมูลใน Cloud แล้ว ให้อัปเดตลงเครื่องทันที
         localStorage.setItem(
           this.storageKeyPrefix + "contracts",
           JSON.stringify(contracts)
         );
+        localStorage.setItem(this.storageKeyPrefix + "cloud_seeded", "true");
         this.notifyListeners();
-      } else {
-        // หากใน Firestore ยังไม่มีข้อมูล (เพิ่งเริ่มเชื่อมต่อ) ให้นำข้อมูลจากเครื่องนี้ขึ้นไปเป็นข้อมูลตั้งต้นทันที
+      } else if (!hasCloudSeeded) {
+        // Cloud ว่างเปล่าในการเชื่อมต่อครั้งแรก ให้นำข้อมูลจากเครื่องนี้ขึ้นไป Seed
         const localContracts = this.getContracts();
         if (localContracts.length > 0) {
           console.log("☁️ Seeding initial contracts to Firestore...");
           for (const c of localContracts) {
             await this.firestore.collection("contracts").doc(c.id).set(c, { merge: true });
           }
+          localStorage.setItem(this.storageKeyPrefix + "cloud_seeded", "true");
         }
+      } else {
+        // Cloud ว่างเปล่าเพราะถูกลบจนหมด
+        localStorage.setItem(this.storageKeyPrefix + "contracts", JSON.stringify([]));
+        this.notifyListeners();
       }
     }, (error) => {
-      console.warn("Firestore contracts snapshot error:", error);
+      console.error("❌ Firestore contracts snapshot error:", error);
+      if (error && (error.code === "permission-denied" || (error.message && error.message.includes("permission")))) {
+        console.warn("⚠️ Firebase Security Rules ไม่อนุญาตให้อ่าน/เขียน! กรุณาเปิด Rules ใน Firebase Console ให้เป็น 'allow read, write: if true;'");
+      }
     });
 
     // Listen to Payment Settings (ซิงค์ QR และบัญชีธนาคารแบบ Real-time)
@@ -483,7 +486,7 @@ class EasyFinanceDatabase {
         await this.firestore.collection("settings").doc("payment").set(localSettings, { merge: true });
       }
     }, (error) => {
-      console.warn("Firestore settings snapshot error:", error);
+      console.error("❌ Firestore settings snapshot error:", error);
     });
   }
 
@@ -536,8 +539,12 @@ class EasyFinanceDatabase {
     if (this.isFirebaseConnected && this.firestore) {
       try {
         await this.firestore.collection("contracts").doc(contract.id).set(contract, { merge: true });
+        console.log(`☁️ Synced contract ${contract.id} to Firestore`);
       } catch (err) {
         console.error("Firestore sync error:", err);
+        if (err && (err.code === "permission-denied" || (err.message && err.message.includes("permission")))) {
+          console.warn("⚠️ Firebase Security Rules ไม่อนุญาตให้เขียนข้อมูล! กรุณาตั้งค่า Rules ใน Firebase Console ให้เป็น 'allow read, write: if true;'");
+        }
       }
     }
 
@@ -556,6 +563,7 @@ class EasyFinanceDatabase {
     if (this.isFirebaseConnected && this.firestore) {
       try {
         await this.firestore.collection("contracts").doc(id).delete();
+        console.log(`🗑️ Deleted contract ${id} from Firestore`);
       } catch (err) {
         console.error("Firestore delete error:", err);
       }
