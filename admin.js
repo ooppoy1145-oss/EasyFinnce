@@ -111,14 +111,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const formBankBranchId = document.getElementById("formBankBranchId");
   const formAutoApprove = document.getElementById("formAutoApprove");
 
-  // DOM Elements - Firebase Modal
-  const btnMenuFirebase = document.getElementById("btnMenuFirebase");
-  const firebaseModal = document.getElementById("firebaseModal");
-  const btnCloseFirebaseModal = document.getElementById("btnCloseFirebaseModal");
-  const firebaseConfigForm = document.getElementById("firebaseConfigForm");
-  const fbProjectId = document.getElementById("fbProjectId");
-  const fbApiKey = document.getElementById("fbApiKey");
-  const fbAuthDomain = document.getElementById("fbAuthDomain");
 
   // DOM Elements - Slip Viewer Modal
   const slipViewerModal = document.getElementById("slipViewerModal");
@@ -179,10 +171,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateCloudStatus() {
     if (window.easyFinanceDB.isFirebaseConnected) {
       cloudStatusBadge.className = "cloud-status-badge";
-      cloudStatusText.textContent = "Firebase Firestore Connected";
+      cloudStatusText.textContent = "ซิงค์เรียลไทม์ทุกอุปกรณ์ (Cloud Connected)";
     } else {
       cloudStatusBadge.className = "cloud-status-badge offline";
-      cloudStatusText.textContent = "LocalStorage (Ready to Sync)";
+      cloudStatusText.textContent = "โหมดในเครื่อง (Local Mode)";
     }
   }
 
@@ -1674,38 +1666,7 @@ document.addEventListener("DOMContentLoaded", () => {
     showAdminToast("บันทึกการตั้งค่า Bank API ตรวจสลิปเรียบร้อยแล้ว", "success");
   });
 
-  // --- 9. FIREBASE CLOUD CONFIG MODAL ---
-
-  btnMenuFirebase.addEventListener("click", () => {
-    const config = window.easyFinanceDB.getFirebaseConfig();
-    fbProjectId.value = config.projectId || "";
-    fbApiKey.value = config.apiKey || "";
-    fbAuthDomain.value = config.authDomain || "";
-
-    firebaseModal.classList.add("active");
-  });
-
-  btnCloseFirebaseModal.addEventListener("click", () => {
-    firebaseModal.classList.remove("active");
-  });
-
-  firebaseConfigForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-
-    const config = {
-      projectId: fbProjectId.value.trim(),
-      apiKey: fbApiKey.value.trim(),
-      authDomain: fbAuthDomain.value.trim(),
-      storageBucket: `${fbProjectId.value.trim()}.appspot.com`
-    };
-
-    window.easyFinanceDB.saveFirebaseConfig(config);
-    firebaseModal.classList.remove("active");
-    showAdminToast("บันทึกคอนฟิก Firebase เรียบร้อยแล้ว กำลังเชื่อมต่อ...", "success");
-    updateCloudStatus();
-  });
-
-  // --- 10. REAL-TIME OBSERVER & HELPERS ---
+  // --- 9. REAL-TIME OBSERVER & HELPERS ---
 
   window.easyFinanceDB.subscribe(() => {
     renderStatsCounters();

@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="EasyFinance - ระบบติดตามสัญญาเงินกู้และผ่อนชำระสินค้าออนไลน์ Mobile-First">
   <title>EasyFinance - ระบบติดตามและชำระค่างวดออนไลน์</title>
-  
+
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  
+
   <!-- App Stylesheet -->
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
   <div class="app-container">
@@ -34,14 +36,8 @@
             <label class="form-label" for="loginIdentifier">อีเมล / รหัสสัญญา / เบอร์โทร</label>
             <div class="input-with-icon">
               <i class="fa-solid fa-user"></i>
-              <input 
-                type="text" 
-                id="loginIdentifier" 
-                class="input-field" 
-                placeholder="ระบุอีเมล หรือรหัสสัญญาที่ได้รับ" 
-                required 
-                autocomplete="username"
-              >
+              <input type="text" id="loginIdentifier" class="input-field" placeholder="ระบุอีเมล หรือรหัสสัญญาที่ได้รับ"
+                required autocomplete="username">
             </div>
           </div>
 
@@ -49,14 +45,8 @@
             <label class="form-label" for="loginPassword">รหัสผ่าน</label>
             <div class="input-with-icon">
               <i class="fa-solid fa-lock"></i>
-              <input 
-                type="password" 
-                id="loginPassword" 
-                class="input-field" 
-                placeholder="รหัสผ่านที่พนักงานตั้งให้" 
-                required 
-                autocomplete="current-password"
-              >
+              <input type="password" id="loginPassword" class="input-field" placeholder="รหัสผ่านที่พนักงานตั้งให้"
+                required autocomplete="current-password">
             </div>
           </div>
 
@@ -78,7 +68,7 @@
           หากยังไม่มีบัญชีหรือลืมรหัสผ่าน กรุณาติดต่อพนักงานผู้ดูแลสัญญาของท่าน<br>
           <div style="margin-top: 10px;">
             <a href="admin.html" style="font-size: 0.8rem; color: var(--primary-light); text-decoration: underline;">
-              <i class="fa-solid fa-user-shield"></i> เข้าสู่ระบบสำหรับพนักงาน / แอดมิน (Admin Portal)
+              <i class="fa-solid fa-user-shield"></i>
             </a>
           </div>
         </div>
@@ -103,7 +93,8 @@
 
         <div class="user-profile-header">
           <div class="avatar-wrapper">
-            <img id="userAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" alt="Customer Profile">
+            <img id="userAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
+              alt="Customer Profile">
           </div>
           <button id="btnLogout" class="btn-icon-logout" title="ออกจากระบบ">
             <i class="fa-solid fa-arrow-right-from-bracket"></i>
@@ -171,7 +162,8 @@
           </div>
 
           <!-- สรุปยอดชำระแล้วทั้งหมด -->
-          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 16px; padding: 0 4px;">
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 16px; padding: 0 4px;">
             <span style="color: var(--text-muted);">ยอดชำระแล้วทั้งหมด:</span>
             <span style="color: var(--primary-light); font-weight: 600;" id="totalPaidText">฿14,000</span>
           </div>
@@ -199,7 +191,8 @@
         <!-- 2. PROGRESS BAR SECTION -->
         <div class="progress-card">
           <div class="progress-header">
-            <span class="progress-title"><i class="fa-solid fa-chart-line" style="color: var(--primary); margin-right: 6px;"></i>ความคืบหน้าการผ่อนชำระ</span>
+            <span class="progress-title"><i class="fa-solid fa-chart-line"
+                style="color: var(--primary); margin-right: 6px;"></i>ความคืบหน้าการผ่อนชำระ</span>
             <span class="progress-fraction" id="progressFractionText">2 / 6 งวด (33%)</span>
           </div>
           <div class="progress-track">
@@ -302,7 +295,7 @@
           </div>
           <div class="slip-upload-text">กดเพื่อเลือกรูปสลิป หรือลากไฟล์มาวางที่นี่</div>
           <div class="slip-upload-sub">รองรับ JPG, PNG (ระบบจะส่งตรวจกับ API ธนาคารอัตโนมัติ)</div>
-          
+
           <div class="slip-preview-container" id="slipPreviewBox">
             <img id="slipThumbnail" class="slip-thumbnail" src="" alt="Slip Preview">
             <span id="slipFileName" style="font-size: 0.75rem; color: var(--primary-light);"></span>
@@ -340,20 +333,24 @@
       </div>
 
       <div style="text-align: center; margin-bottom: 20px;">
-        <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 10px;">
+        <div
+          style="width: 60px; height: 60px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 10px;">
           <i class="fa-solid fa-user-tie"></i>
         </div>
         <h3 style="font-size: 1.1rem; color: #fff;">ฝ่ายบริการลูกค้า EasyFinance</h3>
-        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">พร้อมให้บริการและตอบคำถามเกี่ยวกับสัญญาของท่าน</p>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+          พร้อมให้บริการและตอบคำถามเกี่ยวกับสัญญาของท่าน</p>
       </div>
 
       <div class="card-actions" style="gap: 12px;">
-        <a id="linkCallOfficer" href="tel:0891234567" class="btn-pay-now" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); text-decoration: none; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);">
+        <a id="linkCallOfficer" href="tel:0891234567" class="btn-pay-now"
+          style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); text-decoration: none; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);">
           <i class="fa-solid fa-phone"></i>
           <span>โทรหาเจ้าหน้าที่: <strong id="officerPhoneDisplay">089-123-4567</strong></span>
         </a>
 
-        <a id="linkLineOfficer" href="https://line.me/ti/p/~@easyfinance" target="_blank" class="btn-pay-now" style="background: linear-gradient(135deg, #06c755 0%, #05a044 100%); text-decoration: none; box-shadow: 0 4px 15px rgba(6, 199, 85, 0.35);">
+        <a id="linkLineOfficer" href="https://line.me/ti/p/~@easyfinance" target="_blank" class="btn-pay-now"
+          style="background: linear-gradient(135deg, #06c755 0%, #05a044 100%); text-decoration: none; box-shadow: 0 4px 15px rgba(6, 199, 85, 0.35);">
           <i class="fa-brands fa-line" style="font-size: 1.3rem;"></i>
           <span>ติดต่อผ่าน LINE: <strong id="officerLineDisplay">@easyfinance</strong></span>
         </a>
@@ -369,4 +366,5 @@
   <script src="bank-verification.js"></script>
   <script src="app.js"></script>
 </body>
+
 </html>

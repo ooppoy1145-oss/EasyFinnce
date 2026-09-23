@@ -4,14 +4,18 @@
  * พร้อมระบบ LocalStorage Fallback อัตโนมัติ (พร้อมทำงานได้ทันทีแม้ยังไม่ใส่ Firebase Key หรือบน GitHub Pages)
  */
 
-// คอนฟิกเริ่มต้นของ Firebase (ผู้ใช้สามารถนำ config จาก Firebase Console มาแทนที่ได้)
+// ====================================================================
+// ⚡ FIREBASE CLOUD DATABASE CONFIG (ผูกในโค้ดโดยตรงตรงนี้)
+// เมื่อใส่ค่าคอนฟิกที่นี่ พนักงานทุกคนที่เปิดลิงก์ผ่านมือถือหรือคอม จะซิงค์ข้อมูลเรียลไทม์ตรงกัน 100%
+// ไม่ต้องกดตั้งค่าใดๆ ในหน้าเว็บอีกต่อไป
+// ====================================================================
 const defaultFirebaseConfig = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyDzcnvH-fJm9PH3Q6thDSpUaeTz3-0jMEI",
+  authDomain: "easyfinance-847ed.firebaseapp.com",
+  projectId: "easyfinance-847ed",
+  storageBucket: "easyfinance-847ed.firebasestorage.app",
+  messagingSenderId: "1074903630791",
+  appId: "1:1074903630791:web:9c06ad5bc531b60097cfe2"
 };
 
 // ข้อมูลเริ่มต้นสำหรับระบบ (Initial Realistic Seed Data)
@@ -361,7 +365,7 @@ class EasyFinanceDatabase {
         if (modified) {
           localStorage.setItem(this.storageKeyPrefix + "contracts", JSON.stringify(list));
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (!localStorage.getItem(this.storageKeyPrefix + "settings")) {
@@ -390,6 +394,10 @@ class EasyFinanceDatabase {
   }
 
   getFirebaseConfig() {
+    // 1. ให้ความสำคัญสูงสุดกับค่า config ที่ผูกไว้ในโค้ด (defaultFirebaseConfig)
+    if (defaultFirebaseConfig && defaultFirebaseConfig.projectId) {
+      return defaultFirebaseConfig;
+    }
     const saved = localStorage.getItem(this.storageKeyPrefix + "firebase_config");
     if (saved) {
       try {
@@ -436,8 +444,8 @@ class EasyFinanceDatabase {
   setupFirestoreListeners() {
     if (!this.firestore) return;
 
-    // Listen to Contracts
-    this.firestore.collection("contracts").onSnapshot((snapshot) => {
+    // Listen to Contracts (ซิงค์สัญญาทั้งหมดแบบ Real-time)
+    this.firestore.collection("contracts").onSnapshot(async (snapshot) => {
       if (!snapshot.empty) {
         const contracts = [];
         snapshot.forEach((doc) => {
@@ -448,19 +456,31 @@ class EasyFinanceDatabase {
           JSON.stringify(contracts)
         );
         this.notifyListeners();
+      } else {
+        // หากใน Firestore ยังไม่มีข้อมูล (เพิ่งเริ่มเชื่อมต่อ) ให้นำข้อมูลจากเครื่องนี้ขึ้นไปเป็นข้อมูลตั้งต้นทันที
+        const localContracts = this.getContracts();
+        if (localContracts.length > 0) {
+          console.log("☁️ Seeding initial contracts to Firestore...");
+          for (const c of localContracts) {
+            await this.firestore.collection("contracts").doc(c.id).set(c, { merge: true });
+          }
+        }
       }
     }, (error) => {
       console.warn("Firestore contracts snapshot error:", error);
     });
 
-    // Listen to Payment Settings
-    this.firestore.collection("settings").doc("payment").onSnapshot((doc) => {
+    // Listen to Payment Settings (ซิงค์ QR และบัญชีธนาคารแบบ Real-time)
+    this.firestore.collection("settings").doc("payment").onSnapshot(async (doc) => {
       if (doc.exists) {
         localStorage.setItem(
           this.storageKeyPrefix + "settings",
           JSON.stringify(doc.data())
         );
         this.notifyListeners();
+      } else {
+        const localSettings = this.getPaymentSettings();
+        await this.firestore.collection("settings").doc("payment").set(localSettings, { merge: true });
       }
     }, (error) => {
       console.warn("Firestore settings snapshot error:", error);

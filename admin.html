@@ -105,10 +105,6 @@
           <i class="fa-solid fa-shield-halved"></i>
           <span>ระบบตรวจสลิป (Bank API)</span>
         </a>
-        <a class="sidebar-item" id="btnMenuFirebase">
-          <i class="fa-solid fa-fire"></i>
-          <span>คลาวด์ Firebase</span>
-        </a>
       </nav>
 
       <div class="sidebar-footer">
@@ -587,47 +583,6 @@
         <button type="submit" class="btn-primary-action" style="width: 100%; justify-content: center; margin-top: 14px; padding: 12px;">
           <i class="fa-solid fa-floppy-disk"></i>
           <span>บันทึกการตั้งค่า API ตรวจสลิป</span>
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- ====================================================================
-       MODAL 5: FIREBASE CLOUD CONFIG
-       ==================================================================== -->
-  <div id="firebaseModal" class="admin-modal-overlay">
-    <div class="admin-modal-card">
-      <div class="admin-modal-header">
-        <div class="admin-modal-title">
-          <i class="fa-solid fa-fire" style="color: #f97316;"></i>
-          <span>ตั้งค่าเชื่อมต่อ Firebase Firestore Cloud</span>
-        </div>
-        <button class="btn-close-modal" id="btnCloseFirebaseModal">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5;">
-        ระบบรองรับการเชื่อมต่อ Firebase Firestore เพื่อให้ข้อมูลอัปเดต Real-time ข้ามอุปกรณ์ หากไม่ได้กรอกระบบจะทำงานบน LocalStorage ให้ทันที
-      </div>
-
-      <form id="firebaseConfigForm">
-        <div class="form-group-admin">
-          <label class="form-label-admin">Project ID</label>
-          <input type="text" id="fbProjectId" class="input-admin" placeholder="เช่น easyfinance-app-12345">
-        </div>
-        <div class="form-group-admin">
-          <label class="form-label-admin">API Key</label>
-          <input type="text" id="fbApiKey" class="input-admin" placeholder="AIzaSy...">
-        </div>
-        <div class="form-group-admin">
-          <label class="form-label-admin">Auth Domain</label>
-          <input type="text" id="fbAuthDomain" class="input-admin" placeholder="easyfinance-app.firebaseapp.com">
-        </div>
-
-        <button type="submit" class="btn-primary-action" style="width: 100%; justify-content: center; margin-top: 14px; padding: 12px;">
-          <i class="fa-solid fa-cloud-arrow-up"></i>
-          <span>บันทึกการเชื่อมต่อ Firebase</span>
         </button>
       </form>
     </div>
