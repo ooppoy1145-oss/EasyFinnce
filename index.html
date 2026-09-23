@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="EasyFinance - ระบบติดตามสัญญาเงินกู้และผ่อนชำระสินค้าออนไลน์ Mobile-First">
+  <title>EasyFinance - ระบบติดตามและชำระค่างวดออนไลน์</title>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- ====================================================================
+         1. LOGIN VIEW (ไม่มีปุ่มทดสอบ / ไม่มี LINE LOGIN ตามข้อกำหนด)
+         ==================================================================== -->
+    <section id="loginSection" class="login-view-wrapper">
+      <div class="login-brand-header">
+        <div class="login-logo-circle">
+          <i class="fa-solid fa-coins"></i>
+        </div>
+        <h2>EasyFinance</h2>
+        <p>ระบบติดตามสัญญาและชำระค่างวดออนไลน์</p>
+      </div>
+
+      <div class="login-form-card">
+        <form id="clientLoginForm">
+          <div class="form-group">
+            <label class="form-label" for="loginIdentifier">อีเมล / รหัสสัญญา / เบอร์โทร</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-user"></i>
+              <input 
+                type="text" 
+                id="loginIdentifier" 
+                class="input-field" 
+                placeholder="ระบุอีเมล หรือรหัสสัญญาที่ได้รับ" 
+                required 
+                autocomplete="username"
+              >
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 12px;">
+            <label class="form-label" for="loginPassword">รหัสผ่าน</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-lock"></i>
+              <input 
+                type="password" 
+                id="loginPassword" 
+                class="input-field" 
+                placeholder="รหัสผ่านที่พนักงานตั้งให้" 
+                required 
+                autocomplete="current-password"
+              >
+            </div>
+          </div>
+
+          <div class="login-options-row" style="margin-top: 14px;">
+            <label class="remember-label">
+              <input type="checkbox" id="rememberMeCheckbox" checked>
+              <span>จดจำการเข้าสู่ระบบ</span>
+            </label>
+            <span style="color: var(--text-dim); font-size: 0.75rem;">เข้ารหัสปลอดภัย SSL</span>
+          </div>
+
+          <button type="submit" id="btnLoginSubmit" class="btn-login-submit" style="margin-top: 20px;">
+            <i class="fa-solid fa-right-to-bracket"></i>
+            <span>เข้าสู่ระบบ</span>
+          </button>
+        </form>
+
+        <div class="login-help-note">
+          หากยังไม่มีบัญชีหรือลืมรหัสผ่าน กรุณาติดต่อพนักงานผู้ดูแลสัญญาของท่าน<br>
+          <div style="margin-top: 10px;">
+            <a href="admin.html" style="font-size: 0.8rem; color: var(--primary-light); text-decoration: underline;">
+              <i class="fa-solid fa-user-shield"></i> เข้าสู่ระบบสำหรับพนักงาน / แอดมิน (Admin Portal)
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         2. DASHBOARD VIEW (ลูกค้าเข้าสู่ระบบแล้ว)
+         ==================================================================== -->
+    <div id="dashboardSection" class="hidden">
+      <!-- App Header -->
+      <header class="app-header">
+        <div class="brand-badge">
+          <div class="brand-icon-box">
+            <i class="fa-solid fa-coins"></i>
+          </div>
+          <div class="brand-text">
+            <h1>EasyFinance</h1>
+            <p>Smart Finance Portal</p>
+          </div>
+        </div>
+
+        <div class="user-profile-header">
+          <div class="avatar-wrapper">
+            <img id="userAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" alt="Customer Profile">
+          </div>
+          <button id="btnLogout" class="btn-icon-logout" title="ออกจากระบบ">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- App Main Content -->
+      <main class="app-content">
+        <!-- Client Greeting & Contract Meta -->
+        <div class="client-meta-banner">
+          <div class="client-greeting">
+            <h2>สวัสดี, <span id="clientName">คุณสมชาย</span></h2>
+          </div>
+          <div class="contract-id-pill" id="contractIdBadge">
+            <i class="fa-solid fa-file-contract"></i> <span id="contractIdText">EF-2026-001</span>
+          </div>
+        </div>
+
+        <!-- 1. FINANCIAL CARD (การ์ดการเงินหลัก) -->
+        <div class="financial-card">
+          <!-- ประเภทสิ่งที่กำลังผ่อน -->
+          <div class="finance-item-badge" id="financedItemBadge">
+            <i class="fa-solid fa-gem"></i>
+            <span id="financedItemName">ผ่อนทองคำแท่ง 1 บาท (96.5%)</span>
+          </div>
+
+          <div class="balance-label">ยอดคงเหลือรวม (Remaining Balance)</div>
+          <div class="balance-amount-display">
+            <span class="currency">฿</span>
+            <span class="amount" id="remainingBalanceText">28,000</span>
+          </div>
+
+          <!-- 3-Column Metrics Grid -->
+          <div class="finance-stats-grid">
+            <div class="f-stat-item">
+              <div class="f-stat-label">ระยะเวลาสัญญา</div>
+              <div class="f-stat-val" id="durationText">6 เดือน</div>
+            </div>
+            <div class="f-stat-item">
+              <div class="f-stat-label">สัญญาที่ปิดแล้ว</div>
+              <div class="f-stat-val" id="closedContractsText">2 ครั้ง</div>
+            </div>
+            <div class="f-stat-item">
+              <div class="f-stat-label">งวดทั้งหมด</div>
+              <div class="f-stat-val" id="totalInstallmentsText">6 งวด</div>
+            </div>
+          </div>
+
+          <!-- งวดถัดไป Banner -->
+          <div class="next-due-banner" id="nextDueBanner">
+            <div class="next-due-left">
+              <div class="next-due-icon">
+                <i class="fa-regular fa-calendar-check"></i>
+              </div>
+              <div>
+                <div class="next-due-title">งวดถัดไปที่ต้องชำระ (งวดที่ <span id="nextInstallmentNo">3</span>)</div>
+                <div class="next-due-date" id="nextDueDateText">1 เม.ย. 2026</div>
+              </div>
+            </div>
+            <div class="next-due-amount">
+              <div class="val" id="nextDueAmountText">฿7,000</div>
+              <div class="sub" id="paymentFrequencyText">รายเดือน</div>
+            </div>
+          </div>
+
+          <!-- สรุปยอดชำระแล้วทั้งหมด -->
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; margin-bottom: 16px; padding: 0 4px;">
+            <span style="color: var(--text-muted);">ยอดชำระแล้วทั้งหมด:</span>
+            <span style="color: var(--primary-light); font-weight: 600;" id="totalPaidText">฿14,000</span>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="card-actions">
+            <button id="btnOpenPayment" class="btn-pay-now" onclick="openPaymentNow()">
+              <i class="fa-solid fa-qrcode"></i>
+              <span>ชำระเงินตอนนี้ (สแกน QR Code)</span>
+            </button>
+
+            <div class="sub-actions-row">
+              <button id="btnScrollSchedule" class="btn-sub-action">
+                <i class="fa-solid fa-list-check"></i>
+                <span>ประวัติค่างวด</span>
+              </button>
+              <button id="btnOpenOfficerModal" class="btn-sub-action" onclick="openOfficerModal()">
+                <i class="fa-solid fa-headset"></i>
+                <span>ติดต่อเจ้าหน้าที่</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. PROGRESS BAR SECTION -->
+        <div class="progress-card">
+          <div class="progress-header">
+            <span class="progress-title"><i class="fa-solid fa-chart-line" style="color: var(--primary); margin-right: 6px;"></i>ความคืบหน้าการผ่อนชำระ</span>
+            <span class="progress-fraction" id="progressFractionText">2 / 6 งวด (33%)</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar-fill" id="progressBarFill" style="width: 33%;"></div>
+          </div>
+          <div class="progress-meta">
+            <span>ชำระแล้ว: <strong id="progressPaidCount" style="color: var(--primary-light);">2</strong> งวด</span>
+            <span>คงเหลือ: <strong id="progressRemainingCount" style="color: var(--text-main);">4</strong> งวด</span>
+          </div>
+        </div>
+
+        <!-- 3. INSTALLMENT SCHEDULE LIST (ตารางรายการงวดทั้งหมด) -->
+        <div class="schedule-section" id="scheduleSection">
+          <div class="section-header">
+            <div class="section-title">
+              <i class="fa-solid fa-receipt"></i>
+              <span>ตารางรายการงวดทั้งหมด</span>
+            </div>
+            <span class="section-badge" id="scheduleCountBadge">ทั้งหมด 6 งวด</span>
+          </div>
+
+          <div class="installments-list" id="installmentsList">
+            <!-- Dynamic installment items will be rendered here -->
+          </div>
+        </div>
+      </main>
+    </div>
+
+  </div> <!-- Close .app-container -->
+
+  <!-- ====================================================================
+       PAYMENT MODAL (หน้าต่างชำระเงิน + แสดง QR จากแอดมิน + ตรวจสลิป)
+       วางนอก .app-container เพื่อให้เป็น Fixed Viewport ทับหน้าจออย่างสมบูรณ์
+       ==================================================================== -->
+  <div id="paymentModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-qrcode" style="color: var(--primary);"></i>
+          <span>ชำระค่างวดออนไลน์</span>
+        </div>
+        <button id="btnClosePayModal" class="btn-close-modal" onclick="closePaymentModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Hero Amount -->
+      <div class="payment-amount-hero">
+        <div class="pay-hero-label">ยอดที่ต้องชำระในงวดนี้ (งวดที่ <span id="modalPayInstallmentNo">3</span>)</div>
+        <div class="pay-hero-value" id="modalPayAmount">฿7,000</div>
+        <div class="pay-hero-desc">กำหนดชำระภายใน: <span id="modalPayDueDate">1 เม.ย. 2026</span></div>
+      </div>
+
+      <!-- Dynamic QR Code Image from Admin -->
+      <div class="qr-display-box">
+        <div class="qr-image-container">
+          <img id="adminPaymentQrImg" src="" alt="Payment QR Code">
+        </div>
+        <p class="qr-tip-text">
+          <i class="fa-solid fa-camera"></i> สแกนผ่านแอปฯ ธนาคารทุกแห่ง หรือแคปหน้าจอเพื่อเปิดในแอปฯ
+        </p>
+      </div>
+
+      <!-- Bank Account Detail Box with One-Click Copy -->
+      <div class="bank-info-box">
+        <div class="bank-row">
+          <span class="bank-row-label">ธนาคาร:</span>
+          <span class="bank-row-value" id="displayBankName">ธนาคารกสิกรไทย (KBANK)</span>
+        </div>
+        <div class="bank-row">
+          <span class="bank-row-label">เลขที่บัญชี:</span>
+          <span class="bank-row-value">
+            <span id="displayAccountNumber">089-2-88899-0</span>
+            <button type="button" class="btn-copy" onclick="copyText('displayAccountNumber')">คัดลอก</button>
+          </span>
+        </div>
+        <div class="bank-row">
+          <span class="bank-row-label">ชื่อบัญชี:</span>
+          <span class="bank-row-value" id="displayAccountName">บจก. อีซี่ไฟแนนซ์ โซลูชั่นส์</span>
+        </div>
+        <div class="bank-row">
+          <span class="bank-row-label">พร้อมเพย์:</span>
+          <span class="bank-row-value">
+            <span id="displayPromptPay">0891234567</span>
+            <button type="button" class="btn-copy" onclick="copyText('displayPromptPay')">คัดลอก</button>
+          </span>
+        </div>
+      </div>
+
+      <!-- Slip Upload Area -->
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fa-solid fa-file-invoice-dollar" style="color: var(--primary);"></i>
+          แนบหลักฐานการโอนเงิน (สลิปธนาคาร)
+        </label>
+        <div class="slip-upload-area" id="slipDropArea">
+          <input type="file" id="slipFileInput" accept="image/*" style="display: none;">
+          <div class="slip-upload-icon">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+          </div>
+          <div class="slip-upload-text">กดเพื่อเลือกรูปสลิป หรือลากไฟล์มาวางที่นี่</div>
+          <div class="slip-upload-sub">รองรับ JPG, PNG (ระบบจะส่งตรวจกับ API ธนาคารอัตโนมัติ)</div>
+          
+          <div class="slip-preview-container" id="slipPreviewBox">
+            <img id="slipThumbnail" class="slip-thumbnail" src="" alt="Slip Preview">
+            <span id="slipFileName" style="font-size: 0.75rem; color: var(--primary-light);"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Verification Banner / Alerts -->
+      <div id="verifyStatusBanner" class="verify-status-banner">
+        <i id="verifyStatusIcon" class="fa-solid fa-spinner fa-spin"></i>
+        <span id="verifyStatusMsg">กำลังส่งตรวจสอบกับระบบธนาคาร...</span>
+      </div>
+
+      <!-- Confirm Payment Button -->
+      <button id="btnSubmitSlipVerify" class="btn-verify-slip" disabled>
+        <i class="fa-solid fa-shield-check"></i>
+        <span>ส่งตรวจสลิปและยืนยันการชำระเงิน</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       OFFICER CONTACT MODAL (ติดต่อเจ้าหน้าที่)
+       ==================================================================== -->
+  <div id="officerModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-headset" style="color: var(--primary);"></i>
+          <span>ติดต่อเจ้าหน้าที่ผู้ดูแล</span>
+        </div>
+        <button id="btnCloseOfficerModal" class="btn-close-modal" onclick="closeOfficerModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 10px;">
+          <i class="fa-solid fa-user-tie"></i>
+        </div>
+        <h3 style="font-size: 1.1rem; color: #fff;">ฝ่ายบริการลูกค้า EasyFinance</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">พร้อมให้บริการและตอบคำถามเกี่ยวกับสัญญาของท่าน</p>
+      </div>
+
+      <div class="card-actions" style="gap: 12px;">
+        <a id="linkCallOfficer" href="tel:0891234567" class="btn-pay-now" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); text-decoration: none; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);">
+          <i class="fa-solid fa-phone"></i>
+          <span>โทรหาเจ้าหน้าที่: <strong id="officerPhoneDisplay">089-123-4567</strong></span>
+        </a>
+
+        <a id="linkLineOfficer" href="https://line.me/ti/p/~@easyfinance" target="_blank" class="btn-pay-now" style="background: linear-gradient(135deg, #06c755 0%, #05a044 100%); text-decoration: none; box-shadow: 0 4px 15px rgba(6, 199, 85, 0.35);">
+          <i class="fa-brands fa-line" style="font-size: 1.3rem;"></i>
+          <span>ติดต่อผ่าน LINE: <strong id="officerLineDisplay">@easyfinance</strong></span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="firebase-config.js"></script>
+  <script src="bank-verification.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

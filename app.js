@@ -1,0 +1,606 @@
+/**
+ * EasyFinance - Client Application Logic (app.js)
+ * จัดการตรรกะหน้าบ้านลูกค้า, การคำนวณยอด, การชำระเงิน, และการตรวจสลิป
+ */
+
+document.addEventListener("DOMContentLoaded", () => {
+  // DOM Elements - Login
+  const loginSection = document.getElementById("loginSection");
+  const dashboardSection = document.getElementById("dashboardSection");
+  const clientLoginForm = document.getElementById("clientLoginForm");
+  const loginIdentifier = document.getElementById("loginIdentifier");
+  const loginPassword = document.getElementById("loginPassword");
+  const rememberMeCheckbox = document.getElementById("rememberMeCheckbox");
+  const btnLogout = document.getElementById("btnLogout");
+
+  // DOM Elements - Dashboard Meta
+  const userAvatar = document.getElementById("userAvatar");
+  const clientName = document.getElementById("clientName");
+  const contractIdBadge = document.getElementById("contractIdBadge");
+  const contractIdText = document.getElementById("contractIdText");
+  const financedItemBadge = document.getElementById("financedItemBadge");
+  const financedItemName = document.getElementById("financedItemName");
+  const remainingBalanceText = document.getElementById("remainingBalanceText");
+  const durationText = document.getElementById("durationText");
+  const closedContractsText = document.getElementById("closedContractsText");
+  const totalInstallmentsText = document.getElementById("totalInstallmentsText");
+  const nextDueDateText = document.getElementById("nextDueDateText");
+  const nextDueAmountText = document.getElementById("nextDueAmountText");
+  const nextInstallmentNo = document.getElementById("nextInstallmentNo");
+  const paymentFrequencyText = document.getElementById("paymentFrequencyText");
+  const totalPaidText = document.getElementById("totalPaidText");
+
+  // DOM Elements - Progress
+  const progressFractionText = document.getElementById("progressFractionText");
+  const progressBarFill = document.getElementById("progressBarFill");
+  const progressPaidCount = document.getElementById("progressPaidCount");
+  const progressRemainingCount = document.getElementById("progressRemainingCount");
+
+  // DOM Elements - Schedule
+  const scheduleCountBadge = document.getElementById("scheduleCountBadge");
+  const installmentsList = document.getElementById("installmentsList");
+  const btnScrollSchedule = document.getElementById("btnScrollSchedule");
+
+  // DOM Elements - Payment Modal
+  const btnOpenPayment = document.getElementById("btnOpenPayment");
+  const paymentModal = document.getElementById("paymentModal");
+  const btnClosePayModal = document.getElementById("btnClosePayModal");
+  const modalPayInstallmentNo = document.getElementById("modalPayInstallmentNo");
+  const modalPayAmount = document.getElementById("modalPayAmount");
+  const modalPayDueDate = document.getElementById("modalPayDueDate");
+  const adminPaymentQrImg = document.getElementById("adminPaymentQrImg");
+  const displayBankName = document.getElementById("displayBankName");
+  const displayAccountNumber = document.getElementById("displayAccountNumber");
+  const displayAccountName = document.getElementById("displayAccountName");
+  const displayPromptPay = document.getElementById("displayPromptPay");
+  const slipDropArea = document.getElementById("slipDropArea");
+  const slipFileInput = document.getElementById("slipFileInput");
+  const slipPreviewBox = document.getElementById("slipPreviewBox");
+  const slipThumbnail = document.getElementById("slipThumbnail");
+  const slipFileName = document.getElementById("slipFileName");
+  const btnSubmitSlipVerify = document.getElementById("btnSubmitSlipVerify");
+  const verifyStatusBanner = document.getElementById("verifyStatusBanner");
+  const verifyStatusIcon = document.getElementById("verifyStatusIcon");
+  const verifyStatusMsg = document.getElementById("verifyStatusMsg");
+
+  // DOM Elements - Officer Modal
+  const btnOpenOfficerModal = document.getElementById("btnOpenOfficerModal");
+  const officerModal = document.getElementById("officerModal");
+  const btnCloseOfficerModal = document.getElementById("btnCloseOfficerModal");
+  const linkCallOfficer = document.getElementById("linkCallOfficer");
+  const linkLineOfficer = document.getElementById("linkLineOfficer");
+  const officerPhoneDisplay = document.getElementById("officerPhoneDisplay");
+  const officerLineDisplay = document.getElementById("officerLineDisplay");
+
+  // State
+  let currentContractId = null;
+  let activePayingInstallment = null;
+  let selectedSlipFile = null;
+  let selectedSlipBase64 = null;
+
+  // --- 1. INITIALIZATION & SESSION ---
+
+  function checkSession() {
+    const sessionContractId = localStorage.getItem("easyfinance_current_session") ||
+      sessionStorage.getItem("easyfinance_current_session");
+
+    if (sessionContractId) {
+      const contract = window.easyFinanceDB.getContractById(sessionContractId);
+      if (contract) {
+        currentContractId = contract.id;
+        renderDashboard(contract);
+        showDashboard();
+        return;
+      }
+    }
+    showLogin();
+  }
+
+  function showLogin() {
+    loginSection.classList.remove("hidden");
+    dashboardSection.classList.add("hidden");
+  }
+
+  function showDashboard() {
+    loginSection.classList.add("hidden");
+    dashboardSection.classList.remove("hidden");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  // --- 2. AUTHENTICATION (NO DEMO / REAL ADMIN PASSWORDS ONLY) ---
+
+  clientLoginForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const identifier = loginIdentifier.value.trim();
+    const password = loginPassword.value.trim();
+
+    if (!identifier || !password) {
+      showToast("กรุณากรอกข้อมูลให้ครบถ้วน", "error");
+      return;
+    }
+
+    const contract = window.easyFinanceDB.getContractByEmail(identifier);
+
+    if (!contract) {
+      showToast("ไม่พบข้อมูลสัญญานี้ในระบบ กรุณาตรวจสอบอีเมลหรือรหัสสัญญา", "error");
+      return;
+    }
+
+    if (contract.password !== password) {
+      showToast("รหัสผ่านไม่ถูกต้อง กรุณาติดต่อพนักงานดูแลสัญญา", "error");
+      return;
+    }
+
+    // Login Success
+    currentContractId = contract.id;
+    if (rememberMeCheckbox.checked) {
+      localStorage.setItem("easyfinance_current_session", contract.id);
+    } else {
+      sessionStorage.setItem("easyfinance_current_session", contract.id);
+    }
+
+    showToast(`ยินดีต้อนรับคุณ ${contract.name}`, "success");
+    renderDashboard(contract);
+    showDashboard();
+  });
+
+  btnLogout.addEventListener("click", () => {
+    localStorage.removeItem("easyfinance_current_session");
+    sessionStorage.removeItem("easyfinance_current_session");
+    currentContractId = null;
+    loginIdentifier.value = "";
+    loginPassword.value = "";
+    showToast("ออกจากระบบเรียบร้อยแล้ว", "success");
+    showLogin();
+  });
+
+  // --- 3. DASHBOARD RENDERING ---
+
+  function renderDashboard(contract) {
+    if (!contract) return;
+
+    // Header & Meta
+    clientName.textContent = contract.name;
+    contractIdText.textContent = contract.id;
+    if (contract.avatar) {
+      userAvatar.src = contract.avatar;
+    }
+    financedItemName.textContent = contract.itemFinanced || "สินเชื่อทั่วไป";
+
+    // Installment Calculations
+    const installments = contract.installments || [];
+    const totalInstallments = installments.length;
+    const paidInstallments = installments.filter((i) => i.status === "paid");
+    const pendingInstallments = installments.filter((i) => i.status !== "paid");
+
+    const totalPaid = paidInstallments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    const totalRemaining = pendingInstallments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+
+    remainingBalanceText.textContent = totalRemaining.toLocaleString();
+    totalPaidText.textContent = `฿${totalPaid.toLocaleString()}`;
+    durationText.textContent = contract.duration || `${totalInstallments} งวด`;
+    closedContractsText.textContent = `${contract.closedContractsCount || 0} ครั้ง`;
+    totalInstallmentsText.textContent = `${totalInstallments} งวด`;
+
+    // Frequency Label
+    const freqMap = {
+      daily: "รายวัน",
+      weekly: "รายสัปดาห์",
+      monthly: "รายเดือน"
+    };
+    paymentFrequencyText.textContent = freqMap[contract.paymentFrequency] || contract.dueSchedule || "ตามกำหนด";
+
+    // Next Due Installment
+    if (pendingInstallments.length > 0) {
+      const nextInst = pendingInstallments[0];
+      activePayingInstallment = nextInst;
+      nextInstallmentNo.textContent = nextInst.installmentNo;
+      nextDueDateText.textContent = formatThaiDate(nextInst.dueDate);
+      nextDueAmountText.textContent = `฿${Number(nextInst.amount).toLocaleString()}`;
+      btnOpenPayment.disabled = false;
+      btnOpenPayment.innerHTML = `<i class="fa-solid fa-qrcode"></i><span>ชำระเงินงวดที่ ${nextInst.installmentNo} (฿${Number(nextInst.amount).toLocaleString()})</span>`;
+    } else {
+      activePayingInstallment = null;
+      nextInstallmentNo.textContent = "-";
+      nextDueDateText.textContent = "ครบกำหนดทุกงวดแล้ว";
+      nextDueAmountText.textContent = "฿0";
+      btnOpenPayment.disabled = true;
+      btnOpenPayment.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>ปิดสัญญาสมบูรณ์แล้ว (ชำระครบถ้วน)</span>`;
+    }
+
+    // Progress Bar
+    const progressPercent = totalInstallments > 0
+      ? Math.round((paidInstallments.length / totalInstallments) * 100)
+      : 0;
+    progressBarFill.style.width = `${progressPercent}%`;
+    progressFractionText.textContent = `${paidInstallments.length} / ${totalInstallments} งวด (${progressPercent}%)`;
+    progressPaidCount.textContent = paidInstallments.length;
+    progressRemainingCount.textContent = pendingInstallments.length;
+
+    // Render Installment Schedule List
+    renderInstallmentsList(installments, contract);
+  }
+
+  function renderInstallmentsList(installments, contract) {
+    scheduleCountBadge.textContent = `ทั้งหมด ${installments.length} งวด`;
+    installmentsList.innerHTML = "";
+
+    installments.forEach((inst) => {
+      const isPaid = inst.status === "paid";
+      const itemEl = document.createElement("div");
+      itemEl.className = `installment-item ${isPaid ? "is-paid" : ""}`;
+
+      itemEl.innerHTML = `
+        <div class="inst-left">
+          <div class="inst-no-badge">
+            ${isPaid ? '<i class="fa-solid fa-check"></i>' : inst.installmentNo}
+          </div>
+          <div>
+            <div class="inst-info-title">งวดที่ ${inst.installmentNo}</div>
+            <div class="inst-info-date">กำหนด: ${formatThaiDate(inst.dueDate)}</div>
+            ${
+              isPaid
+                ? `<div class="inst-info-paid-date"><i class="fa-solid fa-circle-check"></i> ชำระเมื่อ: ${inst.paidAt || "สมบูรณ์"}</div>`
+                : ""
+            }
+          </div>
+        </div>
+        <div class="inst-right">
+          <div class="inst-amount">฿${Number(inst.amount).toLocaleString()}</div>
+          <div class="inst-remaining">คงเหลือ: ฿${Number(inst.remainingBalanceAfter || 0).toLocaleString()}</div>
+          <div class="inst-status-tag ${isPaid ? "status-paid-tag" : "status-pending-tag"}" style="${!isPaid ? "background: rgba(16, 185, 129, 0.18); color: var(--primary-light); border: 1px solid var(--border-emerald); cursor: pointer;" : ""}">
+            ${
+              isPaid
+                ? '<i class="fa-solid fa-shield-check"></i> ชำระแล้ว (สมบูรณ์)'
+                : '<i class="fa-solid fa-qrcode"></i> ชำระงวดนี้'
+            }
+          </div>
+        </div>
+      `;
+
+      // หากเป็นงวดที่ยังไม่จ่าย คลิกเพื่อเปิดชำระเงินได้
+      if (!isPaid) {
+        itemEl.style.cursor = "pointer";
+        itemEl.title = `คลิกเพื่อชำระงวดที่ ${inst.installmentNo}`;
+        itemEl.addEventListener("click", () => {
+          openPaymentModalForInstallment(inst);
+        });
+      }
+
+      installmentsList.appendChild(itemEl);
+    });
+  }
+
+  // --- 4. PAYMENT MODAL & DYNAMIC QR FROM ADMIN ---
+
+  function getActiveOrNextInstallment() {
+    if (activePayingInstallment) return activePayingInstallment;
+    if (currentContractId) {
+      const contract = window.easyFinanceDB.getContractById(currentContractId);
+      if (contract && contract.installments && contract.installments.length > 0) {
+        const pending = contract.installments.find((i) => i.status !== "paid");
+        return pending || contract.installments[0];
+      }
+    }
+    // Fallback if not set
+    const contracts = window.easyFinanceDB.getContracts();
+    if (contracts.length > 0) {
+      const first = contracts[0];
+      return first.installments?.find((i) => i.status !== "paid") || first.installments?.[0];
+    }
+    return null;
+  }
+
+  function openPaymentModalForInstallment(installment) {
+    if (!installment) {
+      installment = getActiveOrNextInstallment();
+    }
+    if (!installment) {
+      showToast("กรุณาเลือกงวดที่ต้องการชำระเงิน", "error");
+      return;
+    }
+    activePayingInstallment = installment;
+
+    // โหลดการตั้งค่า QR และบัญชีจากระบบ (Firebase / Admin Settings)
+    const settings = window.easyFinanceDB.getPaymentSettings();
+
+    if (modalPayInstallmentNo) modalPayInstallmentNo.textContent = installment.installmentNo;
+    if (modalPayAmount) modalPayAmount.textContent = `฿${Number(installment.amount).toLocaleString()}`;
+    if (modalPayDueDate) modalPayDueDate.textContent = formatThaiDate(installment.dueDate);
+
+    // รูป QR Code ที่แอดมินอัปโหลดไว้
+    if (adminPaymentQrImg) {
+      if (settings && settings.qrImageUrl) {
+        adminPaymentQrImg.src = settings.qrImageUrl;
+      }
+    }
+
+    if (displayBankName) displayBankName.textContent = settings.bankName || "ธนาคารกสิกรไทย (KBANK)";
+    if (displayAccountNumber) displayAccountNumber.textContent = settings.accountNumber || "089-2-88899-0";
+    if (displayAccountName) displayAccountName.textContent = settings.accountName || "บจก. อีซี่ไฟแนนซ์ โซลูชั่นส์";
+    if (displayPromptPay) displayPromptPay.textContent = settings.promptPayNumber || "0891234567";
+
+    // รีเซ็ตฟอร์มสลิป
+    resetSlipForm();
+
+    if (paymentModal) {
+      paymentModal.classList.add("active");
+      document.body.style.overflow = "hidden";
+    }
+  }
+
+  // Expose to window for inline onclick handlers
+  window.openPaymentModalForInstallment = openPaymentModalForInstallment;
+
+  window.openPaymentNow = function () {
+    const inst = getActiveOrNextInstallment();
+    if (inst) {
+      openPaymentModalForInstallment(inst);
+    } else {
+      showToast("สัญญานี้ไม่มีงวดที่ต้องชำระ หรือปิดสัญญาสมบูรณ์แล้ว", "info");
+    }
+  };
+
+  window.closePaymentModal = function () {
+    if (paymentModal) {
+      paymentModal.classList.remove("active");
+      document.body.style.overflow = "";
+    }
+  };
+
+  btnOpenPayment.addEventListener("click", (e) => {
+    e.preventDefault();
+    window.openPaymentNow();
+  });
+
+  btnClosePayModal.addEventListener("click", () => {
+    window.closePaymentModal();
+  });
+
+  paymentModal.addEventListener("click", (e) => {
+    if (e.target === paymentModal) {
+      window.closePaymentModal();
+    }
+  });
+
+  // --- 5. SLIP UPLOAD & DRAG/DROP ---
+
+  function resetSlipForm() {
+    selectedSlipFile = null;
+    selectedSlipBase64 = null;
+    slipFileInput.value = "";
+    slipPreviewBox.classList.remove("active");
+    slipThumbnail.src = "";
+    slipFileName.textContent = "";
+    btnSubmitSlipVerify.disabled = true;
+    verifyStatusBanner.className = "verify-status-banner";
+  }
+
+  slipDropArea.addEventListener("click", () => {
+    slipFileInput.click();
+  });
+
+  slipFileInput.addEventListener("change", (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleSlipSelected(e.target.files[0]);
+    }
+  });
+
+  slipDropArea.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    slipDropArea.classList.add("dragover");
+  });
+
+  slipDropArea.addEventListener("dragleave", () => {
+    slipDropArea.classList.remove("dragover");
+  });
+
+  slipDropArea.addEventListener("drop", (e) => {
+    e.preventDefault();
+    slipDropArea.classList.remove("dragover");
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleSlipSelected(e.dataTransfer.files[0]);
+    }
+  });
+
+  function handleSlipSelected(file) {
+    if (!file.type.startsWith("image/")) {
+      showToast("กรุณาเลือกไฟล์รูปภาพเท่านั้น (JPG, PNG)", "error");
+      return;
+    }
+
+    selectedSlipFile = file;
+    slipFileName.textContent = file.name;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      selectedSlipBase64 = e.target.result;
+      slipThumbnail.src = selectedSlipBase64;
+      slipPreviewBox.classList.add("active");
+      btnSubmitSlipVerify.disabled = false;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // --- 6. SUBMIT SLIP VERIFY (CONNECT BANK API) ---
+
+  btnSubmitSlipVerify.addEventListener("click", async () => {
+    if (!activePayingInstallment || !selectedSlipBase64) {
+      showToast("กรุณาแนบรูปภาพสลิปการโอนเงิน", "error");
+      return;
+    }
+
+    btnSubmitSlipVerify.disabled = true;
+    btnSubmitSlipVerify.innerHTML = `<div class="spinner"></div> <span>กำลังส่งตรวจสลิปกับระบบธนาคาร...</span>`;
+
+    verifyStatusBanner.className = "verify-status-banner loading show";
+    verifyStatusIcon.className = "fa-solid fa-spinner fa-spin";
+    verifyStatusMsg.textContent = "กำลังเชื่อมต่อ Bank Verification API และตรวจสอบยอดเงิน...";
+
+    try {
+      const result = await window.bankVerificationService.verifySlip({
+        slipImage: selectedSlipBase64,
+        expectedAmount: Number(activePayingInstallment.amount),
+        contractId: currentContractId,
+        installmentNo: activePayingInstallment.installmentNo
+      });
+
+      if (result.success) {
+        verifyStatusBanner.className = "verify-status-banner success show";
+        verifyStatusIcon.className = "fa-solid fa-circle-check";
+        verifyStatusMsg.textContent = `${result.message} (Ref: ${result.transRef || "สมบูรณ์"})`;
+
+        // บันทึกตัดงวดใน Cloud Database / Firestore
+        await window.easyFinanceDB.markInstallmentPaid(
+          currentContractId,
+          activePayingInstallment.installmentNo,
+          {
+            slipUrl: selectedSlipBase64,
+            transRef: result.transRef,
+            verifiedBy: "bank_api"
+          }
+        );
+
+        showToast(`บันทึกชำระงวดที่ ${activePayingInstallment.installmentNo} เรียบร้อยแล้ว!`, "success");
+
+        // อัปเดตข้อมูลบนหน้าจอ
+        const updatedContract = window.easyFinanceDB.getContractById(currentContractId);
+        renderDashboard(updatedContract);
+
+        setTimeout(() => {
+          paymentModal.classList.remove("active");
+          btnSubmitSlipVerify.disabled = false;
+          btnSubmitSlipVerify.innerHTML = `<i class="fa-solid fa-shield-check"></i><span>ส่งตรวจสลิปและยืนยันการชำระเงิน</span>`;
+        }, 1800);
+      } else {
+        // กรณีตรวจสอบไม่ผ่าน เช่น ยอดเงินไม่ตรง หรือสลิปซ้ำ
+        verifyStatusBanner.className = "verify-status-banner error show";
+        verifyStatusIcon.className = "fa-solid fa-triangle-exclamation";
+        verifyStatusMsg.textContent = result.error || "ไม่สามารถยืนยันสลิปนี้ได้";
+        btnSubmitSlipVerify.disabled = false;
+        btnSubmitSlipVerify.innerHTML = `<i class="fa-solid fa-shield-check"></i><span>ลองใหม่อีกครั้ง</span>`;
+      }
+    } catch (err) {
+      verifyStatusBanner.className = "verify-status-banner error show";
+      verifyStatusIcon.className = "fa-solid fa-triangle-exclamation";
+      verifyStatusMsg.textContent = "เกิดข้อผิดพลาดในการตรวจสอบ: " + err.message;
+      btnSubmitSlipVerify.disabled = false;
+      btnSubmitSlipVerify.innerHTML = `<i class="fa-solid fa-shield-check"></i><span>ลองใหม่อีกครั้ง</span>`;
+    }
+  });
+
+  // --- 7. OFFICER CONTACT MODAL ---
+
+  window.openOfficerModal = function () {
+    const settings = window.easyFinanceDB.getPaymentSettings();
+    const phone = settings.officerPhone || "089-123-4567";
+    const lineId = settings.officerLine || "@easyfinance";
+
+    if (officerPhoneDisplay) officerPhoneDisplay.textContent = phone;
+    if (officerLineDisplay) officerLineDisplay.textContent = lineId;
+    if (linkCallOfficer) linkCallOfficer.href = `tel:${phone.replace(/\D/g, "")}`;
+    if (linkLineOfficer) {
+      linkLineOfficer.href = lineId.startsWith("http")
+        ? lineId
+        : `https://line.me/ti/p/~${lineId.replace("@", "")}`;
+    }
+
+    if (officerModal) {
+      officerModal.classList.add("active");
+      document.body.style.overflow = "hidden";
+    }
+  };
+
+  window.closeOfficerModal = function () {
+    if (officerModal) {
+      officerModal.classList.remove("active");
+      document.body.style.overflow = "";
+    }
+  };
+
+  btnOpenOfficerModal.addEventListener("click", () => {
+    window.openOfficerModal();
+  });
+
+  btnCloseOfficerModal.addEventListener("click", () => {
+    window.closeOfficerModal();
+  });
+
+  officerModal.addEventListener("click", (e) => {
+    if (e.target === officerModal) {
+      window.closeOfficerModal();
+    }
+  });
+
+  btnScrollSchedule.addEventListener("click", () => {
+    document.getElementById("scheduleSection").scrollIntoView({ behavior: "smooth" });
+  });
+
+  // --- 8. REALTIME CLOUD LISTENER ---
+
+  window.easyFinanceDB.subscribe(() => {
+    if (currentContractId) {
+      const updated = window.easyFinanceDB.getContractById(currentContractId);
+      if (updated) {
+        renderDashboard(updated);
+      }
+    }
+  });
+
+  // --- 9. HELPERS ---
+
+  function formatThaiDate(dateInput) {
+    if (!dateInput) return "-";
+    const dateString = String(dateInput);
+    if (dateString.includes("งวดสัปดาห์")) return dateString;
+
+    try {
+      const parts = dateString.split("-");
+      if (parts.length === 3) {
+        const year = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10);
+        const day = parseInt(parts[2], 10);
+        const thaiMonths = [
+          "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+          "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."
+        ];
+        return `${day} ${thaiMonths[month - 1]} ${year + 543}`;
+      }
+    } catch (e) {
+      return dateString;
+    }
+    return dateString;
+  }
+
+  function showToast(message, type = "success") {
+    const container = document.getElementById("toastContainer");
+    const toast = document.createElement("div");
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+      <i class="fa-solid fa-${type === "success" ? "circle-check" : "circle-exclamation"}"></i>
+      <span>${message}</span>
+    `;
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      toast.style.transform = "translateY(-10px)";
+      setTimeout(() => toast.remove(), 300);
+    }, 3500);
+  }
+
+  // One-Click Copy Function
+  window.copyText = function (elementId) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    const text = el.innerText.trim();
+    navigator.clipboard.writeText(text).then(() => {
+      showToast(`คัดลอก "${text}" เรียบร้อยแล้ว`, "success");
+    }).catch(() => {
+      showToast("ไม่สามารถคัดลอกได้", "error");
+    });
+  };
+
+  // Run on start
+  checkSession();
+});
