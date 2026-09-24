@@ -636,9 +636,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (officerLineDisplay) officerLineDisplay.textContent = lineId;
     if (linkCallOfficer) linkCallOfficer.href = `tel:${phone.replace(/\D/g, "")}`;
     if (linkLineOfficer) {
-      linkLineOfficer.href = lineId.startsWith("http")
-        ? lineId
-        : `https://line.me/ti/p/~${lineId.replace("@", "")}`;
+      const rawLine = (lineId || "").trim();
+      if (rawLine.startsWith("http://") || rawLine.startsWith("https://") || rawLine.startsWith("line://")) {
+        linkLineOfficer.href = rawLine;
+      } else {
+        const cleanId = rawLine.replace(/^@\s*/, "");
+        if (rawLine.includes("@")) {
+          // บัญชี LINE Official Account (LINE OA) - แนบ @ ไปด้วยเพื่อให้เปิดเจอทันที
+          linkLineOfficer.href = `https://line.me/R/ti/p/@${cleanId}`;
+        } else {
+          // บัญชีส่วนตัวทั่วไป
+          linkLineOfficer.href = `https://line.me/ti/p/~${cleanId}`;
+        }
+      }
     }
 
     if (officerModal) {
