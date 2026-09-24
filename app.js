@@ -344,8 +344,9 @@ document.addEventListener("DOMContentLoaded", () => {
   window.closePaymentModal = function () {
     if (paymentModal) {
       paymentModal.classList.remove("active");
-      document.body.style.overflow = "";
     }
+    document.body.style.overflow = ""; // คืนค่าการเลื่อนหน้าจอเสมอ ป้องกันหน้าจอค้าง
+    resetSlipForm();
   };
 
   btnOpenPayment.addEventListener("click", (e) => {
@@ -403,23 +404,69 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  function handleSlipSelected(file) {
+  // Helper: ย่อขนาดรูปภาพสลิปอัตโนมัติก่อนบันทึก ป้องกัน LocalStorage เกินโควตา (5MB) และ Firestore Limit (1MB)
+  function compressImage(file, maxDimension = 500, quality = 0.6) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      const timeout = setTimeout(() => resolve(null), 3000); // ป้องกันค้าง
+      reader.onerror = () => {
+        clearTimeout(timeout);
+        resolve(null);
+      };
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onerror = () => {
+          clearTimeout(timeout);
+          resolve(e.target.result);
+        };
+        img.onload = () => {
+          clearTimeout(timeout);
+          let width = img.width;
+          let height = img.height;
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressed = canvas.toDataURL("image/jpeg", quality);
+          resolve(compressed);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleSlipSelected(file) {
     if (!file.type.startsWith("image/")) {
       showToast("กรุณาเลือกไฟล์รูปภาพเท่านั้น (JPG, PNG)", "error");
       return;
     }
 
     selectedSlipFile = file;
-    slipFileName.textContent = file.name;
+    slipFileName.textContent = `${file.name} (กำลังประมวลผลรูป...)`;
+    btnSubmitSlipVerify.disabled = true;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      selectedSlipBase64 = e.target.result;
+    try {
+      const compressed = await compressImage(file);
+      selectedSlipBase64 = compressed || "";
       slipThumbnail.src = selectedSlipBase64;
       slipPreviewBox.classList.add("active");
+      slipFileName.textContent = file.name;
       btnSubmitSlipVerify.disabled = false;
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Image processing error:", err);
+      showToast("ไม่สามารถประมวลผลรูปภาพนี้ได้ กรุณาลองใหม่อีกครั้ง", "error");
+    }
   }
 
   // --- 6. SUBMIT SLIP VERIFY (CONNECT BANK API) ---
@@ -436,6 +483,13 @@ document.addEventListener("DOMContentLoaded", () => {
     verifyStatusBanner.className = "verify-status-banner loading show";
     verifyStatusIcon.className = "fa-solid fa-spinner fa-spin";
     verifyStatusMsg.textContent = "กำลังเชื่อมต่อ Bank Verification API และตรวจสอบยอดเงิน...";
+
+    // ป้องกันหน้าเว็บค้างสูงสุด 8 วินาที
+    const safetyTimer = setTimeout(() => {
+      btnSubmitSlipVerify.disabled = false;
+      btnSubmitSlipVerify.innerHTML = `<i class="fa-solid fa-shield-check"></i><span>ส่งตรวจสลิปและยืนยันการชำระเงิน</span>`;
+      document.body.style.overflow = "";
+    }, 8000);
 
     try {
       const result = await window.bankVerificationService.verifySlip({
@@ -463,17 +517,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
         showToast(`บันทึกชำระงวดที่ ${activePayingInstallment.installmentNo} เรียบร้อยแล้ว!`, "success");
 
-        // อัปเดตข้อมูลบนหน้าจอ
+        // อัปเดตข้อมูลบนหน้าจอลูกค้าทันที
         const updatedContract = window.easyFinanceDB.getContractById(currentContractId);
-        renderDashboard(updatedContract);
+        if (updatedContract) {
+          renderDashboard(updatedContract);
+        }
 
         setTimeout(() => {
-          paymentModal.classList.remove("active");
+          clearTimeout(safetyTimer);
+          window.closePaymentModal();
           btnSubmitSlipVerify.disabled = false;
           btnSubmitSlipVerify.innerHTML = `<i class="fa-solid fa-shield-check"></i><span>ส่งตรวจสลิปและยืนยันการชำระเงิน</span>`;
-        }, 1800);
+
+          const finalContract = window.easyFinanceDB.getContractById(currentContractId);
+          if (finalContract) {
+            renderDashboard(finalContract);
+          }
+        }, 1200);
       } else {
-        // กรณีตรวจสอบไม่ผ่าน เช่น ยอดเงินไม่ตรง หรือสลิปซ้ำ
+        clearTimeout(safetyTimer);
         verifyStatusBanner.className = "verify-status-banner error show";
         verifyStatusIcon.className = "fa-solid fa-triangle-exclamation";
         verifyStatusMsg.textContent = result.error || "ไม่สามารถยืนยันสลิปนี้ได้";
@@ -481,11 +543,14 @@ document.addEventListener("DOMContentLoaded", () => {
         btnSubmitSlipVerify.innerHTML = `<i class="fa-solid fa-shield-check"></i><span>ลองใหม่อีกครั้ง</span>`;
       }
     } catch (err) {
+      clearTimeout(safetyTimer);
+      console.error("Payment submission error:", err);
       verifyStatusBanner.className = "verify-status-banner error show";
       verifyStatusIcon.className = "fa-solid fa-triangle-exclamation";
-      verifyStatusMsg.textContent = "เกิดข้อผิดพลาดในการตรวจสอบ: " + err.message;
+      verifyStatusMsg.textContent = "เกิดข้อผิดพลาดในการตรวจสอบ: " + (err.message || err);
       btnSubmitSlipVerify.disabled = false;
       btnSubmitSlipVerify.innerHTML = `<i class="fa-solid fa-shield-check"></i><span>ลองใหม่อีกครั้ง</span>`;
+      document.body.style.overflow = "";
     }
   });
 

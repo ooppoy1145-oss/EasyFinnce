@@ -95,6 +95,11 @@
           <i class="fa-solid fa-file-contract"></i>
           <span>สัญญาทั้งหมด (Contracts)</span>
         </a>
+        <a class="sidebar-item" id="menuCustomerDb" onclick="openCustomerDatabaseModal()" style="cursor: pointer;">
+          <i class="fa-solid fa-address-book" style="color: #34d399;"></i>
+          <span>ฐานข้อมูลลูกค้า (Customer DB)</span>
+          <span id="customerCountBadge" class="tab-count-badge" style="margin-left: auto; background: rgba(16, 185, 129, 0.2); color: #34d399; display: inline-flex;">0</span>
+        </a>
         <a class="sidebar-item" data-tab="bad_debt" id="menuBadDebt">
           <i class="fa-solid fa-triangle-exclamation" style="color: #f87171;"></i>
           <span>ประวัติหนี้เสีย (Bad Debt)</span>
@@ -202,6 +207,11 @@
           </div>
 
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button id="btnOpenCustomerDb" type="button" class="btn-table-action" onclick="openCustomerDatabaseModal()" style="padding: 10px 16px; font-size: 0.88rem; background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.35); color: #34d399; font-weight: 600; cursor: pointer;">
+              <i class="fa-solid fa-address-book"></i>
+              <span>ฐานข้อมูลลูกค้า</span>
+            </button>
+
             <button id="btnOpenDashboardOverview" class="btn-table-action" style="padding: 10px 16px; font-size: 0.88rem; background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3); color: #93c5fd; cursor: pointer;">
               <i class="fa-solid fa-chart-pie"></i>
               <span>สรุปแดชบอร์ด</span>
@@ -247,35 +257,38 @@
           <!-- Dynamic Sub-tabs will be rendered here -->
         </div>
 
-        <!-- DATE FILTER BAR (Requirement 2: กรองดูรายวัน เลือกวันที่แล้วดูว่าคนไหนจ่าย/ยังไม่จ่าย) -->
+        <!-- DATE / PERIOD FILTER BAR (Daily / Weekly / Monthly Tracker) -->
         <div class="date-filter-bar" id="dateFilterBar">
           <div class="date-filter-left">
-            <div class="date-input-group">
+            <!-- Unified Single-Date Filter (สำหรับ รายวัน, รายอาทิตย์, และ รายเดือน เหมือนกันทั้งหมด) -->
+            <div class="date-input-group" id="dateFilterSingleGroup">
               <label for="adminDateFilter" class="date-filter-label">
-                <i class="fa-solid fa-calendar-day" style="color: var(--primary);"></i>
+                <i class="fa-solid fa-calendar-day" id="dateFilterIcon" style="color: var(--primary);"></i>
                 <span id="dateFilterLabelText">เลือกวันที่สรุปยอดรายวัน:</span>
               </label>
               <input type="date" id="adminDateFilter" class="input-admin-date">
             </div>
+
+            <!-- Quick Navigation Buttons -->
             <div class="date-quick-btns">
-              <button type="button" class="btn-date-quick" id="btnDatePrev" title="วันก่อนหน้า">
+              <button type="button" class="btn-date-quick" id="btnDatePrev" title="ก่อนหน้า">
                 <i class="fa-solid fa-chevron-left"></i>
               </button>
               <button type="button" class="btn-date-quick active" id="btnDateToday">
                 วันนี้
               </button>
-              <button type="button" class="btn-date-quick" id="btnDateNext" title="วันถัดไป">
+              <button type="button" class="btn-date-quick" id="btnDateNext" title="ถัดไป">
                 <i class="fa-solid fa-chevron-right"></i>
               </button>
             </div>
           </div>
 
-          <!-- ยอดรวมรายวันของวันนั้น (เด้งสรุปขึ้นมาในวงสีแดงที่ระบุ) -->
+          <!-- ยอดรวมของช่วงเวลาที่เลือก (เด้งสรุปขึ้นมาในวงสีแดง) -->
           <div class="date-daily-total-badge" id="dateDailyTotalBadge">
             <div class="daily-total-main">
-              <span class="daily-total-label">
+              <span class="daily-total-label" id="dateTotalMainLabel">
                 <i class="fa-solid fa-coins" style="color: #34d399;"></i>
-                ยอดรวมของวัน:
+                <span id="dateTotalLabelText">ยอดรวมของวัน:</span>
               </span>
               <strong class="daily-total-amount" id="dailyTotalAmountVal">฿0</strong>
             </div>
@@ -290,7 +303,7 @@
           </div>
 
           <div class="date-filter-summary" id="dateFilterSummary">
-            <!-- Dynamic summary text for selected date -->
+            <!-- Dynamic summary text for selected date / week / month -->
           </div>
         </div>
 
@@ -358,6 +371,24 @@
             <label class="form-label-admin">เบอร์โทรศัพท์ *</label>
             <input type="text" id="formPhone" class="input-admin" placeholder="เช่น 081-234-5678" required>
           </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group-admin">
+            <label class="form-label-admin">เลขบัตรประชาชน (13 หลัก)</label>
+            <input type="text" id="formIdCard" class="input-admin" placeholder="เช่น 1-1020-00123-45-6" maxlength="17">
+          </div>
+          <div class="form-group-admin">
+            <label class="form-label-admin">ลิงก์ Facebook / ช่องทางติดต่อเสริม</label>
+            <input type="text" id="formFacebook" class="input-admin" placeholder="เช่น https://facebook.com/username">
+          </div>
+        </div>
+        <div class="form-group-admin">
+          <label class="form-label-admin">ที่อยู่ปัจจุบันของลูกค้า</label>
+          <input type="text" id="formAddress" class="input-admin" placeholder="เช่น 123/45 ถนนพหลโยธิน แขวงลาดยาว เขตจตุจักร กรุงเทพฯ">
+        </div>
+        <div class="form-group-admin">
+          <label class="form-label-admin">รายละเอียดเพิ่มเติม / หมายเหตุบันทึก</label>
+          <input type="text" id="formAdditionalNotes" class="input-admin" placeholder="เช่น บันทึกเพิ่มเติม หรือข้อมูลการประกอบอาชีพ">
         </div>
         <div class="form-group-admin">
           <label class="form-label-admin">รูปโปรไฟล์ (URL ภาพ หรือเว้นว่างได้)</label>
@@ -721,8 +752,127 @@
     </div>
   </div>
 
+  <!-- ====================================================================
+       MODAL 5: CUSTOMER DATABASE (ฐานข้อมูลลูกค้าทั้งหมด)
+       3.1 กดเข้าไปแล้วจะมีรายชื่อลูกค้าทั้งหมดเด้งขึ้นมา
+       3.2 แต่ละรายชื่อจะมี 3 ขีดให้กด
+       ==================================================================== -->
+  <div id="customerDatabaseModal" class="admin-modal-overlay">
+    <div class="admin-modal-card" style="max-width: 960px; width: 95%;">
+      <div class="admin-modal-header">
+        <div class="admin-modal-title">
+          <i class="fa-solid fa-address-book" style="color: #34d399;"></i>
+          <span>ฐานข้อมูลลูกค้าทั้งหมด (Customer Database)</span>
+          <span class="tab-count-badge" id="modalCustomerTotalBadge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 0.85rem; padding: 4px 10px;">0 ราย</span>
+        </div>
+        <button class="btn-close-modal" id="btnCloseCustomerDbModal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Quick Search & Filters for Customer DB -->
+      <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+        <div class="search-input-wrapper" style="flex: 1; min-width: 260px;">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="customerDbSearchInput" placeholder="ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์, หรือเลขบัตรประชาชน...">
+        </div>
+        <div class="customer-db-filters" style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <button type="button" class="tab-btn active btn-cdb-filter" data-cdb-filter="all" onclick="filterCustomerDb('all')">
+            <i class="fa-solid fa-users"></i> ทั้งหมด
+          </button>
+          <button type="button" class="tab-btn btn-cdb-filter" data-cdb-filter="active" onclick="filterCustomerDb('active')">
+            <i class="fa-solid fa-clock" style="color: #38bdf8;"></i> กำลังผ่อน
+          </button>
+          <button type="button" class="tab-btn btn-cdb-filter" data-cdb-filter="completed" onclick="filterCustomerDb('completed')">
+            <i class="fa-solid fa-circle-check" style="color: #34d399;"></i> ปิดสัญญาแล้ว
+          </button>
+          <button type="button" class="tab-btn btn-cdb-filter" data-cdb-filter="has_bad_debt" onclick="filterCustomerDb('has_bad_debt')">
+            <i class="fa-solid fa-triangle-exclamation" style="color: #f87171;"></i> มีประวัติหนี้เสีย
+          </button>
+        </div>
+      </div>
+
+      <!-- Customer List Table (3.1 & 3.2: แต่ละรายชื่อจะมี 3 ขีดให้กด) -->
+      <div class="table-container" style="max-height: 55vh; overflow-y: auto; border: 1px solid var(--admin-border); border-radius: var(--radius-md);">
+        <table class="admin-data-table" style="width: 100%;">
+          <thead>
+            <tr>
+              <th>ลูกค้า</th>
+              <th>เบอร์โทรศัพท์</th>
+              <th>เลขบัตรประชาชน</th>
+              <th>สถานะสินเชื่อ</th>
+              <th>ยอดปล่อยรวม</th>
+              <th>คงค้างรอเก็บ</th>
+              <th style="text-align: center;">ดูข้อมูล (3 ขีด)</th>
+            </tr>
+          </thead>
+          <tbody id="customerDbTableBody">
+            <!-- Dynamic Customer Rows with 3-bar button -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL 6: CUSTOMER DOSSIER & PROFILE (ข้อมูลทั้งหมดของลูกค้า + ดาวน์โหลด Excel และ PDF)
+       3.3 กดเข้าไปแล้ว จะมีข้อมูลทั้งหมด
+       3.3.1 ชื่อ-นามสกุล
+       3.3.2 เบอร์
+       3.3.3 หมายเลขบัตร ปชช
+       3.3.4 ที่อยู่
+       3.3.5 ช่องใส่รายละเอียดเพิ่มเติม เอาไว้ใส่ลิงค์เฟส
+       3.3.6 รายละเอียดต่างๆที่ลูกค้า เคยผ่อน กำลังผ่อน มีทุกอย่าง
+       3.3.7 หลังจากมีข้อมูลแล้ว ในหน้านั้นอยากให้มีปุ่ม Download ไฟล์ Excel และ PDF ได้ด้วย
+       ==================================================================== -->
+  <div id="customerDossierModal" class="admin-modal-overlay">
+    <div class="admin-modal-card" style="max-width: 1000px; width: 96%; max-height: 92vh;">
+      <div class="admin-modal-header" style="flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button type="button" class="btn-table-action" onclick="backToCustomerDbList()" title="กลับหน้ารายชื่อ" style="padding: 6px 12px;">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>กลับ</span>
+          </button>
+          <div class="admin-modal-title">
+            <i class="fa-solid fa-id-card-clip" style="color: #38bdf8;"></i>
+            <span id="dossierCustomerTitle">ข้อมูลประวัติลูกค้า</span>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <!-- 3.3.7 ปุ่มดาวน์โหลด Excel และ PDF -->
+          <button type="button" class="btn-table-action" id="btnDownloadExcel" onclick="downloadCurrentCustomerExcel()" style="background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.35); color: #4ade80; font-weight: 600; padding: 7px 14px; cursor: pointer;">
+            <i class="fa-solid fa-file-excel"></i>
+            <span>ดาวน์โหลด Excel</span>
+          </button>
+          <button type="button" class="btn-table-action" id="btnDownloadPDF" onclick="downloadCurrentCustomerPDF()" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.35); color: #f87171; font-weight: 600; padding: 7px 14px; cursor: pointer;">
+            <i class="fa-solid fa-file-pdf"></i>
+            <span>ดาวน์โหลด PDF</span>
+          </button>
+          <button type="button" class="btn-table-action" onclick="printCurrentCustomerDossier()" title="พิมพ์เอกสาร" style="cursor: pointer;">
+            <i class="fa-solid fa-print"></i>
+          </button>
+          <button class="btn-close-modal" id="btnCloseDossierModal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Dossier Container -->
+      <div id="customerDossierContent" style="display: flex; flex-direction: column; gap: 18px;">
+        <!-- Dynamic Content Rendered Here -->
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Container -->
   <div id="adminToastContainer" class="toast-container"></div>
+
+  <!-- SheetJS (Excel .xlsx export) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- html2pdf.js (PDF export) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <!-- Firebase App & Firestore SDKs (Compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>

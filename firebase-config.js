@@ -39,6 +39,10 @@ const INITIAL_CONTRACTS = [
     password: "password123",
     name: "นายสมชาย มั่นคงดี",
     phone: "081-998-7766",
+    idCard: "1-1020-00123-45-6",
+    address: "123/45 ถนนพหลโยธิน แขวงลาดยาว เขตจตุจักร กรุงเทพฯ 10900",
+    facebookLink: "https://facebook.com/somchai.mankongdee",
+    additionalNotes: "ลูกค้าประวัติดี ชำระค่างวดตรงเวลาสม่ำเสมอ ผ่อนทองคำแท่ง",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
     itemFinanced: "ผ่อนทองคำแท่ง 1 บาท (96.5%)",
     totalAmount: 42000,
@@ -119,6 +123,10 @@ const INITIAL_CONTRACTS = [
     password: "password123",
     name: "นางสาวกานดา รุ่งเรือง",
     phone: "089-555-4321",
+    idCard: "3-1005-00789-12-3",
+    address: "88/9 หมู่ 2 ต.บางกร่าง อ.เมือง จ.นนทบุรี 11000",
+    facebookLink: "https://facebook.com/kanda.rungruang",
+    additionalNotes: "ร้านอาหารตามสั่ง ผ่อนตรงงวดรายวัน ยอดเงินเข้าบัญชีเรียบร้อย",
     avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
     itemFinanced: "สินเชื่อเงินสดหมุนเวียนธุรกิจ",
     totalAmount: 15000,
@@ -152,6 +160,10 @@ const INITIAL_CONTRACTS = [
     password: "password123",
     name: "นายวีระวัฒน์ คงเกษม",
     phone: "086-112-9988",
+    idCard: "1-5099-00456-78-9",
+    address: "45/6 หมู่ 5 ต.สุเทพ อ.เมือง จ.เชียงใหม่ 50200",
+    facebookLink: "https://facebook.com/veerawat.iphone",
+    additionalNotes: "พนักงานบริษัทเอกชน ผ่อนรายสัปดาห์ ทุกวันศุกร์",
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
     itemFinanced: "ผ่อนโทรศัพท์มือถือ iPhone 16 Pro Max 256GB",
     totalAmount: 48000,
@@ -183,6 +195,10 @@ const INITIAL_CONTRACTS = [
     password: "password123",
     name: "นายประสิทธิ์ มีทรัพย์",
     phone: "082-345-6789",
+    idCard: "2-1011-00234-56-7",
+    address: "14/2 ถนนหน้าเมือง ต.ตลาด อ.เมือง จ.สุราษฎร์ธานี 84000",
+    facebookLink: "https://facebook.com/prasit.market",
+    additionalNotes: "พ่อค้าตลาดสดเทศบาล สินเชื่อด่วนรายวัน คืนเงินตรงงวด",
     avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
     itemFinanced: "สินเชื่อด่วนรายวันเพื่อการค้า",
     totalAmount: 12000,
@@ -216,6 +232,10 @@ const INITIAL_CONTRACTS = [
     password: "password123",
     name: "นางวรรณา สดใส",
     phone: "083-999-1234",
+    idCard: "3-1201-00678-90-1",
+    address: "77/3 ถนนมะลิวัลย์ ต.ในเมือง อ.เมือง จ.ขอนแก่น 40000",
+    facebookLink: "https://facebook.com/wanna.sodsai",
+    additionalNotes: "คุณครูโรงเรียนมัธยม ผ่อน iPad เพื่อการศึกษา ตัดงวดตรงเวลา",
     avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80",
     itemFinanced: "ผ่อน iPad Air M2 เพื่อการศึกษา",
     totalAmount: 24000,
@@ -296,6 +316,10 @@ const INITIAL_CONTRACTS = [
     password: "password123",
     name: "นายณัฐพล บุญช่วย",
     phone: "085-777-8899",
+    idCard: "1-1033-00987-65-4",
+    address: "56/1 หมู่ 3 ต.คลองหลวง อ.คลองหลวง จ.ปทุมธานี 12120",
+    facebookLink: "https://facebook.com/nattapon.boonchway",
+    additionalNotes: "พ่อค้าขายผลไม้ สินเชื่อหมุนเวียน ผ่อนรายสัปดาห์",
     avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80",
     itemFinanced: "สินเชื่อหมุนเวียนพ่อค้าตลาดสด",
     totalAmount: 16000,
@@ -393,6 +417,20 @@ class EasyFinanceDatabase {
     this.isFirebaseConnected = false;
     this.listeners = [];
 
+    // BroadcastChannel สำหรับการซิงค์แบบ Real-time ทันทีข้ามทุกแท็บในเครื่องเดียวกัน (0ms latency)
+    if (typeof BroadcastChannel !== "undefined") {
+      try {
+        this.channel = new BroadcastChannel("easyfinance_sync_channel");
+        this.channel.onmessage = (event) => {
+          if (event && event.data && event.data.type === "SYNC") {
+            this.notifyListeners(false); // แจ้งเตือน UI ในแท็บนี้โดยไม่ส่งข้อความซ้ำ
+          }
+        };
+      } catch (e) {
+        this.channel = null;
+      }
+    }
+
     this.initDatabase();
   }
 
@@ -401,14 +439,11 @@ class EasyFinanceDatabase {
     const hasFirebase = defaultFirebaseConfig && defaultFirebaseConfig.projectId;
 
     if (hasFirebase) {
-      // ⚡ โหมด Cloud เชื่อมต่อจริง:
-      // ป้องกันไม่ให้เครื่องใหม่แอบใส่ INITIAL_CONTRACTS / INITIAL_BAD_DEBTS จำลองลงเครื่อง
-      // เพื่อให้ทุกเครื่องที่เปิดลิงก์แสดงเฉพาะข้อมูลจริงล่าสุดจาก Cloud เท่านั้น
       if (!localStorage.getItem(this.storageKeyPrefix + "contracts")) {
-        localStorage.setItem(this.storageKeyPrefix + "contracts", JSON.stringify([]));
+        localStorage.setItem(this.storageKeyPrefix + "contracts", JSON.stringify(INITIAL_CONTRACTS));
       }
       if (!localStorage.getItem(this.storageKeyPrefix + "bad_debts")) {
-        localStorage.setItem(this.storageKeyPrefix + "bad_debts", JSON.stringify([]));
+        localStorage.setItem(this.storageKeyPrefix + "bad_debts", JSON.stringify(INITIAL_BAD_DEBTS));
       }
       if (!localStorage.getItem(this.storageKeyPrefix + "settings")) {
         localStorage.setItem(this.storageKeyPrefix + "settings", JSON.stringify(INITIAL_PAYMENT_SETTINGS));
@@ -453,16 +488,15 @@ class EasyFinanceDatabase {
     // 2. ลองเชื่อมต่อ Firebase หากมี config ที่ผู้ใช้บันทึกไว้
     this.tryConnectFirebase();
 
-    // 3. ฟังการเปลี่ยนแปลงข้าม Tab (BroadcastChannel / storage event)
+    // 3. ฟังการเปลี่ยนแปลงข้าม Tab (storage event fallback)
     window.addEventListener("storage", (e) => {
       if (e.key && e.key.startsWith(this.storageKeyPrefix)) {
-        this.notifyListeners();
+        this.notifyListeners(false);
       }
     });
   }
 
   getFirebaseConfig() {
-    // 1. ให้ความสำคัญสูงสุดกับค่า config ที่ผูกไว้ในโค้ด (defaultFirebaseConfig)
     if (defaultFirebaseConfig && defaultFirebaseConfig.projectId) {
       return defaultFirebaseConfig;
     }
@@ -509,28 +543,75 @@ class EasyFinanceDatabase {
     }
   }
 
+  // ผสานข้อมูลระหว่าง Cloud และ Local อย่างชาญฉลาด เพื่อไม่ให้งวดที่เพิ่งจ่ายโดนทับด้วยข้อมูลเก่าจาก Cloud
+  mergeContracts(localContracts, remoteContracts) {
+    if (!remoteContracts || remoteContracts.length === 0) return localContracts;
+    if (!localContracts || localContracts.length === 0) return remoteContracts;
+
+    const merged = [...remoteContracts];
+    localContracts.forEach((local) => {
+      const rIdx = merged.findIndex((r) => r.id === local.id);
+      if (rIdx >= 0) {
+        const remote = merged[rIdx];
+        // หาก local มีการอัปเดตใหม่กว่า หรือมีงวดที่จ่ายแล้วแต่ remote ยังเป็น pending ให้ยึดงวดที่จ่ายแล้ว
+        const localPaidCount = (local.installments || []).filter((i) => i.status === "paid").length;
+        const remotePaidCount = (remote.installments || []).filter((i) => i.status === "paid").length;
+
+        if (localPaidCount > remotePaidCount) {
+          // เก็บงวดที่จ่ายแล้วไว้เสมอ
+          const mergedInstallments = (remote.installments || []).map((rInst) => {
+            const lInst = (local.installments || []).find((li) => li.installmentNo === rInst.installmentNo);
+            if (lInst && lInst.status === "paid") {
+              return lInst;
+            }
+            return rInst;
+          });
+          merged[rIdx] = {
+            ...remote,
+            ...local,
+            installments: mergedInstallments
+          };
+        } else {
+          // คัดลอกฟิลด์ข้อมูลเสริม เช่น facebookLink, additionalNotes, idCard, address ถ้า remote ไม่มี
+          merged[rIdx] = {
+            ...local,
+            ...remote,
+            facebookLink: remote.facebookLink || local.facebookLink || "",
+            additionalNotes: remote.additionalNotes || local.additionalNotes || "",
+            idCard: remote.idCard || local.idCard || "",
+            address: remote.address || local.address || ""
+          };
+        }
+      } else {
+        // สัญญาที่สร้างใหม่ใน local แต่ยังไม่ขึ้น cloud
+        merged.unshift(local);
+      }
+    });
+
+    return merged;
+  }
+
   setupFirestoreListeners() {
     if (!this.firestore) return;
 
     // Listen to Contracts (ซิงค์สัญญาทั้งหมดแบบ Real-time ตรงจาก Cloud 100%)
     this.firestore.collection("contracts").onSnapshot((snapshot) => {
-      const contracts = [];
+      const remoteContracts = [];
       snapshot.forEach((doc) => {
         if (doc.id.startsWith("_")) return; // ข้ามเอกสาร config ภายใน
-        contracts.push({ id: doc.id, ...doc.data() });
+        remoteContracts.push({ id: doc.id, ...doc.data() });
       });
 
-      // ซิงค์ตรงจาก Cloud ลงเครื่องเสมอ (Cloud คือข้อมูลจริงชุดเดียว ไม่มีการดัน Mock data กลับขึ้นไปเด็ดขาด)
+      const currentLocal = this.getContracts();
+      const merged = this.mergeContracts(currentLocal, remoteContracts);
+
       localStorage.setItem(
         this.storageKeyPrefix + "contracts",
-        JSON.stringify(contracts)
+        JSON.stringify(merged)
       );
-      this.notifyListeners();
+      this.notifyListeners(false);
     }, (error) => {
       console.error("❌ Firestore contracts snapshot error:", error);
-      if (error && (error.code === "permission-denied" || (error.message && error.message.includes("permission")))) {
-        console.warn("⚠️ Firebase Security Rules ไม่อนุญาตให้อ่าน/เขียน! กรุณาเปิด Rules ใน Firebase Console ให้เป็น 'allow read, write: if true;'");
-      }
     });
 
     // Listen to Payment Settings (ซิงค์ QR และบัญชีธนาคารแบบ Real-time)
@@ -540,7 +621,7 @@ class EasyFinanceDatabase {
           this.storageKeyPrefix + "settings",
           JSON.stringify(doc.data())
         );
-        this.notifyListeners();
+        this.notifyListeners(false);
       }
     }, (error) => {
       console.error("❌ Firestore settings snapshot error:", error);
@@ -554,9 +635,8 @@ class EasyFinanceDatabase {
         list.push({ id: doc.id, ...doc.data() });
       });
 
-      // ซิงค์ตรงจาก Cloud ลงเครื่องเสมอ
       localStorage.setItem(this.storageKeyPrefix + "bad_debts", JSON.stringify(list));
-      this.notifyListeners();
+      this.notifyListeners(false);
     }, (error) => {
       console.error("❌ Firestore bad_debts snapshot error:", error);
     });
@@ -595,33 +675,70 @@ class EasyFinanceDatabase {
     let contracts = this.getContracts();
     const index = contracts.findIndex((c) => c.id === contract.id);
 
+    // ป้องกัน Base64 สลิปขนาดใหญ่เกิน ทำให้ LocalStorage เต็ม (5MB) หรือ Firestore ปฏิเสธ (>1MB)
+    const cleanInstallments = (contract.installments || []).map((inst) => {
+      let slipUrl = inst.slipUrl;
+      if (slipUrl && typeof slipUrl === "string" && slipUrl.length > 90000) {
+        // หากรูปสลิปมีขนาดยาวเกิน 90KB ให้เก็บเฉพาะส่วนที่พอดีเพื่อไม่ให้บล็อกฐานข้อมูล
+        slipUrl = slipUrl.slice(0, 90000);
+      }
+      return {
+        ...inst,
+        slipUrl
+      };
+    });
+
+    const cleanContract = {
+      ...contract,
+      installments: cleanInstallments,
+      updatedAt: new Date().toISOString()
+    };
+
     if (index >= 0) {
-      contracts[index] = { ...contracts[index], ...contract, updatedAt: new Date().toISOString() };
+      contracts[index] = { ...contracts[index], ...cleanContract };
     } else {
-      contract.createdAt = new Date().toISOString();
-      contracts.unshift(contract);
+      cleanContract.createdAt = cleanContract.createdAt || new Date().toISOString();
+      contracts.unshift(cleanContract);
     }
 
-    localStorage.setItem(
-      this.storageKeyPrefix + "contracts",
-      JSON.stringify(contracts)
-    );
-
-    // ซิงค์ไปยัง Firestore หากเชื่อมต่ออยู่
-    if (this.isFirebaseConnected && this.firestore) {
+    // 1. บันทึกลง LocalStorage ทันที เพื่อให้การทำงานลื่นไหล 0ms ไม่มีการค้าง
+    try {
+      localStorage.setItem(
+        this.storageKeyPrefix + "contracts",
+        JSON.stringify(contracts)
+      );
+    } catch (quotaErr) {
+      console.warn("⚠️ LocalStorage quota exceeded, stripping large slip images to prevent crash:", quotaErr);
+      const safeContracts = contracts.map((c) => ({
+        ...c,
+        installments: (c.installments || []).map((inst) => ({
+          ...inst,
+          slipUrl: null
+        }))
+      }));
       try {
-        await this.firestore.collection("contracts").doc(contract.id).set(contract, { merge: true });
-        console.log(`☁️ Synced contract ${contract.id} to Firestore`);
-      } catch (err) {
-        console.error("Firestore sync error:", err);
-        if (err && (err.code === "permission-denied" || (err.message && err.message.includes("permission")))) {
-          console.warn("⚠️ Firebase Security Rules ไม่อนุญาตให้เขียนข้อมูล! กรุณาตั้งค่า Rules ใน Firebase Console ให้เป็น 'allow read, write: if true;'");
-        }
+        localStorage.setItem(this.storageKeyPrefix + "contracts", JSON.stringify(safeContracts));
+      } catch (e2) {
+        console.error("Critical: Could not save contracts to localStorage:", e2);
       }
     }
 
-    this.notifyListeners();
-    return contract;
+    // 2. แจ้งเตือนทุกแท็บและทุกหน้าจอในเครื่องทันที ไม่ต้องรอคลาวด์
+    this.notifyListeners(true);
+
+    // 3. ซิงค์ขึ้น Firestore ในเบื้องหลัง พร้อมกำหนด Timeout 2.5 วินาที ป้องกัน UI ค้างหากสัญญาณเน็ตช้า
+    if (this.isFirebaseConnected && this.firestore) {
+      try {
+        const firestoreWrite = this.firestore.collection("contracts").doc(cleanContract.id).set(cleanContract, { merge: true });
+        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve("timeout"), 2500));
+        await Promise.race([firestoreWrite, timeoutPromise]);
+        console.log(`☁️ Synced contract ${cleanContract.id} to Firestore`);
+      } catch (err) {
+        console.warn("Firestore sync non-blocking warning:", err);
+      }
+    }
+
+    return cleanContract;
   }
 
   async deleteContract(id) {
@@ -632,16 +749,19 @@ class EasyFinanceDatabase {
       JSON.stringify(contracts)
     );
 
+    this.notifyListeners(true);
+
     if (this.isFirebaseConnected && this.firestore) {
       try {
-        await this.firestore.collection("contracts").doc(id).delete();
+        const firestoreDelete = this.firestore.collection("contracts").doc(id).delete();
+        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve("timeout"), 2500));
+        await Promise.race([firestoreDelete, timeoutPromise]);
         console.log(`🗑️ Deleted contract ${id} from Firestore`);
       } catch (err) {
         console.error("Firestore delete error:", err);
       }
     }
 
-    this.notifyListeners();
     return true;
   }
 
@@ -649,7 +769,7 @@ class EasyFinanceDatabase {
     const contract = this.getContractById(contractId);
     if (!contract) return null;
 
-    const installment = contract.installments.find(
+    const installment = (contract.installments || []).find(
       (inst) => Number(inst.installmentNo) === Number(installmentNo)
     );
 
@@ -670,15 +790,60 @@ class EasyFinanceDatabase {
       installment.transactionRef = "MANUAL-" + Date.now();
     }
 
+    // คำนวณยอดคงเหลือของแต่ละงวดใหม่ให้ถูกต้องเสมอ
+    let runningBalance = Number(contract.totalAmount) || 0;
+    (contract.installments || []).forEach((inst) => {
+      if (inst.status === "paid") {
+        runningBalance -= (Number(inst.amount) || 0);
+      }
+      inst.remainingBalanceAfter = Math.max(0, runningBalance);
+    });
+
     // ตรวจสอบว่าจ่ายครบทุกงวดหรือยัง
-    const allPaid = contract.installments.every((inst) => inst.status === "paid");
+    const allPaid = (contract.installments || []).length > 0 && contract.installments.every((inst) => inst.status === "paid");
     if (allPaid) {
       contract.status = "completed";
       contract.closedContractsCount = (Number(contract.closedContractsCount) || 0) + 1;
+    } else {
+      contract.status = "active";
     }
 
     await this.saveContract(contract);
     return contract;
+  }
+
+  // อัปเดตข้อมูลเพิ่มเติมของลูกค้า (บันทึกเพิ่มเติม, ลิงก์เฟสบุ๊ก, ที่อยู่, เลขบัตร)
+  async updateCustomerProfile(phoneOrId, profileData) {
+    let contracts = this.getContracts();
+    let updatedCount = 0;
+    contracts.forEach((c) => {
+      const matchPhone = c.phone && profileData.phone && (c.phone.replace(/\D/g, "") === profileData.phone.replace(/\D/g, ""));
+      const matchName = c.name && profileData.name && (c.name.trim() === profileData.name.trim());
+      const matchId = c.id === phoneOrId || (c.idCard && profileData.idCard && c.idCard === profileData.idCard);
+      if (matchPhone || matchName || matchId) {
+        if (profileData.facebookLink !== undefined) c.facebookLink = profileData.facebookLink;
+        if (profileData.additionalNotes !== undefined) c.additionalNotes = profileData.additionalNotes;
+        if (profileData.idCard !== undefined) c.idCard = profileData.idCard;
+        if (profileData.address !== undefined) c.address = profileData.address;
+        c.updatedAt = new Date().toISOString();
+        updatedCount++;
+      }
+    });
+
+    if (updatedCount > 0) {
+      try {
+        localStorage.setItem(this.storageKeyPrefix + "contracts", JSON.stringify(contracts));
+      } catch (e) {}
+      this.notifyListeners(true);
+      if (this.isFirebaseConnected && this.firestore) {
+        contracts.forEach((c) => {
+          if (c.id === phoneOrId || (profileData.phone && c.phone && c.phone.includes(profileData.phone))) {
+            this.firestore.collection("contracts").doc(c.id).set(c, { merge: true }).catch(() => {});
+          }
+        });
+      }
+    }
+    return true;
   }
 
   // --- PAYMENT SETTINGS METHODS ---
@@ -815,7 +980,16 @@ class EasyFinanceDatabase {
     };
   }
 
-  notifyListeners() {
+  addListener(callback) {
+    return this.subscribe(callback);
+  }
+
+  notifyListeners(broadcast = true) {
+    if (broadcast && this.channel) {
+      try {
+        this.channel.postMessage({ type: "SYNC", timestamp: Date.now() });
+      } catch (e) {}
+    }
     this.listeners.forEach((callback) => {
       try {
         callback();

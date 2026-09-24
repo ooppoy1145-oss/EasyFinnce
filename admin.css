@@ -1318,6 +1318,22 @@ table.admin-table tr:hover td {
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 }
 
+.date-range-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.date-range-divider {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-weight: 600;
+  padding: 0 2px;
+  align-self: flex-end;
+  margin-bottom: 8px;
+}
+
 .date-quick-btns {
   display: flex;
   align-items: center;
@@ -1565,6 +1581,194 @@ table.admin-table tr:hover td {
 @media (max-width: 600px) {
   .category-radio-group {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   CUSTOMER DATABASE & DOSSIER STYLES (Requirement 3, 3.1, 3.2, 3.3)
+   ========================================================================== */
+.btn-customer-menu {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid var(--admin-border-emerald);
+  color: var(--primary-light);
+  font-size: 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.btn-customer-menu:hover {
+  background: var(--primary);
+  color: #fff;
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+}
+
+.dossier-section-card {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.dossier-card-title {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.dossier-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.dossier-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dossier-info-item .info-label {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dossier-info-item .info-val {
+  font-size: 0.95rem;
+  color: #fff;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.dossier-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.dossier-stat-box {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dossier-stat-box .stat-box-title {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.dossier-stat-box .stat-box-amount {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.dossier-contract-card {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: var(--transition);
+}
+
+.dossier-contract-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.dossier-contract-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.dossier-notes-textarea {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+  color: #fff;
+  padding: 12px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  resize: vertical;
+  min-height: 70px;
+  transition: var(--transition);
+}
+
+.dossier-notes-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.btn-open-facebook {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-md);
+  background: #1877f2;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.btn-open-facebook:hover {
+  background: #0d6efd;
+  transform: translateY(-1px);
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #customerDossierContent, #customerDossierContent * {
+    visibility: visible;
+  }
+  #customerDossierContent {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    color: #000 !important;
+    background: #fff !important;
+  }
+  .dossier-section-card {
+    background: #fff !important;
+    color: #000 !important;
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+  .dossier-info-item .info-val {
+    color: #000 !important;
   }
 }
 
