@@ -278,15 +278,15 @@ document.addEventListener("DOMContentLoaded", () => {
   adminAuthForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const pass = adminSecretPass.value.trim();
-    const savedAdminPass = localStorage.getItem("easyfinance_admin_password") || "admin1234";
+    const savedAdminPass = localStorage.getItem("easyfinance_admin_password") || "Easy123";
 
-    if (pass === savedAdminPass || pass === "admin1234") {
+    if (pass === savedAdminPass || pass === "Easy123") {
       sessionStorage.setItem("easyfinance_admin_auth", "true");
       adminLoginOverlay.style.display = "none";
       showAdminToast("เข้าสู่ระบบแอดมินสำเร็จ", "success");
       initAdminDashboard();
     } else {
-      showAdminToast("รหัสผ่านไม่ถูกต้อง (Default: admin1234)", "error");
+      showAdminToast("รหัสผ่านไม่ถูกต้อง (Default: )", "error");
     }
   });
 
@@ -708,7 +708,7 @@ document.addEventListener("DOMContentLoaded", () => {
       weekly: "สรุปการเก็บเงินรายอาทิตย์ (Weekly Tracker)",
       monthly: "สรุปการเก็บเงินรายเดือน (Monthly Tracker)",
       all: "จัดการสัญญาทั้งหมด (Contracts Management)",
-      bad_debt: "ประวัติหนี้เสียและแบล็กลิสต์ (Bad Debt & Blacklist Tracker)"
+      bad_debt: "เช็คประวัติลูกค้า"
     };
     activeTabTitle.textContent = titles[tabName] || "จัดการสัญญา";
 
@@ -730,8 +730,8 @@ document.addEventListener("DOMContentLoaded", () => {
         dateFilterLabelText.textContent = tabName === "daily"
           ? "เลือกวันที่สรุปยอดรายวัน:"
           : tabName === "weekly"
-          ? "เลือกวันที่สรุปยอดรายอาทิตย์:"
-          : "เลือกวันที่สรุปยอดรายเดือน:";
+            ? "เลือกวันที่สรุปยอดรายอาทิตย์:"
+            : "เลือกวันที่สรุปยอดรายเดือน:";
       }
       if (dateFilterIcon) {
         if (tabName === "daily") {
@@ -752,8 +752,8 @@ document.addEventListener("DOMContentLoaded", () => {
         dateTotalLabelText.textContent = tabName === "daily"
           ? "ยอดรวมของวัน:"
           : tabName === "weekly"
-          ? "ยอดรวมของสัปดาห์:"
-          : "ยอดรวมของเดือน:";
+            ? "ยอดรวมของสัปดาห์:"
+            : "ยอดรวมของเดือน:";
       }
       updatePeriodDateInputs();
     } else {
@@ -958,7 +958,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const contractPaidAmount = installments
         .filter((inst) => inst.status === "paid")
         .reduce((sum, inst) => sum + (Number(inst.amount) || 0), 0);
-      
+
       totalCollected += contractPaidAmount;
       // ยอดคงค้างรอเก็บคำนวณจากยอดต้นลบยอดที่จ่ายแล้วเสมอ
       totalOutstanding += Math.max(0, totalAmount - contractPaidAmount);
@@ -1357,7 +1357,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 1. Filter by search query (Requirement 4: ค้นหาได้เฉพาะ "ชื่อ", "เบอร์โทรศัพท์", หรือ "อีเมล" เท่านั้น)
     let filtered = contracts.filter((c) => {
       if (!query) return true;
-      
+
       const nameMatch = c.name && c.name.toLowerCase().includes(query);
       const emailMatch = c.email && c.email.toLowerCase().includes(query);
       let phoneMatch = false;
@@ -1530,22 +1530,20 @@ document.addEventListener("DOMContentLoaded", () => {
           <strong style="color: var(--primary-light);">฿${Number(pendingInst ? pendingInst.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>
         </td>
         <td>
-          ${
-            isPaid
-              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${dailyStatus.label}</span>`
-              : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${dailyStatus.label}</span>`
-          }
+          ${isPaid
+          ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${dailyStatus.label}</span>`
+          : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${dailyStatus.label}</span>`
+        }
         </td>
         <td>฿${remainingBalance.toLocaleString()}</td>
         <td>
           <div class="table-actions">
-            ${
-              !isPaid && dailyStatus.installment
-                ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${dailyStatus.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
+            ${!isPaid && dailyStatus.installment
+          ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${dailyStatus.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
                     <i class="fa-solid fa-check"></i> บันทึกรับชำระ
                    </button>`
-                : '<span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
-            }
+          : '<span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
+        }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
             </button>
@@ -1662,22 +1660,20 @@ document.addEventListener("DOMContentLoaded", () => {
         <td><span style="color: #38bdf8; font-weight: 500;">${c.dueSchedule || "ทุกวันศุกร์"}</span></td>
         <td><strong style="color: var(--primary-light);">฿${Number(statusObj.installment ? statusObj.installment.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong></td>
         <td>
-          ${
-            isPaid
-              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${statusObj.label}</span>`
-              : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${statusObj.label}</span>`
-          }
+          ${isPaid
+          ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${statusObj.label}</span>`
+          : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${statusObj.label}</span>`
+        }
         </td>
         <td>฿${remainingBalance.toLocaleString()}</td>
         <td>
           <div class="table-actions">
-            ${
-              !isPaid && statusObj.installment
-                ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${weeklyStartDate}')" title="บันทึกรับชำระ">
+            ${!isPaid && statusObj.installment
+          ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${weeklyStartDate}')" title="บันทึกรับชำระ">
                     <i class="fa-solid fa-check"></i> บันทึกรับชำระ
                    </button>`
-                : '<span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
-            }
+          : '<span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
+        }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
             </button>
@@ -1794,22 +1790,20 @@ document.addEventListener("DOMContentLoaded", () => {
         <td><span style="color: #c084fc; font-weight: 500;">${c.dueSchedule || "ทุกวันที่ 1"}</span></td>
         <td><strong style="color: var(--primary-light);">฿${Number(statusObj.installment ? statusObj.installment.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong></td>
         <td>
-          ${
-            isPaid
-              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${statusObj.label}</span>`
-              : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${statusObj.label}</span>`
-          }
+          ${isPaid
+          ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${statusObj.label}</span>`
+          : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${statusObj.label}</span>`
+        }
         </td>
         <td>฿${remainingBalance.toLocaleString()}</td>
         <td>
           <div class="table-actions">
-            ${
-              !isPaid && statusObj.installment
-                ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedMonthlyMonth}-01')" title="บันทึกรับชำระ">
+            ${!isPaid && statusObj.installment
+          ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedMonthlyMonth}-01')" title="บันทึกรับชำระ">
                     <i class="fa-solid fa-check"></i> บันทึกรับชำระ
                    </button>`
-                : '<span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
-            }
+          : '<span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
+        }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
             </button>
@@ -1894,11 +1888,10 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </td>
         <td>
-          ${
-            isCompleted
-              ? '<span class="status-badge badge-paid">ปิดสัญญาแล้ว</span>'
-              : '<span class="status-badge badge-pending">กำลังผ่อนชำระ</span>'
-          }
+          ${isCompleted
+          ? '<span class="status-badge badge-paid">ปิดสัญญาแล้ว</span>'
+          : '<span class="status-badge badge-pending">กำลังผ่อนชำระ</span>'
+        }
           ${Number(c.lateFine) > 0 ? `<div style="margin-top: 3px;"><span class="badge-fine"><i class="fa-solid fa-triangle-exclamation"></i> ปรับ ฿${Number(c.lateFine).toLocaleString()}</span></div>` : ""}
         </td>
         <td>
@@ -2089,8 +2082,8 @@ document.addEventListener("DOMContentLoaded", () => {
       paymentFrequency === "daily"
         ? `ทุกวัน (เริ่ม ${formatDateThai(firstPaymentDate)})`
         : paymentFrequency === "weekly"
-        ? `ทุกสัปดาห์ (เริ่ม ${formatDateThai(firstPaymentDate)})`
-        : `ทุกวันที่ ${dueDay} ของเดือน (เริ่ม ${formatDateThai(firstPaymentDate)})`
+          ? `ทุกสัปดาห์ (เริ่ม ${formatDateThai(firstPaymentDate)})`
+          : `ทุกวันที่ ${dueDay} ของเดือน (เริ่ม ${formatDateThai(firstPaymentDate)})`
     );
     const duration = formDuration.value.trim() || (
       paymentFrequency === "daily" ? `${totalInstallments} วัน` : paymentFrequency === "weekly" ? `${totalInstallments} สัปดาห์` : `${totalInstallments} เดือน`
@@ -2300,30 +2293,27 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${inst.dueDate}</td>
         <td><strong style="color: var(--primary-light);">฿${Number(inst.amount).toLocaleString()}</strong></td>
         <td>
-          ${
-            isPaid
-              ? '<span class="status-badge badge-paid"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
-              : '<span class="status-badge badge-pending">รอชำระ</span>'
-          }
+          ${isPaid
+          ? '<span class="status-badge badge-paid"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
+          : '<span class="status-badge badge-pending">รอชำระ</span>'
+        }
         </td>
         <td><span style="font-size: 0.75rem; color: var(--text-dim);">${inst.paidAt || "-"}</span></td>
         <td>
-          ${
-            inst.slipUrl
-              ? `<button class="btn-table-action" onclick="viewSlip('${inst.slipUrl}', 'งวดที่ ${inst.installmentNo} - Ref: ${inst.transactionRef || "-"}')">
+          ${inst.slipUrl
+          ? `<button class="btn-table-action" onclick="viewSlip('${inst.slipUrl}', 'งวดที่ ${inst.installmentNo} - Ref: ${inst.transactionRef || "-"}')">
                   <i class="fa-solid fa-image"></i> ดูสลิป
                  </button>`
-              : (isPaid ? `<span style="font-size: 0.72rem; color: var(--text-dim);">${inst.transactionRef || "บันทึกโดยแอดมิน"}</span>` : "-")
-          }
+          : (isPaid ? `<span style="font-size: 0.72rem; color: var(--text-dim);">${inst.transactionRef || "บันทึกโดยแอดมิน"}</span>` : "-")
+        }
         </td>
         <td>
-          ${
-            !isPaid
-              ? `<button class="btn-table-action btn-mark-paid" onclick="markPaidFromDetail(${inst.installmentNo})">
+          ${!isPaid
+          ? `<button class="btn-table-action btn-mark-paid" onclick="markPaidFromDetail(${inst.installmentNo})">
                   <i class="fa-solid fa-check"></i> มาร์คชำระ
                  </button>`
-              : '<span style="color: var(--primary-light); font-size: 0.8rem;"><i class="fa-solid fa-circle-check"></i> สมบูรณ์</span>'
-          }
+          : '<span style="color: var(--primary-light); font-size: 0.8rem;"><i class="fa-solid fa-circle-check"></i> สมบูรณ์</span>'
+        }
         </td>
       `;
       detailInstallmentsBody.appendChild(tr);
@@ -2947,31 +2937,28 @@ document.addEventListener("DOMContentLoaded", () => {
               <td>${formatDateThai(inst.dueDate)}</td>
               <td><strong style="color: #fff;">฿${(Number(inst.amount) || 0).toLocaleString()}</strong></td>
               <td>
-                ${
-                  isPaid
-                    ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ชำระแล้ว</span>`
-                    : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> รอชำระ</span>`
-                }
+                ${isPaid
+              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ชำระแล้ว</span>`
+              : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> รอชำระ</span>`
+            }
               </td>
               <td>
                 <span style="font-size: 0.8rem; color: var(--text-muted);">${inst.paidAt ? formatDateThai(inst.paidAt.slice(0, 10)) : "-"}</span>
               </td>
               <td>
                 <div style="display: flex; gap: 6px; align-items: center;">
-                  ${
-                    inst.slipUrl
-                      ? `<button type="button" class="btn-table-action" onclick="viewPaymentSlip('${inst.slipUrl}', 'งวดที่ ${inst.installmentNo} (${c.id})')" style="padding: 3px 8px; font-size: 0.72rem; color: #38bdf8;">
+                  ${inst.slipUrl
+              ? `<button type="button" class="btn-table-action" onclick="viewPaymentSlip('${inst.slipUrl}', 'งวดที่ ${inst.installmentNo} (${c.id})')" style="padding: 3px 8px; font-size: 0.72rem; color: #38bdf8;">
                           <i class="fa-solid fa-image"></i> สลิป
                          </button>`
-                      : '<span style="font-size: 0.72rem; color: var(--text-dim);">-</span>'
-                  }
-                  ${
-                    !isPaid
-                      ? `<button type="button" class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${inst.installmentNo}); setTimeout(() => openCustomerDossier('${customer.key}'), 800);" style="padding: 3px 8px; font-size: 0.72rem;">
+              : '<span style="font-size: 0.72rem; color: var(--text-dim);">-</span>'
+            }
+                  ${!isPaid
+              ? `<button type="button" class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${inst.installmentNo}); setTimeout(() => openCustomerDossier('${customer.key}'), 800);" style="padding: 3px 8px; font-size: 0.72rem;">
                           <i class="fa-solid fa-check"></i> บันทึกรับ
                          </button>`
-                      : ""
-                  }
+              : ""
+            }
                 </div>
               </td>
             </tr>
@@ -3181,13 +3168,12 @@ document.addEventListener("DOMContentLoaded", () => {
             </label>
             <div style="display: flex; gap: 8px;">
               <input type="text" id="dossierFacebookInput" class="input-admin" placeholder="https://facebook.com/..." value="${customer.facebookLink || ""}">
-              ${
-                customer.facebookLink
-                  ? `<a href="${customer.facebookLink}" target="_blank" rel="noopener noreferrer" class="btn-open-facebook" title="เปิดหน้า Facebook">
+              ${customer.facebookLink
+        ? `<a href="${customer.facebookLink}" target="_blank" rel="noopener noreferrer" class="btn-open-facebook" title="เปิดหน้า Facebook">
                       <i class="fa-solid fa-arrow-up-right-from-square"></i> เปิด Facebook
                      </a>`
-                  : ""
-              }
+        : ""
+      }
             </div>
           </div>
 
@@ -3465,11 +3451,10 @@ document.addEventListener("DOMContentLoaded", () => {
         <td style="padding: 8px 10px; text-align: center; border: 1px solid #cbd5e1;">${formatDateThai(inst.dueDate)}</td>
         <td style="padding: 8px 10px; text-align: right; font-weight: 700; border: 1px solid #cbd5e1;">฿${(Number(inst.amount) || 0).toLocaleString()}</td>
         <td style="padding: 8px 10px; text-align: center; border: 1px solid #cbd5e1;">
-          ${
-            inst.status === "paid"
-              ? '<span style="color: #059669; font-weight: 700; background: #d1fae5; padding: 2px 8px; border-radius: 4px;">✓ ชำระแล้ว</span>'
-              : '<span style="color: #d97706; font-weight: 600; background: #fef3c7; padding: 2px 8px; border-radius: 4px;">รอชำระ</span>'
-          }
+          ${inst.status === "paid"
+        ? '<span style="color: #059669; font-weight: 700; background: #d1fae5; padding: 2px 8px; border-radius: 4px;">✓ ชำระแล้ว</span>'
+        : '<span style="color: #d97706; font-weight: 600; background: #fef3c7; padding: 2px 8px; border-radius: 4px;">รอชำระ</span>'
+      }
         </td>
         <td style="padding: 8px 10px; text-align: center; color: #64748b; font-size: 12px; border: 1px solid #cbd5e1;">${inst.paidAt ? formatDateThai(inst.paidAt.slice(0, 10)) : "-"}</td>
         <td style="padding: 8px 10px; text-align: right; color: #475569; border: 1px solid #cbd5e1;">฿${(Number(inst.remainingBalanceAfter) || 0).toLocaleString()}</td>
@@ -3857,7 +3842,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           try {
             localStorage.removeItem("customer_notes_" + cust.key);
-          } catch (e) {}
+          } catch (e) { }
           showAdminToast(`ลบข้อมูลลูกค้า ${cust.name} และสัญญาทั้งหมดสำเร็จเรียบร้อยแล้ว`, "success");
         }
       }

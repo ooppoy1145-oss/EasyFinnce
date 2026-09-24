@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="EasyFinance Admin Portal - ระบบจัดการสัญญาเงินกู้และผ่อนชำระสำหรับพนักงาน">
-  <title>EasyFinance Admin - ระบบจัดการหลังบ้านแอดมิน</title>
+  <meta name="description" content="Easy Wealth Finance Admin Portal - ระบบจัดการสัญญาเงินกู้และผ่อนชำระสำหรับพนักงาน">
+  <title>Easy Wealth Finance Admin - ระบบจัดการหลังบ้านแอดมิน</title>
 
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -13,6 +14,7 @@
   <link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
   <!-- ====================================================================
@@ -23,26 +25,21 @@
       <div class="admin-login-icon">
         <i class="fa-solid fa-user-shield"></i>
       </div>
-      <h2 class="admin-login-title">EasyFinance Admin</h2>
+      <h2 class="admin-login-title">Easy Wealth Finance Admin</h2>
       <p class="admin-login-sub">กรุณาระบุรหัสผ่านเพื่อเข้าสู่ระบบจัดการหลังบ้าน</p>
 
       <form id="adminAuthForm">
         <div class="form-group-admin" style="text-align: left;">
-          <label class="form-label-admin" for="adminSecretPass">รหัสผ่านแอดมิน (Default: admin1234)</label>
+          <label class="form-label-admin" for="adminSecretPass">กรุณาเข้าสู่ระบบ</label>
           <div class="input-with-icon">
             <i class="fa-solid fa-key" style="left: 14px; position: absolute; color: var(--text-dim);"></i>
-            <input 
-              type="password" 
-              id="adminSecretPass" 
-              class="input-admin" 
-              style="padding-left: 42px;" 
-              placeholder="ระบุรหัสผ่านเข้าหลังบ้าน" 
-              required
-            >
+            <input type="password" id="adminSecretPass" class="input-admin" style="padding-left: 42px;"
+              placeholder="ระบุรหัสผ่านเข้าหลังบ้าน" required>
           </div>
         </div>
 
-        <button type="submit" class="btn-primary-action" style="width: 100%; justify-content: center; margin-top: 14px; padding: 12px;">
+        <button type="submit" class="btn-primary-action"
+          style="width: 100%; justify-content: center; margin-top: 14px; padding: 12px;">
           <i class="fa-solid fa-lock-open"></i>
           <span>เข้าสู่ระบบหลังบ้าน</span>
         </button>
@@ -60,15 +57,15 @@
        ADMIN MAIN LAYOUT
        ==================================================================== -->
   <div class="admin-layout" id="adminMainLayout">
-    
+
     <!-- Sidebar -->
     <aside class="admin-sidebar" id="adminSidebar">
       <div class="sidebar-brand">
-        <div class="sidebar-brand-icon">
-          <i class="fa-solid fa-coins"></i>
+        <div class="sidebar-brand-icon has-img">
+          <img src="images/logo.png" alt="Easy Wealth Finance">
         </div>
         <div class="sidebar-brand-text">
-          <h2>EasyFinance</h2>
+          <h2>Easy Wealth Finance</h2>
           <span>Admin Portal</span>
         </div>
       </div>
@@ -98,12 +95,14 @@
         <a class="sidebar-item" id="menuCustomerDb" onclick="openCustomerDatabaseModal()" style="cursor: pointer;">
           <i class="fa-solid fa-address-book" style="color: #34d399;"></i>
           <span>ฐานข้อมูลลูกค้า (Customer DB)</span>
-          <span id="customerCountBadge" class="tab-count-badge" style="margin-left: auto; background: rgba(16, 185, 129, 0.2); color: #34d399; display: inline-flex;">0</span>
+          <span id="customerCountBadge" class="tab-count-badge"
+            style="margin-left: auto; background: rgba(16, 185, 129, 0.2); color: #34d399; display: inline-flex;">0</span>
         </a>
         <a class="sidebar-item" data-tab="bad_debt" id="menuBadDebt">
           <i class="fa-solid fa-triangle-exclamation" style="color: #f87171;"></i>
-          <span>ประวัติหนี้เสีย (Bad Debt)</span>
-          <span id="badDebtBadgeCount" class="tab-count-badge" style="margin-left: auto; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); display: none;">0</span>
+          <span>เช็คประวัติลูกค้า (Bad Debt)</span>
+          <span id="badDebtBadgeCount" class="tab-count-badge"
+            style="margin-left: auto; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); display: none;">0</span>
         </a>
 
         <div class="menu-category-label" style="margin-top: 16px;">การตั้งค่าระบบ</div>
@@ -201,9 +200,11 @@
             <div class="stat-info">
               <div class="stat-label" id="statLabelLateFines">ยอดรวมค่าปรับ</div>
               <div class="stat-val" id="statTotalLateFines" style="color: #fb923c;">฿0</div>
-              <div id="statLateFinesSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">แยกเฉพาะค่าปรับ</div>
+              <div id="statLateFinesSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
+                แยกเฉพาะค่าปรับ</div>
             </div>
-            <div class="stat-icon-box" id="statIconLateFines" style="background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3);">
+            <div class="stat-icon-box" id="statIconLateFines"
+              style="background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3);">
               <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
           </div>
@@ -219,12 +220,14 @@
           </div>
 
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <button id="btnOpenCustomerDb" type="button" class="btn-table-action" onclick="openCustomerDatabaseModal()" style="padding: 10px 16px; font-size: 0.88rem; background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.35); color: #34d399; font-weight: 600; cursor: pointer;">
+            <button id="btnOpenCustomerDb" type="button" class="btn-table-action" onclick="openCustomerDatabaseModal()"
+              style="padding: 10px 16px; font-size: 0.88rem; background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.35); color: #34d399; font-weight: 600; cursor: pointer;">
               <i class="fa-solid fa-address-book"></i>
               <span>ฐานข้อมูลลูกค้า</span>
             </button>
 
-            <button id="btnOpenDashboardOverview" class="btn-table-action" style="padding: 10px 16px; font-size: 0.88rem; background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3); color: #93c5fd; cursor: pointer;">
+            <button id="btnOpenDashboardOverview" class="btn-table-action"
+              style="padding: 10px 16px; font-size: 0.88rem; background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3); color: #93c5fd; cursor: pointer;">
               <i class="fa-solid fa-chart-pie"></i>
               <span>สรุปแดชบอร์ด</span>
             </button>
@@ -234,7 +237,8 @@
               <span>+ เพิ่มสัญญาใหม่</span>
             </button>
 
-            <button id="btnOpenAddBadDebt" class="btn-primary-action" style="display: none; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.35);">
+            <button id="btnOpenAddBadDebt" class="btn-primary-action"
+              style="display: none; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.35);">
               <i class="fa-solid fa-triangle-exclamation"></i>
               <span>+ เพิ่มประวัติหนี้เสีย</span>
             </button>
@@ -357,7 +361,8 @@
       <form id="contractForm">
         <input type="hidden" id="formContractId">
 
-        <h4 style="font-size: 0.88rem; color: var(--primary-light); margin-bottom: 12px; border-bottom: 1px solid var(--admin-border); padding-bottom: 6px;">
+        <h4
+          style="font-size: 0.88rem; color: var(--primary-light); margin-bottom: 12px; border-bottom: 1px solid var(--admin-border); padding-bottom: 6px;">
           1. บัญชีเข้าสู่ระบบของลูกค้า (Customer Login Credentials)
         </h4>
         <div class="form-grid-2">
@@ -371,7 +376,8 @@
           </div>
         </div>
 
-        <h4 style="font-size: 0.88rem; color: var(--primary-light); margin-top: 14px; margin-bottom: 12px; border-bottom: 1px solid var(--admin-border); padding-bottom: 6px;">
+        <h4
+          style="font-size: 0.88rem; color: var(--primary-light); margin-top: 14px; margin-bottom: 12px; border-bottom: 1px solid var(--admin-border); padding-bottom: 6px;">
           2. ข้อมูลส่วนตัวลูกค้า (Customer Information)
         </h4>
         <div class="form-grid-2">
@@ -396,18 +402,21 @@
         </div>
         <div class="form-group-admin">
           <label class="form-label-admin">ที่อยู่ปัจจุบันของลูกค้า</label>
-          <input type="text" id="formAddress" class="input-admin" placeholder="เช่น 123/45 ถนนพหลโยธิน แขวงลาดยาว เขตจตุจักร กรุงเทพฯ">
+          <input type="text" id="formAddress" class="input-admin"
+            placeholder="เช่น 123/45 ถนนพหลโยธิน แขวงลาดยาว เขตจตุจักร กรุงเทพฯ">
         </div>
         <div class="form-group-admin">
           <label class="form-label-admin">รายละเอียดเพิ่มเติม / หมายเหตุบันทึก</label>
-          <input type="text" id="formAdditionalNotes" class="input-admin" placeholder="เช่น บันทึกเพิ่มเติม หรือข้อมูลการประกอบอาชีพ">
+          <input type="text" id="formAdditionalNotes" class="input-admin"
+            placeholder="เช่น บันทึกเพิ่มเติม หรือข้อมูลการประกอบอาชีพ">
         </div>
         <div class="form-group-admin">
           <label class="form-label-admin">รูปโปรไฟล์ (URL ภาพ หรือเว้นว่างได้)</label>
           <input type="text" id="formAvatar" class="input-admin" placeholder="https://...">
         </div>
 
-        <h4 style="font-size: 0.88rem; color: var(--primary-light); margin-top: 14px; margin-bottom: 12px; border-bottom: 1px solid var(--admin-border); padding-bottom: 6px;">
+        <h4
+          style="font-size: 0.88rem; color: var(--primary-light); margin-top: 14px; margin-bottom: 12px; border-bottom: 1px solid var(--admin-border); padding-bottom: 6px;">
           3. ข้อมูลสัญญาและการผ่อนชำระ (Financing & Installment Setup)
         </h4>
         <div class="form-grid-2">
@@ -421,34 +430,41 @@
           </div>
           <div class="form-group-admin">
             <label class="form-label-admin">สิ่งที่กำลังผ่อน / รายละเอียดสินค้า *</label>
-            <input type="text" id="formItemFinanced" class="input-admin" placeholder="เช่น ผ่อนทองคำ 1 บาท, Honda Wave 110i, iPhone 16" required>
+            <input type="text" id="formItemFinanced" class="input-admin"
+              placeholder="เช่น ผ่อนทองคำ 1 บาท, Honda Wave 110i, iPhone 16" required>
           </div>
         </div>
 
         <!-- 5. ช่องกรอกเงินดาวน์ (แสดงเมื่อเลือกหมวดผ่อนมอไซต์ หรือ ผ่อนทอง) -->
-        <div class="form-group-admin" id="formDownPaymentGroup" style="display: none; background: rgba(56, 189, 248, 0.08); border: 1px dashed rgba(56, 189, 248, 0.35); padding: 12px; border-radius: var(--radius-md);">
+        <div class="form-group-admin" id="formDownPaymentGroup"
+          style="display: none; background: rgba(56, 189, 248, 0.08); border: 1px dashed rgba(56, 189, 248, 0.35); padding: 12px; border-radius: var(--radius-md);">
           <label class="form-label-admin" style="color: #38bdf8; font-weight: 600;">
             <i class="fa-solid fa-coins"></i> เงินดาวน์ (บาท) *
-            <span style="font-size: 0.74rem; color: #94a3b8; font-weight: normal;">(สำหรับหมวดผ่อนมอเตอร์ไซค์ หรือ ผ่อนทอง)</span>
+            <span style="font-size: 0.74rem; color: #94a3b8; font-weight: normal;">(สำหรับหมวดผ่อนมอเตอร์ไซค์ หรือ
+              ผ่อนทอง)</span>
           </label>
-          <input type="number" id="formDownPayment" class="input-admin" min="0" step="100" placeholder="ระบุจำนวนเงินดาวน์ เช่น 5000">
+          <input type="number" id="formDownPayment" class="input-admin" min="0" step="100"
+            placeholder="ระบุจำนวนเงินดาวน์ เช่น 5000">
         </div>
 
         <div class="form-grid-2">
           <div class="form-group-admin">
             <label class="form-label-admin">ยอดเงินกู้ / ยอดผ่อนรวม (บาท) *</label>
-            <input type="number" id="formTotalAmount" class="input-admin" min="100" step="100" placeholder="เช่น 30000" required>
+            <input type="number" id="formTotalAmount" class="input-admin" min="100" step="100" placeholder="เช่น 30000"
+              required>
           </div>
           <div class="form-group-admin">
             <label class="form-label-admin">จำนวนงวดทั้งหมด (งวด) *</label>
-            <input type="number" id="formTotalInstallments" class="input-admin" min="1" max="360" placeholder="เช่น 6" required>
+            <input type="number" id="formTotalInstallments" class="input-admin" min="1" max="360" placeholder="เช่น 6"
+              required>
           </div>
         </div>
 
         <div class="form-grid-2">
           <div class="form-group-admin">
             <label class="form-label-admin">ค่างวดต่องวด (บาท/งวด) *</label>
-            <input type="number" id="formInstallmentAmount" class="input-admin" min="1" placeholder="ระบุค่างวดต่องวด เช่น 5000" required>
+            <input type="number" id="formInstallmentAmount" class="input-admin" min="1"
+              placeholder="ระบุค่างวดต่องวด เช่น 5000" required>
           </div>
           <div class="form-group-admin">
             <label class="form-label-admin">หมวดการชำระ (Frequency) *</label>
@@ -465,14 +481,16 @@
             <label class="form-label-admin" style="color: #38bdf8; font-weight: 600;">
               <i class="fa-solid fa-calendar-day"></i> กำหนดวันที่เริ่มจ่าย (งวดที่ 1) *
             </label>
-            <input type="date" id="formFirstPaymentDate" class="input-admin" required style="border-color: rgba(56, 189, 248, 0.45); font-weight: 600; color: #fff;">
+            <input type="date" id="formFirstPaymentDate" class="input-admin" required
+              style="border-color: rgba(56, 189, 248, 0.45); font-weight: 600; color: #fff;">
             <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
               * ระบบจะรันวันที่ของงวดถัดไปให้อัตโนมัติและแสดงผลตามที่กำหนดไปหน้าลูกค้า
             </div>
           </div>
           <div class="form-group-admin">
             <label class="form-label-admin">กำหนดวันชำระ (รายละเอียดแสดงผล)</label>
-            <input type="text" id="formDueSchedule" class="input-admin" placeholder="เช่น ทุกวัน, ทุกวันศุกร์, ทุกวันที่ 25">
+            <input type="text" id="formDueSchedule" class="input-admin"
+              placeholder="เช่น ทุกวัน, ทุกวันศุกร์, ทุกวันที่ 25">
           </div>
         </div>
 
@@ -487,7 +505,8 @@
           </div>
         </div>
 
-        <button type="submit" class="btn-primary-action" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;">
+        <button type="submit" class="btn-primary-action"
+          style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;">
           <i class="fa-solid fa-floppy-disk"></i>
           <span>บันทึกข้อมูลสัญญาและสร้างตารางงวด</span>
         </button>
@@ -518,7 +537,8 @@
           </div>
           <div style="text-align: center;">
             <input type="file" id="adminQrFileInput" accept="image/*" style="display: none;">
-            <button type="button" id="btnSelectQrFile" class="btn-primary-action" style="padding: 6px 14px; font-size: 0.8rem;">
+            <button type="button" id="btnSelectQrFile" class="btn-primary-action"
+              style="padding: 6px 14px; font-size: 0.8rem;">
               <i class="fa-solid fa-cloud-arrow-up"></i>
               <span>อัปโหลดรูป QR Code ใหม่</span>
             </button>
@@ -546,7 +566,8 @@
           </div>
           <div class="form-group-admin">
             <label class="form-label-admin">เบอร์พร้อมเพย์ (PromptPay)</label>
-            <input type="text" id="settingPromptPay" class="input-admin" placeholder="ระบุเบอร์พร้อมเพย์ หรือเลขประจำตัว">
+            <input type="text" id="settingPromptPay" class="input-admin"
+              placeholder="ระบุเบอร์พร้อมเพย์ หรือเลขประจำตัว">
           </div>
         </div>
 
@@ -561,7 +582,8 @@
           </div>
         </div>
 
-        <button type="submit" class="btn-primary-action" style="width: 100%; justify-content: center; margin-top: 14px; padding: 12px;">
+        <button type="submit" class="btn-primary-action"
+          style="width: 100%; justify-content: center; margin-top: 14px; padding: 12px;">
           <i class="fa-solid fa-floppy-disk"></i>
           <span>บันทึกการตั้งค่า QR และบัญชีรับเงิน</span>
         </button>
@@ -584,7 +606,8 @@
         </button>
       </div>
 
-      <div id="detailContractMeta" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 14px; margin-bottom: 18px;">
+      <div id="detailContractMeta"
+        style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 14px; margin-bottom: 18px;">
         <!-- Dynamic Contract Metadata -->
       </div>
 
@@ -640,7 +663,8 @@
 
         <div class="form-group-admin">
           <label class="form-label-admin">API Key / Token</label>
-          <input type="password" id="formBankApiKey" class="input-admin" placeholder="กรอก API Key ที่ได้จากผู้ให้บริการ">
+          <input type="password" id="formBankApiKey" class="input-admin"
+            placeholder="กรอก API Key ที่ได้จากผู้ให้บริการ">
         </div>
 
         <div class="form-group-admin">
@@ -655,7 +679,8 @@
           </label>
         </div>
 
-        <button type="submit" class="btn-primary-action" style="width: 100%; justify-content: center; margin-top: 14px; padding: 12px;">
+        <button type="submit" class="btn-primary-action"
+          style="width: 100%; justify-content: center; margin-top: 14px; padding: 12px;">
           <i class="fa-solid fa-floppy-disk"></i>
           <span>บันทึกการตั้งค่า API ตรวจสลิป</span>
         </button>
@@ -676,7 +701,8 @@
         </button>
       </div>
       <div style="padding: 10px; background: #000; border-radius: var(--radius-md);">
-        <img id="viewerSlipImg" src="" alt="Slip Image" style="max-width: 100%; max-height: 450px; object-fit: contain; border-radius: var(--radius-sm);">
+        <img id="viewerSlipImg" src="" alt="Slip Image"
+          style="max-width: 100%; max-height: 450px; object-fit: contain; border-radius: var(--radius-sm);">
       </div>
       <div id="viewerSlipMeta" style="margin-top: 12px; font-size: 0.8rem; color: var(--text-muted);"></div>
     </div>
@@ -700,7 +726,8 @@
       <form id="badDebtForm">
         <input type="hidden" id="formBadDebtId">
 
-        <h4 style="font-size: 0.88rem; color: #f87171; margin-bottom: 12px; border-bottom: 1px solid var(--admin-border); padding-bottom: 6px;">
+        <h4
+          style="font-size: 0.88rem; color: #f87171; margin-bottom: 12px; border-bottom: 1px solid var(--admin-border); padding-bottom: 6px;">
           1. ข้อมูลส่วนบุคคลลูกหนี้
         </h4>
 
@@ -711,7 +738,8 @@
           </div>
           <div class="form-group-admin">
             <label class="form-label-admin">เลขบัตรประชาชน (13 หลัก) *</label>
-            <input type="text" id="formBdIdCard" class="input-admin" placeholder="เช่น 1-1020-00345-67-8" maxlength="17" required>
+            <input type="text" id="formBdIdCard" class="input-admin" placeholder="เช่น 1-1020-00345-67-8" maxlength="17"
+              required>
           </div>
         </div>
 
@@ -728,10 +756,12 @@
 
         <div class="form-group-admin">
           <label class="form-label-admin">ที่อยู่ปัจจุบัน / ที่อยู่ตามบัตร *</label>
-          <input type="text" id="formBdAddress" class="input-admin" placeholder="เช่น 99/12 หมู่ 4 ต.บางกรวย อ.บางกรวย จ.นนทบุรี 11130" required>
+          <input type="text" id="formBdAddress" class="input-admin"
+            placeholder="เช่น 99/12 หมู่ 4 ต.บางกรวย อ.บางกรวย จ.นนทบุรี 11130" required>
         </div>
 
-        <h4 style="font-size: 0.88rem; color: #f87171; margin-top: 14px; margin-bottom: 12px; border-bottom: 1px solid var(--admin-border); padding-bottom: 6px;">
+        <h4
+          style="font-size: 0.88rem; color: #f87171; margin-top: 14px; margin-bottom: 12px; border-bottom: 1px solid var(--admin-border); padding-bottom: 6px;">
           2. สถานะและพฤติกรรมลูกหนี้
         </h4>
 
@@ -765,7 +795,8 @@
         <div class="form-grid-2">
           <div class="form-group-admin">
             <label class="form-label-admin">สิ่งที่ผ่อน / วัตถุประสงค์สินเชื่อ</label>
-            <input type="text" id="formBdItemDescription" class="input-admin" placeholder="เช่น ผ่อนรถมอเตอร์ไซค์, สินเชื่อเงินสด">
+            <input type="text" id="formBdItemDescription" class="input-admin"
+              placeholder="เช่น ผ่อนรถมอเตอร์ไซค์, สินเชื่อเงินสด">
           </div>
           <div class="form-group-admin">
             <label class="form-label-admin">วันที่บันทึกข้อมูล</label>
@@ -775,10 +806,12 @@
 
         <div class="form-group-admin">
           <label class="form-label-admin">หมายเหตุพฤติกรรม / ประวัติการติดตาม *</label>
-          <textarea id="formBdNote" class="input-admin" rows="3" style="resize: vertical;" placeholder="เช่น ย้ายที่อยู่หนี, ปลอมแปลงเอกสาร, เบี้ยวจ่ายงวด, ติดต่อไม่ได้" required></textarea>
+          <textarea id="formBdNote" class="input-admin" rows="3" style="resize: vertical;"
+            placeholder="เช่น ย้ายที่อยู่หนี, ปลอมแปลงเอกสาร, เบี้ยวจ่ายงวด, ติดต่อไม่ได้" required></textarea>
         </div>
 
-        <button type="submit" class="btn-primary-action" style="width: 100%; justify-content: center; margin-top: 16px; padding: 12px; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);">
+        <button type="submit" class="btn-primary-action"
+          style="width: 100%; justify-content: center; margin-top: 16px; padding: 12px; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);">
           <i class="fa-solid fa-floppy-disk"></i>
           <span>บันทึกประวัติลูกหนี้</span>
         </button>
@@ -797,7 +830,9 @@
         <div class="admin-modal-title">
           <i class="fa-solid fa-address-book" style="color: #34d399;"></i>
           <span>ฐานข้อมูลลูกค้าทั้งหมด (Customer Database)</span>
-          <span class="tab-count-badge" id="modalCustomerTotalBadge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 0.85rem; padding: 4px 10px;">0 ราย</span>
+          <span class="tab-count-badge" id="modalCustomerTotalBadge"
+            style="background: rgba(16, 185, 129, 0.2); color: #34d399; font-size: 0.85rem; padding: 4px 10px;">0
+            ราย</span>
         </div>
         <button class="btn-close-modal" id="btnCloseCustomerDbModal">
           <i class="fa-solid fa-xmark"></i>
@@ -805,32 +840,41 @@
       </div>
 
       <!-- Quick Search & Filters for Customer DB -->
-      <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+      <div
+        style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
         <div class="search-input-wrapper" style="flex: 1; min-width: 280px; position: relative;">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" id="customerDbSearchInput" placeholder="พิมพ์ค้นหาชื่อลูกค้า, เบอร์โทร, เลขบัตร ปชช, รหัสสัญญา, สิ่งที่ผ่อน..." autocomplete="off">
-          <button type="button" id="btnCustomerDbSearchClear" onclick="clearCustomerDbSearch()" style="display: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: var(--text-dim); cursor: pointer; padding: 4px; font-size: 0.9rem;" title="ล้างคำค้นหา">
+          <input type="text" id="customerDbSearchInput"
+            placeholder="พิมพ์ค้นหาชื่อลูกค้า, เบอร์โทร, เลขบัตร ปชช, รหัสสัญญา, สิ่งที่ผ่อน..." autocomplete="off">
+          <button type="button" id="btnCustomerDbSearchClear" onclick="clearCustomerDbSearch()"
+            style="display: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: var(--text-dim); cursor: pointer; padding: 4px; font-size: 0.9rem;"
+            title="ล้างคำค้นหา">
             <i class="fa-solid fa-circle-xmark"></i>
           </button>
         </div>
         <div class="customer-db-filters" style="display: flex; gap: 6px; flex-wrap: wrap;">
-          <button type="button" class="tab-btn active btn-cdb-filter" data-cdb-filter="all" onclick="filterCustomerDb('all')">
+          <button type="button" class="tab-btn active btn-cdb-filter" data-cdb-filter="all"
+            onclick="filterCustomerDb('all')">
             <i class="fa-solid fa-users"></i> ทั้งหมด
           </button>
-          <button type="button" class="tab-btn btn-cdb-filter" data-cdb-filter="active" onclick="filterCustomerDb('active')">
+          <button type="button" class="tab-btn btn-cdb-filter" data-cdb-filter="active"
+            onclick="filterCustomerDb('active')">
             <i class="fa-solid fa-clock" style="color: #38bdf8;"></i> กำลังผ่อน
           </button>
-          <button type="button" class="tab-btn btn-cdb-filter" data-cdb-filter="completed" onclick="filterCustomerDb('completed')">
+          <button type="button" class="tab-btn btn-cdb-filter" data-cdb-filter="completed"
+            onclick="filterCustomerDb('completed')">
             <i class="fa-solid fa-circle-check" style="color: #34d399;"></i> ปิดสัญญาแล้ว
           </button>
-          <button type="button" class="tab-btn btn-cdb-filter" data-cdb-filter="has_bad_debt" onclick="filterCustomerDb('has_bad_debt')">
+          <button type="button" class="tab-btn btn-cdb-filter" data-cdb-filter="has_bad_debt"
+            onclick="filterCustomerDb('has_bad_debt')">
             <i class="fa-solid fa-triangle-exclamation" style="color: #f87171;"></i> มีประวัติหนี้เสีย
           </button>
         </div>
       </div>
 
       <!-- Customer List Table (3.1 & 3.2: แต่ละรายชื่อจะมี 3 ขีดให้กด) -->
-      <div class="table-container" style="max-height: 55vh; overflow-y: auto; border: 1px solid var(--admin-border); border-radius: var(--radius-md);">
+      <div class="table-container"
+        style="max-height: 55vh; overflow-y: auto; border: 1px solid var(--admin-border); border-radius: var(--radius-md);">
         <table class="admin-data-table" style="width: 100%;">
           <thead>
             <tr>
@@ -866,7 +910,8 @@
     <div class="admin-modal-card" style="max-width: 1000px; width: 96%; max-height: 92vh;">
       <div class="admin-modal-header" style="flex-wrap: wrap; gap: 10px;">
         <div style="display: flex; align-items: center; gap: 12px;">
-          <button type="button" class="btn-table-action" onclick="backToCustomerDbList()" title="กลับหน้ารายชื่อ" style="padding: 6px 12px;">
+          <button type="button" class="btn-table-action" onclick="backToCustomerDbList()" title="กลับหน้ารายชื่อ"
+            style="padding: 6px 12px;">
             <i class="fa-solid fa-arrow-left"></i>
             <span>กลับ</span>
           </button>
@@ -878,19 +923,24 @@
 
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
           <!-- 3.3.7 ปุ่มดาวน์โหลด Excel และ PDF -->
-          <button type="button" class="btn-table-action" id="btnDownloadExcel" onclick="downloadCurrentCustomerExcel()" style="background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.35); color: #4ade80; font-weight: 600; padding: 7px 14px; cursor: pointer;">
+          <button type="button" class="btn-table-action" id="btnDownloadExcel" onclick="downloadCurrentCustomerExcel()"
+            style="background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.35); color: #4ade80; font-weight: 600; padding: 7px 14px; cursor: pointer;">
             <i class="fa-solid fa-file-excel"></i>
             <span>ดาวน์โหลด Excel</span>
           </button>
-          <button type="button" class="btn-table-action" id="btnDownloadPDF" onclick="downloadCurrentCustomerPDF()" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.35); color: #f87171; font-weight: 600; padding: 7px 14px; cursor: pointer;">
+          <button type="button" class="btn-table-action" id="btnDownloadPDF" onclick="downloadCurrentCustomerPDF()"
+            style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.35); color: #f87171; font-weight: 600; padding: 7px 14px; cursor: pointer;">
             <i class="fa-solid fa-file-pdf"></i>
             <span>ดาวน์โหลด PDF</span>
           </button>
-          <button type="button" class="btn-table-action" onclick="printCurrentCustomerDossier()" title="พิมพ์เอกสาร" style="cursor: pointer;">
+          <button type="button" class="btn-table-action" onclick="printCurrentCustomerDossier()" title="พิมพ์เอกสาร"
+            style="cursor: pointer;">
             <i class="fa-solid fa-print"></i>
           </button>
           <!-- 1. ปุ่มลบลูกค้า (ต้องใส่รหัสความปลอดภัยก่อนลบ) -->
-          <button type="button" class="btn-table-action" onclick="deleteCustomerConfirm(currentViewingCustomerKey)" title="ลบข้อมูลลูกค้ารายนี้ทั้งหมด" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; font-weight: 600; padding: 7px 14px; cursor: pointer;">
+          <button type="button" class="btn-table-action" onclick="deleteCustomerConfirm(currentViewingCustomerKey)"
+            title="ลบข้อมูลลูกค้ารายนี้ทั้งหมด"
+            style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; font-weight: 600; padding: 7px 14px; cursor: pointer;">
             <i class="fa-solid fa-user-xmark"></i>
             <span>ลบลูกค้า</span>
           </button>
@@ -925,13 +975,16 @@
       </div>
 
       <div style="padding: 16px 0;">
-        <div style="background: rgba(251, 146, 60, 0.08); border: 1px solid rgba(251, 146, 60, 0.25); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+        <div
+          style="background: rgba(251, 146, 60, 0.08); border: 1px solid rgba(251, 146, 60, 0.25); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
             <strong style="color: #fff; font-size: 1.05rem;" id="penaltyTargetCustomerName">ชื่อลูกค้า</strong>
-            <span class="status-badge" style="background: rgba(251, 146, 60, 0.2); color: #fb923c;" id="penaltyTargetContractId">EF-2026-001</span>
+            <span class="status-badge" style="background: rgba(251, 146, 60, 0.2); color: #fb923c;"
+              id="penaltyTargetContractId">EF-2026-001</span>
           </div>
           <div style="font-size: 0.85rem; color: var(--text-dim);" id="penaltyTargetItemInfo">สิ่งที่ผ่อน: -</div>
-          <div style="font-size: 0.85rem; color: #38bdf8; margin-top: 4px; font-weight: 500;" id="penaltyTargetDueInfo">งวดค้างชำระ: -</div>
+          <div style="font-size: 0.85rem; color: #38bdf8; margin-top: 4px; font-weight: 500;" id="penaltyTargetDueInfo">
+            งวดค้างชำระ: -</div>
         </div>
 
         <form id="penaltyAdminForm">
@@ -942,31 +995,42 @@
               <label class="form-label-admin" style="font-size: 0.9rem; font-weight: 600; color: #fb923c;">
                 <i class="fa-solid fa-coins"></i> จำนวนเงินค่าปรับ (บาท) *
               </label>
-              <span id="currentFineStatusBadge" class="status-badge" style="display: none; background: rgba(239,68,68,0.2); color: #f87171; font-size: 0.72rem;">มีค่าปรับค้างอยู่</span>
+              <span id="currentFineStatusBadge" class="status-badge"
+                style="display: none; background: rgba(239,68,68,0.2); color: #f87171; font-size: 0.72rem;">มีค่าปรับค้างอยู่</span>
             </div>
-            <input type="number" id="penaltyAmountInput" class="input-admin" min="0" step="10" placeholder="ระบุจำนวนเงินค่าปรับ เช่น 100, 200, 500" style="font-size: 1.2rem; font-weight: 700; color: #fb923c; border-color: rgba(251, 146, 60, 0.4);">
+            <input type="number" id="penaltyAmountInput" class="input-admin" min="0" step="10"
+              placeholder="ระบุจำนวนเงินค่าปรับ เช่น 100, 200, 500"
+              style="font-size: 1.2rem; font-weight: 700; color: #fb923c; border-color: rgba(251, 146, 60, 0.4);">
             <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
-              <button type="button" class="btn-table-action" onclick="setQuickFine(50)" style="padding: 4px 10px; font-size: 0.75rem;">+50฿</button>
-              <button type="button" class="btn-table-action" onclick="setQuickFine(100)" style="padding: 4px 10px; font-size: 0.75rem;">+100฿</button>
-              <button type="button" class="btn-table-action" onclick="setQuickFine(200)" style="padding: 4px 10px; font-size: 0.75rem;">+200฿</button>
-              <button type="button" class="btn-table-action" onclick="setQuickFine(300)" style="padding: 4px 10px; font-size: 0.75rem;">+300฿</button>
-              <button type="button" class="btn-table-action" onclick="setQuickFine(500)" style="padding: 4px 10px; font-size: 0.75rem;">+500฿</button>
+              <button type="button" class="btn-table-action" onclick="setQuickFine(50)"
+                style="padding: 4px 10px; font-size: 0.75rem;">+50฿</button>
+              <button type="button" class="btn-table-action" onclick="setQuickFine(100)"
+                style="padding: 4px 10px; font-size: 0.75rem;">+100฿</button>
+              <button type="button" class="btn-table-action" onclick="setQuickFine(200)"
+                style="padding: 4px 10px; font-size: 0.75rem;">+200฿</button>
+              <button type="button" class="btn-table-action" onclick="setQuickFine(300)"
+                style="padding: 4px 10px; font-size: 0.75rem;">+300฿</button>
+              <button type="button" class="btn-table-action" onclick="setQuickFine(500)"
+                style="padding: 4px 10px; font-size: 0.75rem;">+500฿</button>
             </div>
           </div>
 
           <div class="form-group-admin" style="margin-top: 14px;">
             <label class="form-label-admin">เหตุผล / ข้อความแจ้งลูกค้า (จะแสดงบนหน้าจอของลูกค้า)</label>
-            <input type="text" id="penaltyReasonInput" class="input-admin" placeholder="เช่น ชำระเกินกำหนด 3 วัน, ค่าปรับผิดนัดชำระ">
+            <input type="text" id="penaltyReasonInput" class="input-admin"
+              placeholder="เช่น ชำระเกินกำหนด 3 วัน, ค่าปรับผิดนัดชำระ">
           </div>
 
           <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 22px;">
-            <button type="submit" class="btn-primary-action" style="justify-content: center; padding: 12px; font-weight: 600; background: linear-gradient(135deg, #f97316, #ea580c); box-shadow: 0 4px 14px rgba(249, 115, 22, 0.35);">
+            <button type="submit" class="btn-primary-action"
+              style="justify-content: center; padding: 12px; font-weight: 600; background: linear-gradient(135deg, #f97316, #ea580c); box-shadow: 0 4px 14px rgba(249, 115, 22, 0.35);">
               <i class="fa-solid fa-check"></i>
               <span>ยืนยันบันทึกค่าปรับ (ส่งไปหน้าลูกค้าทันที)</span>
             </button>
 
             <!-- 4. ปุ่มคีย์ออก / ล้างค่าปรับ (ให้ค่าปรับหน้าลูกค้าหายไป) -->
-            <button type="button" id="btnClearPenaltyAction" class="btn-table-action" onclick="clearAndConfirmPenalty()" style="justify-content: center; padding: 10px; color: #f87171; border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.08); font-weight: 600;">
+            <button type="button" id="btnClearPenaltyAction" class="btn-table-action" onclick="clearAndConfirmPenalty()"
+              style="justify-content: center; padding: 10px; color: #f87171; border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.08); font-weight: 600;">
               <i class="fa-solid fa-trash-can"></i>
               <span>คีย์ออก / ล้างค่าปรับเป็น 0 (ยืนยันแล้วหน้าลูกค้าจะหายทันที)</span>
             </button>
@@ -985,7 +1049,7 @@
       <div class="admin-modal-header" style="border-bottom-color: rgba(239, 68, 68, 0.3);">
         <div class="admin-modal-title" style="color: #f87171;">
           <i class="fa-solid fa-shield-halved"></i>
-          <span>ยืนยันรหัสความปลอดภัยก่อนลบข้อมูล</span>
+          <span>กรุณาติดต่อผู้บริหารเป้ ก่อนลบข้อมูล</span>
         </div>
         <button type="button" class="btn-close-modal" id="btnCloseDeleteSecurityModal">
           <i class="fa-solid fa-xmark"></i>
@@ -993,12 +1057,14 @@
       </div>
 
       <div style="padding: 12px 0;">
-        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+        <div
+          style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
           <div style="font-weight: 600; color: #fff; margin-bottom: 4px;">
             ต้องการลบ: <span id="deleteTargetItemLabel" style="color: #fca5a5;">-</span>
           </div>
           <p style="font-size: 0.8rem; color: #fca5a5; margin: 0; line-height: 1.4;">
-            ⚠️ การลบข้อมูลนี้จะไม่สามารถกู้คืนได้ เพื่อความปลอดภัยกรุณากรอกรหัสผ่านยืนยันการลบ (รหัสผ่านคนละชุดกับรหัสผ่านเข้าหลังบ้าน)
+            ⚠️ การลบข้อมูลนี้จะไม่สามารถกู้คืนได้ เพื่อความปลอดภัยกรุณากรอกรหัสผ่านยืนยันการลบ
+            (รหัสผ่านคนละชุดกับรหัสผ่านเข้าหลังบ้าน)
           </p>
         </div>
 
@@ -1011,25 +1077,32 @@
               <i class="fa-solid fa-key"></i> รหัสผ่านยืนยันการลบข้อมูล (Delete Security PIN) *
             </label>
             <div style="position: relative;">
-              <input type="password" id="deleteSecurityPasswordInput" class="input-admin" placeholder="กรอกรหัสผ่านเพื่อลบ" autocomplete="off" required style="border-color: rgba(239,68,68,0.4); padding-right: 40px; font-size: 1.05rem;">
-              <button type="button" id="btnToggleDeletePass" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px 6px;">
+              <input type="password" id="deleteSecurityPasswordInput" class="input-admin"
+                placeholder="กรอกรหัสผ่านเพื่อลบ" autocomplete="off" required
+                style="border-color: rgba(239,68,68,0.4); padding-right: 40px; font-size: 1.05rem;">
+              <button type="button" id="btnToggleDeletePass"
+                style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px 6px;">
                 <i class="fa-solid fa-eye" id="iconToggleDeletePass"></i>
               </button>
             </div>
             <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
-              * รหัสผ่านยืนยันการลบ: <code style="background: rgba(255,255,255,0.1); color: #fbbf24; padding: 2px 6px; border-radius: 4px; font-weight: 700;">delete9999</code>
+              * รหัสผ่านยืนยันการลบ: <code
+                style="background: rgba(255,255,255,0.1); color: #fbbf24; padding: 2px 6px; border-radius: 4px; font-weight: 700;">ติดต่อผู้บริหารเป้</code>
             </div>
           </div>
 
-          <div id="deleteSecurityErrorMsg" style="display: none; color: #ef4444; font-size: 0.82rem; margin-top: 10px; font-weight: 600;">
+          <div id="deleteSecurityErrorMsg"
+            style="display: none; color: #ef4444; font-size: 0.82rem; margin-top: 10px; font-weight: 600;">
             <i class="fa-solid fa-circle-xmark"></i> รหัสผ่านยืนยันการลบไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง
           </div>
 
           <div style="display: flex; gap: 10px; margin-top: 20px;">
-            <button type="button" class="btn-table-action" id="btnCancelDeleteSecurity" style="flex: 1; justify-content: center; padding: 10px;">
+            <button type="button" class="btn-table-action" id="btnCancelDeleteSecurity"
+              style="flex: 1; justify-content: center; padding: 10px;">
               ยกเลิก
             </button>
-            <button type="submit" class="btn-primary-action" style="flex: 1.5; justify-content: center; padding: 10px; background: linear-gradient(135deg, #ef4444, #dc2626); border: none; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);">
+            <button type="submit" class="btn-primary-action"
+              style="flex: 1.5; justify-content: center; padding: 10px; background: linear-gradient(135deg, #ef4444, #dc2626); border: none; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);">
               <i class="fa-solid fa-trash"></i> ยืนยันการลบ
             </button>
           </div>
@@ -1056,4 +1129,5 @@
   <script src="bank-verification.js"></script>
   <script src="admin.js"></script>
 </body>
+
 </html>

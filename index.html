@@ -4,8 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="description" content="EasyFinance - ระบบติดตามสัญญาเงินกู้และผ่อนชำระสินค้าออนไลน์ Mobile-First">
-  <title>EasyFinance - ชำระค่างวดออนไลน์</title>
+  <meta name="description" content="Easy Wealth Finance - ระบบติดตามสัญญาเงินกู้และผ่อนชำระสินค้าออนไลน์ Mobile-First">
+  <title>Easy Wealth Finance - ชำระค่างวดออนไลน์</title>
 
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -23,10 +23,10 @@
          ==================================================================== -->
     <section id="loginSection" class="login-view-wrapper">
       <div class="login-brand-header">
-        <div class="login-logo-circle">
-          <i class="fa-solid fa-coins"></i>
+        <div class="login-logo-circle has-img">
+          <img src="images/logo.png" alt="Easy Wealth Finance">
         </div>
-        <h2>EasyFinance</h2>
+        <h2>Easy Wealth Finance</h2>
         <p>สัญญาและชำระค่างวดออนไลน์</p>
       </div>
 
@@ -55,7 +55,7 @@
               <input type="checkbox" id="rememberMeCheckbox" checked>
               <span>จดจำการเข้าสู่ระบบ</span>
             </label>
-            <span style="color: var(--text-dim); font-size: 0.75rem;">เข้ารหัสปลอดภัย SSL</span>
+            <span style="color: var(--text-dim); font-size: 0.75rem;">กรุณาเข้าสู่ระบบ</span>
           </div>
 
           <button type="submit" id="btnLoginSubmit" class="btn-login-submit" style="margin-top: 20px;">
@@ -82,12 +82,12 @@
       <!-- App Header -->
       <header class="app-header">
         <div class="brand-badge">
-          <div class="brand-icon-box">
-            <i class="fa-solid fa-coins"></i>
+          <div class="brand-icon-box has-img">
+            <img src="images/logo.png" alt="Easy Wealth Finance">
           </div>
           <div class="brand-text">
-            <h1>EasyFinance</h1>
-            <p>Smart Finance Portal</p>
+            <h1>Easy Wealth Finance</h1>
+            <p>ระบบชำระเงิน</p>
           </div>
         </div>
 
@@ -107,7 +107,7 @@
         <!-- Client Greeting & Contract Meta -->
         <div class="client-meta-banner">
           <div class="client-greeting">
-            <h2>สวัสดี, <span id="clientName">คุณสมชาย</span></h2>
+            <h2>คุณ <span id="clientName">คุณสมชาย</span></h2>
           </div>
           <div class="contract-id-pill" id="contractIdBadge">
             <i class="fa-solid fa-file-contract"></i> <span id="contractIdText">EF-2026-001</span>
@@ -122,7 +122,7 @@
             <span id="financedItemName">ผ่อนทองคำแท่ง 1 บาท (96.5%)</span>
           </div>
 
-          <div class="balance-label">ยอดคงเหลือรวม (Remaining Balance)</div>
+          <div class="balance-label">ยอดคงเหลือรวม</div>
           <div class="balance-amount-display">
             <span class="currency">฿</span>
             <span class="amount" id="remainingBalanceText">28,000</span>
@@ -179,8 +179,10 @@
               <div class="penalty-fee-amount" id="penaltyFeeAmountText">+฿200</div>
             </div>
             <div class="penalty-fee-breakdown">
-              <span>ค่างวดปกติ <strong id="baseDueAmountText">฿7,000</strong> + ค่าปรับ <strong id="fineDueAmountText">฿200</strong></span>
-              <span class="penalty-total-badge">รวมยอดที่ต้องชำระ: <strong id="totalDueWithFineText">฿7,200</strong></span>
+              <span>ค่างวดปกติ <strong id="baseDueAmountText">฿7,000</strong> + ค่าปรับ <strong
+                  id="fineDueAmountText">฿200</strong></span>
+              <span class="penalty-total-badge">รวมยอดที่ต้องชำระ: <strong
+                  id="totalDueWithFineText">฿7,200</strong></span>
             </div>
           </div>
 
@@ -255,7 +257,7 @@
       <div class="modal-header">
         <div class="modal-title">
           <i class="fa-solid fa-qrcode" style="color: var(--primary);"></i>
-          <span>ชำระค่างวดออนไลน์</span>
+          <span>ชำระค่างวด</span>
         </div>
         <button id="btnClosePayModal" class="btn-close-modal" onclick="closePaymentModal()">
           <i class="fa-solid fa-xmark"></i>
@@ -266,7 +268,8 @@
       <div class="payment-amount-hero">
         <div class="pay-hero-label">ยอดที่ต้องชำระในงวดนี้ (งวดที่ <span id="modalPayInstallmentNo">3</span>)</div>
         <div class="pay-hero-value" id="modalPayAmount">฿7,000</div>
-        <div id="modalPayPenaltyNote" style="display: none; font-size: 0.82rem; color: #fb923c; margin-top: 4px; font-weight: 500;">
+        <div id="modalPayPenaltyNote"
+          style="display: none; font-size: 0.82rem; color: #fb923c; margin-top: 4px; font-weight: 500;">
           <i class="fa-solid fa-triangle-exclamation"></i> รวมค่าปรับชำระล่าช้า +฿<span id="modalPayPenaltyVal">0</span>
         </div>
         <div class="pay-hero-desc">กำหนดชำระภายใน: <span id="modalPayDueDate">1 เม.ย. 2026</span></div>
@@ -319,8 +322,8 @@
           <div class="slip-upload-icon">
             <i class="fa-solid fa-cloud-arrow-up"></i>
           </div>
-          <div class="slip-upload-text">กดเพื่อเลือกรูปสลิป หรือลากไฟล์มาวางที่นี่</div>
-          <div class="slip-upload-sub">รองรับ JPG, PNG (ระบบจะส่งตรวจกับ API ธนาคารอัตโนมัติ)</div>
+          <div class="slip-upload-text">กดเพื่อเลือกรูปสลิป </div>
+          <div class="slip-upload-sub">กรุณาแนบรูปสลิปของท่าน</div>
 
           <div class="slip-preview-container" id="slipPreviewBox">
             <img id="slipThumbnail" class="slip-thumbnail" src="" alt="Slip Preview">
@@ -363,7 +366,7 @@
           style="width: 60px; height: 60px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 10px;">
           <i class="fa-solid fa-user-tie"></i>
         </div>
-        <h3 style="font-size: 1.1rem; color: #fff;">ฝ่ายบริการลูกค้า EasyFinance</h3>
+        <h3 style="font-size: 1.1rem; color: #fff;">ฝ่ายบริการลูกค้า Easy Wealth Finance</h3>
         <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
           พร้อมให้บริการและตอบคำถามเกี่ยวกับสัญญาของท่าน</p>
       </div>
