@@ -90,6 +90,22 @@ body {
   margin-bottom: 16px;
 }
 
+.admin-login-icon.has-img {
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  width: 90px;
+  height: 90px;
+  filter: drop-shadow(0 8px 24px rgba(212, 175, 55, 0.45));
+}
+
+.admin-login-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
 .admin-login-title {
   font-size: 1.4rem;
   font-weight: 700;
