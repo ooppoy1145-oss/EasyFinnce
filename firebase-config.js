@@ -44,11 +44,16 @@ const INITIAL_CONTRACTS = [
     facebookLink: "https://facebook.com/somchai.mankongdee",
     additionalNotes: "ลูกค้าประวัติดี ชำระค่างวดตรงเวลาสม่ำเสมอ ผ่อนทองคำแท่ง",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    itemCategory: "gold",
     itemFinanced: "ผ่อนทองคำแท่ง 1 บาท (96.5%)",
+    downPayment: 5000,
+    lateFine: 200,
+    lateFineReason: "ค้างชำระเกินกำหนด 3 วัน",
     totalAmount: 42000,
     interestRate: 1.5,
     totalInstallments: 6,
     duration: "6 เดือน",
+    firstPaymentDate: "2026-02-01",
     paymentFrequency: "monthly", // daily | weekly | monthly
     dueSchedule: "ทุกวันที่ 1 ของเดือน",
     closedContractsCount: 2,
@@ -647,7 +652,19 @@ class EasyFinanceDatabase {
   getContracts() {
     try {
       const data = localStorage.getItem(this.storageKeyPrefix + "contracts");
-      return data ? JSON.parse(data) : [];
+      const list = data ? JSON.parse(data) : [];
+      return list.map((c) => {
+        const fine = c.lateFine !== undefined ? Number(c.lateFine) : (c.id === "EF-2026-001" ? 200 : 0);
+        const reason = c.lateFineReason !== undefined ? c.lateFineReason : (c.id === "EF-2026-001" ? "ค้างชำระเกินกำหนด 3 วัน" : "");
+        return {
+          ...c,
+          downPayment: c.downPayment !== undefined ? Number(c.downPayment) : 0,
+          firstPaymentDate: c.firstPaymentDate || (c.installments && c.installments[0]?.dueDate) || "",
+          lateFine: fine,
+          lateFineReason: reason,
+          hasLateFine: fine > 0
+        };
+      });
     } catch (e) {
       console.error("Error reading contracts:", e);
       return [];
@@ -844,6 +861,22 @@ class EasyFinanceDatabase {
       }
     }
     return true;
+  }
+
+  // อัปเดตค่าปรับชำระล่าช้า (Late Fine / Penalty Fee) ของสัญญา
+  async updateContractLateFine(contractId, lateFineAmount, reason = "") {
+    let contracts = this.getContracts();
+    const c = contracts.find((x) => x.id === contractId);
+    if (c) {
+      const fineVal = Math.max(0, parseFloat(lateFineAmount) || 0);
+      c.lateFine = fineVal;
+      c.lateFineReason = reason || (fineVal > 0 ? "เกินกำหนดชำระค่างวด" : "");
+      c.hasLateFine = fineVal > 0;
+      c.updatedAt = new Date().toISOString();
+      await this.saveContract(c);
+      return c;
+    }
+    return null;
   }
 
   // --- PAYMENT SETTINGS METHODS ---

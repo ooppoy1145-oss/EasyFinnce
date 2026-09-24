@@ -367,6 +367,100 @@ body {
   color: var(--text-dim);
 }
 
+/* Penalty Fee Box (Small frame for late fee) */
+.penalty-fee-box {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(249, 115, 22, 0.12) 100%);
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 18px rgba(239, 68, 68, 0.15);
+  animation: pulseFine 2.5s infinite ease-in-out;
+}
+
+@keyframes pulseFine {
+  0%, 100% { border-color: rgba(249, 115, 22, 0.4); box-shadow: 0 4px 18px rgba(239, 68, 68, 0.15); }
+  50% { border-color: rgba(239, 68, 68, 0.7); box-shadow: 0 4px 22px rgba(239, 68, 68, 0.3); }
+}
+
+.penalty-fee-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.penalty-fee-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.penalty-fee-title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.penalty-fee-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fca5a5;
+  line-height: 1.2;
+}
+
+.penalty-fee-desc {
+  font-size: 0.72rem;
+  color: #fdba74;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.penalty-fee-amount {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #ef4444;
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+  flex-shrink: 0;
+}
+
+.penalty-fee-breakdown {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.73rem;
+  color: rgba(255, 255, 255, 0.75);
+  border-top: 1px dashed rgba(249, 115, 22, 0.25);
+  padding-top: 8px;
+}
+
+.penalty-fee-breakdown strong {
+  color: #fff;
+}
+
+.penalty-total-badge {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  padding: 2px 8px;
+  border-radius: 6px;
+  color: #fca5a5;
+}
+
+.penalty-total-badge strong {
+  color: #fef08a;
+  font-weight: 800;
+}
+
 /* Financial Card Buttons */
 .card-actions {
   display: flex;

@@ -845,23 +845,28 @@ table.admin-table tr:hover td {
    ADMIN MODALS (QR Settings, Add/Edit Contract, Details Drawer)
    ========================================================================== */
 .admin-modal-overlay {
-  position: fixed;
+  position: fixed !important;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.78);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  z-index: 99999 !important;
   opacity: 0;
   visibility: hidden;
-  transition: var(--transition);
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
   padding: 20px;
 }
 
 .admin-modal-overlay.active {
-  opacity: 1;
-  visibility: visible;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
 }
 
 .admin-modal-card {
@@ -1771,5 +1776,63 @@ table.admin-table tr:hover td {
     color: #000 !important;
   }
 }
+
+/* Late Payment Fine Badges & Actions (Admin) */
+.badge-fine {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  animation: pulseFineAdmin 2s infinite ease-in-out;
+}
+
+@keyframes pulseFineAdmin {
+  0%, 100% { border-color: rgba(239, 68, 68, 0.4); }
+  50% { border-color: rgba(249, 115, 22, 0.8); box-shadow: 0 0 8px rgba(249, 115, 22, 0.3); }
+}
+
+.btn-penalty-action {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  background: rgba(251, 146, 60, 0.12);
+  border: 1px solid rgba(251, 146, 60, 0.35);
+  color: #fb923c;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.btn-penalty-action:hover {
+  background: rgba(251, 146, 60, 0.25);
+  border-color: #fb923c;
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.btn-penalty-action.has-fine {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+  color: #fca5a5;
+}
+
+/* Modals layering guarantee */
+#penaltyModalAdmin {
+  z-index: 100005 !important;
+}
+
+#deleteSecurityModal {
+  z-index: 100010 !important;
+}
+
 
 

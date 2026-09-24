@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="EasyFinance - ระบบติดตามสัญญาเงินกู้และผ่อนชำระสินค้าออนไลน์ Mobile-First">
-  <title>EasyFinance - ระบบติดตามและชำระค่างวดออนไลน์</title>
+  <title>EasyFinance - ชำระค่างวดออนไลน์</title>
 
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -27,7 +27,7 @@
           <i class="fa-solid fa-coins"></i>
         </div>
         <h2>EasyFinance</h2>
-        <p>ระบบติดตามสัญญาและชำระค่างวดออนไลน์</p>
+        <p>สัญญาและชำระค่างวดออนไลน์</p>
       </div>
 
       <div class="login-form-card">
@@ -128,7 +128,7 @@
             <span class="amount" id="remainingBalanceText">28,000</span>
           </div>
 
-          <!-- 3-Column Metrics Grid -->
+          <!-- Metrics Grid -->
           <div class="finance-stats-grid">
             <div class="f-stat-item">
               <div class="f-stat-label">ระยะเวลาสัญญา</div>
@@ -141,6 +141,11 @@
             <div class="f-stat-item">
               <div class="f-stat-label">งวดทั้งหมด</div>
               <div class="f-stat-val" id="totalInstallmentsText">6 งวด</div>
+            </div>
+            <!-- 5. แสดงเงินดาวน์ หากมี -->
+            <div class="f-stat-item" id="downPaymentStatItem" style="display: none;">
+              <div class="f-stat-label">เงินดาวน์</div>
+              <div class="f-stat-val" id="downPaymentText" style="color: #38bdf8;">฿0</div>
             </div>
           </div>
 
@@ -158,6 +163,24 @@
             <div class="next-due-amount">
               <div class="val" id="nextDueAmountText">฿7,000</div>
               <div class="sub" id="paymentFrequencyText">รายเดือน</div>
+            </div>
+          </div>
+
+          <!-- 3. กรอบเล็กๆ ค่าปรับชำระล่าช้า (แสดงเมื่อมีค่าปรับ และยอดชำระจะเพิ่มอัตโนมัติ) -->
+          <div id="penaltyFeeBox" class="penalty-fee-box" style="display: none;">
+            <div class="penalty-fee-header">
+              <div class="penalty-fee-icon">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </div>
+              <div class="penalty-fee-title-wrap">
+                <div class="penalty-fee-title">มีค่าปรับชำระล่าช้า (Late Payment Fine)</div>
+                <div class="penalty-fee-desc" id="penaltyFeeReason">เกินกำหนดชำระค่างวด</div>
+              </div>
+              <div class="penalty-fee-amount" id="penaltyFeeAmountText">+฿200</div>
+            </div>
+            <div class="penalty-fee-breakdown">
+              <span>ค่างวดปกติ <strong id="baseDueAmountText">฿7,000</strong> + ค่าปรับ <strong id="fineDueAmountText">฿200</strong></span>
+              <span class="penalty-total-badge">รวมยอดที่ต้องชำระ: <strong id="totalDueWithFineText">฿7,200</strong></span>
             </div>
           </div>
 
@@ -243,6 +266,9 @@
       <div class="payment-amount-hero">
         <div class="pay-hero-label">ยอดที่ต้องชำระในงวดนี้ (งวดที่ <span id="modalPayInstallmentNo">3</span>)</div>
         <div class="pay-hero-value" id="modalPayAmount">฿7,000</div>
+        <div id="modalPayPenaltyNote" style="display: none; font-size: 0.82rem; color: #fb923c; margin-top: 4px; font-weight: 500;">
+          <i class="fa-solid fa-triangle-exclamation"></i> รวมค่าปรับชำระล่าช้า +฿<span id="modalPayPenaltyVal">0</span>
+        </div>
         <div class="pay-hero-desc">กำหนดชำระภายใน: <span id="modalPayDueDate">1 เม.ย. 2026</span></div>
       </div>
 

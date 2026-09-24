@@ -72,12 +72,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const formName = document.getElementById("formName");
   const formPhone = document.getElementById("formPhone");
   const formAvatar = document.getElementById("formAvatar");
+  const formItemCategory = document.getElementById("formItemCategory");
+  const formDownPaymentGroup = document.getElementById("formDownPaymentGroup");
+  const formDownPayment = document.getElementById("formDownPayment");
   const formItemFinanced = document.getElementById("formItemFinanced");
   const formTotalAmount = document.getElementById("formTotalAmount");
   const formTotalInstallments = document.getElementById("formTotalInstallments");
   const formInstallmentAmount = document.getElementById("formInstallmentAmount");
-  const formCalculationPreview = document.getElementById("formCalculationPreview");
   const formPaymentFrequency = document.getElementById("formPaymentFrequency");
+  const formFirstPaymentDate = document.getElementById("formFirstPaymentDate");
   const formDueSchedule = document.getElementById("formDueSchedule");
   const formDuration = document.getElementById("formDuration");
   const formClosedContractsCount = document.getElementById("formClosedContractsCount");
@@ -157,6 +160,34 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnCloseDossierModal = document.getElementById("btnCloseDossierModal");
   const dossierCustomerTitle = document.getElementById("dossierCustomerTitle");
   const customerDossierContent = document.getElementById("customerDossierContent");
+  const btnCustomerDbSearchClear = document.getElementById("btnCustomerDbSearchClear");
+
+  // DOM Elements - Late Payment Fine / Penalty Modal (Requirement 4)
+  const penaltyModalAdmin = document.getElementById("penaltyModalAdmin");
+  const btnClosePenaltyModal = document.getElementById("btnClosePenaltyModal");
+  const penaltyAdminForm = document.getElementById("penaltyAdminForm");
+  const penaltyContractId = document.getElementById("penaltyContractId");
+  const penaltyTargetCustomerName = document.getElementById("penaltyTargetCustomerName");
+  const penaltyTargetContractId = document.getElementById("penaltyTargetContractId");
+  const penaltyTargetItemInfo = document.getElementById("penaltyTargetItemInfo");
+  const penaltyTargetDueInfo = document.getElementById("penaltyTargetDueInfo");
+  const penaltyAmountInput = document.getElementById("penaltyAmountInput");
+  const penaltyReasonInput = document.getElementById("penaltyReasonInput");
+  const currentFineStatusBadge = document.getElementById("currentFineStatusBadge");
+  const btnClearPenaltyAction = document.getElementById("btnClearPenaltyAction");
+
+  // DOM Elements - Delete Security Modal (Requirement 1: ใส่รหัสก่อนลบข้อมูลลูกค้า)
+  const deleteSecurityModal = document.getElementById("deleteSecurityModal");
+  const btnCloseDeleteSecurityModal = document.getElementById("btnCloseDeleteSecurityModal");
+  const btnCancelDeleteSecurity = document.getElementById("btnCancelDeleteSecurity");
+  const deleteSecurityForm = document.getElementById("deleteSecurityForm");
+  const deleteTargetId = document.getElementById("deleteTargetId");
+  const deleteTargetType = document.getElementById("deleteTargetType");
+  const deleteTargetItemLabel = document.getElementById("deleteTargetItemLabel");
+  const deleteSecurityPasswordInput = document.getElementById("deleteSecurityPasswordInput");
+  const deleteSecurityErrorMsg = document.getElementById("deleteSecurityErrorMsg");
+  const btnToggleDeletePass = document.getElementById("btnToggleDeletePass");
+  const iconToggleDeletePass = document.getElementById("iconToggleDeletePass");
 
   // State
   let currentTab = "daily"; // 'overview' | 'daily' | 'weekly' | 'monthly' | 'all' | 'bad_debt'
@@ -545,6 +576,44 @@ document.addEventListener("DOMContentLoaded", () => {
     return isFullyPaid ? "paid" : "pending";
   }
 
+  // --- HELPER: INSTALLMENT DUE DATE CALCULATOR (Requirement 2: รันวันที่เริ่มจ่ายและงวดถัดไปตามหมวด) ---
+  function calculateInstallmentDueDate(firstDateStr, freq, installmentNo) {
+    if (!firstDateStr) return getLocalDateStr();
+    if (installmentNo <= 1) return firstDateStr;
+
+    const parts = firstDateStr.split("-").map(Number);
+    const startYear = parts[0];
+    const startMonth = parts[1]; // 1-12
+    const startDay = parts[2]; // 1-31
+
+    if (freq === "daily") {
+      // รายวัน: รันวันละ +1 วัน
+      const d = new Date(startYear, startMonth - 1, startDay + (installmentNo - 1));
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const dt = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${dt}`;
+    } else if (freq === "weekly") {
+      // รายอาทิตย์: รันสัปดาห์ละ +7 วัน
+      const d = new Date(startYear, startMonth - 1, startDay + (installmentNo - 1) * 7);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const dt = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${dt}`;
+    } else {
+      // รายเดือน: รันเดือนละ +1 เดือน ยึดตามวันที่ที่กำหนด (เช่น ทุกวันที่ 25)
+      const targetMonthIndex = (startMonth - 1) + (installmentNo - 1);
+      const targetYear = startYear + Math.floor(targetMonthIndex / 12);
+      const targetMonth = targetMonthIndex % 12; // 0-11
+      const maxDays = new Date(targetYear, targetMonth + 1, 0).getDate();
+      const targetDay = Math.min(startDay, maxDays);
+      const y = targetYear;
+      const m = String(targetMonth + 1).padStart(2, "0");
+      const dt = String(targetDay).padStart(2, "0");
+      return `${y}-${m}-${dt}`;
+    }
+  }
+
   // --- HELPER: CATEGORY STATS ---
   function getCategoryStats(freq) {
     const contracts = window.easyFinanceDB.getContracts();
@@ -555,10 +624,17 @@ document.addEventListener("DOMContentLoaded", () => {
     let totalOutstanding = 0;
 
     list.forEach((c) => {
+      const downPayment = Number(c.downPayment) || 0;
+      const totalAmount = Number(c.totalAmount) || 0;
+
+      // 1. หลังบ้านแสดงยอดทั้งหมดที่รวมทั้งเงินดาวน์ด้วย (ยอดปล่อยทั้งหมด = ยอดผ่อน + เงินดาวน์)
+      totalFinanced += (totalAmount + downPayment);
+      // เงินดาวน์นับเป็นยอดที่เก็บมาได้แล้วตั้งแต่เริ่มทำสัญญา
+      totalCollected += downPayment;
+
       const installments = c.installments || [];
       installments.forEach((inst) => {
         const amt = Number(inst.amount) || 0;
-        totalFinanced += amt;
         if (inst.status === "paid") {
           totalCollected += amt;
         } else {
@@ -866,10 +942,17 @@ document.addEventListener("DOMContentLoaded", () => {
     let totalOutstanding = 0;
 
     contracts.forEach((c) => {
+      const downPayment = Number(c.downPayment) || 0;
+      const totalAmount = Number(c.totalAmount) || 0;
+
+      // 1. หลังบ้านแสดงยอดทั้งหมดที่รวมทั้งเงินดาวน์ด้วย (ยอดปล่อยทั้งหมด = ยอดผ่อนรวม + เงินดาวน์)
+      totalFinanced += (totalAmount + downPayment);
+      // เงินดาวน์นับเป็นยอดที่เก็บมาได้แล้ว
+      totalCollected += downPayment;
+
       const installments = c.installments || [];
       installments.forEach((inst) => {
         const amt = Number(inst.amount) || 0;
-        totalFinanced += amt;
         if (inst.status === "paid") {
           totalCollected += amt;
         } else {
@@ -1409,6 +1492,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="customer-info">
               <div class="name">${c.name}</div>
               <div class="sub">${c.id} | ${c.phone}</div>
+              ${Number(c.lateFine) > 0 ? `<div style="margin-top: 3px;"><span class="badge-fine"><i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ฿${Number(c.lateFine).toLocaleString()}</span></div>` : ""}
             </div>
           </div>
         </td>
@@ -1436,6 +1520,9 @@ document.addEventListener("DOMContentLoaded", () => {
                    </button>`
                 : '<span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
             }
+            <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
+              <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
+            </button>
             <button class="btn-table-action" onclick="openContractDetails('${c.id}')" title="ดูตารางงวด">
               <i class="fa-solid fa-table-list"></i> ดูงวด
             </button>
@@ -1536,6 +1623,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="customer-info">
               <div class="name">${c.name}</div>
               <div class="sub">${c.id} | ${c.phone}</div>
+              ${Number(c.lateFine) > 0 ? `<div style="margin-top: 3px;"><span class="badge-fine"><i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ฿${Number(c.lateFine).toLocaleString()}</span></div>` : ""}
             </div>
           </div>
         </td>
@@ -1562,6 +1650,9 @@ document.addEventListener("DOMContentLoaded", () => {
                    </button>`
                 : '<span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
             }
+            <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
+              <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
+            </button>
             <button class="btn-table-action" onclick="openContractDetails('${c.id}')" title="ดูตารางงวด">
               <i class="fa-solid fa-table-list"></i> ดูงวด
             </button>
@@ -1662,6 +1753,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="customer-info">
               <div class="name">${c.name}</div>
               <div class="sub">${c.id} | ${c.phone}</div>
+              ${Number(c.lateFine) > 0 ? `<div style="margin-top: 3px;"><span class="badge-fine"><i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ฿${Number(c.lateFine).toLocaleString()}</span></div>` : ""}
             </div>
           </div>
         </td>
@@ -1688,6 +1780,9 @@ document.addEventListener("DOMContentLoaded", () => {
                    </button>`
                 : '<span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
             }
+            <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
+              <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
+            </button>
             <button class="btn-table-action" onclick="openContractDetails('${c.id}')" title="ดูตารางงวด">
               <i class="fa-solid fa-table-list"></i> ดูงวด
             </button>
@@ -1756,7 +1851,10 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <div style="font-size: 0.72rem; color: var(--text-dim);">${c.dueSchedule || "-"}</div>
         </td>
-        <td><strong style="color: #fff;">฿${Number(c.totalAmount || 0).toLocaleString()}</strong></td>
+        <td>
+          <strong style="color: #fff;">฿${(Number(c.totalAmount || 0) + Number(c.downPayment || 0)).toLocaleString()}</strong>
+          ${Number(c.downPayment) > 0 ? `<div style="font-size: 0.72rem; color: #38bdf8;">(ดาวน์ ฿${Number(c.downPayment).toLocaleString()} + ผ่อน ฿${Number(c.totalAmount).toLocaleString()})</div>` : ""}
+        </td>
         <td>
           <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 3px;">
             ${paidCount} / ${totalCount} งวด (${percent}%)
@@ -1771,9 +1869,13 @@ document.addEventListener("DOMContentLoaded", () => {
               ? '<span class="status-badge badge-paid">ปิดสัญญาแล้ว</span>'
               : '<span class="status-badge badge-pending">กำลังผ่อนชำระ</span>'
           }
+          ${Number(c.lateFine) > 0 ? `<div style="margin-top: 3px;"><span class="badge-fine"><i class="fa-solid fa-triangle-exclamation"></i> ปรับ ฿${Number(c.lateFine).toLocaleString()}</span></div>` : ""}
         </td>
         <td>
           <div class="table-actions">
+            <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
+              <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ
+            </button>
             <button class="btn-table-action" onclick="openContractDetails('${c.id}')" title="ดูตารางงวด">
               <i class="fa-solid fa-list-check"></i>
             </button>
@@ -1873,62 +1975,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- 5. ADD / EDIT CONTRACT LOGIC ---
 
-  // ฟังก์ชันคำนวณค่างวดต่องวดอิงจากยอดรวมและจำนวนงวด (Requirement 1: คำนวณงวดอิงจากยอดที่ตั้งให้ลูกค้า)
-  function updateContractFormCalculation(source = "total") {
-    const total = parseFloat(formTotalAmount.value) || 0;
-    const installments = parseInt(formTotalInstallments.value, 10) || 0;
-    let instAmount = parseFloat(formInstallmentAmount.value) || 0;
-
-    if (source === "total" || source === "installments") {
-      if (total > 0 && installments > 0) {
-        instAmount = Math.round(total / installments);
-        formInstallmentAmount.value = instAmount;
-      }
-    } else if (source === "installment") {
-      if (instAmount > 0 && installments > 0) {
-        const computedTotal = Math.round(instAmount * installments);
-        formTotalAmount.value = computedTotal;
-      }
-    }
-
-    const freq = formPaymentFrequency ? formPaymentFrequency.value : "monthly";
-    const freqUnit = freq === "daily" ? "วัน" : freq === "weekly" ? "สัปดาห์" : "เดือน";
-
-    if (formCalculationPreview) {
-      const curTotal = parseFloat(formTotalAmount.value) || 0;
-      const curInst = parseInt(formTotalInstallments.value, 10) || 0;
-      const curInstAmt = parseFloat(formInstallmentAmount.value) || 0;
-
-      if (curTotal > 0 && curInst > 0) {
-        const totalCalculated = curInstAmt * curInst;
-        const diff = totalCalculated - curTotal;
-        let diffNote = "";
-        if (diff !== 0) {
-          diffNote = ` <span style="font-size:0.75rem; color:#facc15;">(รวมทุกงวด: ฿${totalCalculated.toLocaleString()})</span>`;
-        }
-        formCalculationPreview.innerHTML = `
-          <i class="fa-solid fa-calculator" style="color: var(--primary);"></i>
-          <span>ยอดรวมตั้งให้ลูกค้า <strong>฿${curTotal.toLocaleString()}</strong> ÷ <strong>${curInst} ${freqUnit} (งวด)</strong> = ค่างวด <strong>฿${curInstAmt.toLocaleString()}</strong> / ${freqUnit}${diffNote}</span>
-        `;
+  // ตรวจจับการเปลี่ยนหมวดหมู่สินค้า: หากเลือกผ่อนมอไซค์หรือผ่อนทอง ให้แสดงช่องกรอกเงินดาวน์ (Requirement 5)
+  if (formItemCategory) {
+    formItemCategory.addEventListener("change", () => {
+      const cat = formItemCategory.value;
+      if (cat === "motorcycle" || cat === "gold") {
+        if (formDownPaymentGroup) formDownPaymentGroup.style.display = "block";
       } else {
-        formCalculationPreview.innerHTML = `
-          <i class="fa-solid fa-calculator" style="color: var(--primary);"></i>
-          <span>กรุณาระบุยอดรวมและจำนวนงวดเพื่อคำนวณค่างวดต่องวดอัตโนมัติ</span>
-        `;
+        if (formDownPaymentGroup) formDownPaymentGroup.style.display = "none";
+        if (formDownPayment) formDownPayment.value = "0";
       }
-    }
+    });
   }
 
-  // Event Listeners สำหรับการคำนวณงวดแบบ Real-time
-  if (formTotalAmount) {
-    formTotalAmount.addEventListener("input", () => updateContractFormCalculation("total"));
-  }
-  if (formTotalInstallments) {
-    formTotalInstallments.addEventListener("input", () => updateContractFormCalculation("installments"));
-  }
-  if (formInstallmentAmount) {
-    formInstallmentAmount.addEventListener("input", () => updateContractFormCalculation("installment"));
-  }
+  // รอบการชำระเปลี่ยน: ตั้งค่ากำหนดชำระและระยะเวลาแนะนำให้อัตโนมัติ (ไม่แทรกแซงหรือคำนวณค่างวดทับที่แอดมินพิมพ์)
   if (formPaymentFrequency) {
     formPaymentFrequency.addEventListener("change", () => {
       const freq = formPaymentFrequency.value;
@@ -1939,7 +1999,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (curInst > 0) {
         formDuration.value = freq === "daily" ? `${curInst} วัน` : freq === "weekly" ? `${curInst} สัปดาห์` : `${curInst} เดือน`;
       }
-      updateContractFormCalculation("total");
     });
   }
 
@@ -1953,6 +2012,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (formFacebook) formFacebook.value = "";
     if (formAddress) formAddress.value = "";
     if (formAdditionalNotes) formAdditionalNotes.value = "";
+    if (formItemCategory) formItemCategory.value = "general";
+    if (formDownPaymentGroup) formDownPaymentGroup.style.display = "none";
+    if (formDownPayment) formDownPayment.value = "0";
+    if (formFirstPaymentDate) formFirstPaymentDate.value = getLocalDateStr();
 
     // สุ่มรหัสสัญญาใหม่
     const randNo = Math.floor(100 + Math.random() * 900);
@@ -1960,7 +2023,6 @@ document.addEventListener("DOMContentLoaded", () => {
     formEmail.placeholder = `customer${randNo}@easyfinance.com`;
     formPassword.value = "123456"; // Default password for new customer
 
-    updateContractFormCalculation("display");
     contractModal.classList.add("active");
   });
 
@@ -1978,6 +2040,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const phone = formPhone.value.trim();
     const avatar = formAvatar.value.trim() || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150";
     const itemFinanced = formItemFinanced.value.trim();
+    const itemCategory = formItemCategory ? formItemCategory.value : "general";
+    const downPayment = (itemCategory === "motorcycle" || itemCategory === "gold") && formDownPayment
+      ? (parseFloat(formDownPayment.value) || 0)
+      : 0;
     const idCard = formIdCard ? formIdCard.value.trim() : "";
     const facebookLink = formFacebook ? formFacebook.value.trim() : "";
     const address = formAddress ? formAddress.value.trim() : "";
@@ -1985,18 +2051,26 @@ document.addEventListener("DOMContentLoaded", () => {
     const totalAmount = parseFloat(formTotalAmount.value);
     const totalInstallments = parseInt(formTotalInstallments.value, 10);
     const paymentFrequency = formPaymentFrequency.value;
+
+    // 2. กำหนดวันที่เริ่มจ่าย (งวดที่ 1) และรันวันที่ตามหมวด
+    const firstPaymentDate = formFirstPaymentDate && formFirstPaymentDate.value ? formFirstPaymentDate.value : getLocalDateStr();
+    const dueDay = firstPaymentDate ? parseInt(firstPaymentDate.split("-")[2], 10) : 1;
     const dueSchedule = formDueSchedule.value.trim() || (
-      paymentFrequency === "daily" ? "ทุกวัน" : paymentFrequency === "weekly" ? "ทุกวันศุกร์" : "ทุกวันที่ 1 ของเดือน"
+      paymentFrequency === "daily"
+        ? `ทุกวัน (เริ่ม ${formatDateThai(firstPaymentDate)})`
+        : paymentFrequency === "weekly"
+        ? `ทุกสัปดาห์ (เริ่ม ${formatDateThai(firstPaymentDate)})`
+        : `ทุกวันที่ ${dueDay} ของเดือน (เริ่ม ${formatDateThai(firstPaymentDate)})`
     );
     const duration = formDuration.value.trim() || (
       paymentFrequency === "daily" ? `${totalInstallments} วัน` : paymentFrequency === "weekly" ? `${totalInstallments} สัปดาห์` : `${totalInstallments} เดือน`
     );
     const closedContractsCount = parseInt(formClosedContractsCount.value, 10) || 0;
 
-    // คำนวณค่างวดต่องวด (Requirement 1: อิงจากยอดรวม หรือค่างวดที่ระบุ)
+    // คำนวณค่างวดต่องวด: ให้สิทธิ์แอดมินกรอกเองได้อย่างอิสระ หากไม่กรอกจะเฉลี่ยยอดรวมให้ (เอาสูตรคำนวณอัตโนมัติออกแล้ว)
     let installmentAmount = formInstallmentAmount ? parseFloat(formInstallmentAmount.value) : 0;
     if (!installmentAmount || isNaN(installmentAmount) || installmentAmount <= 0) {
-      installmentAmount = Math.round(totalAmount / totalInstallments);
+      installmentAmount = totalInstallments > 0 ? Math.round(totalAmount / totalInstallments) : totalAmount;
     }
 
     // ตรวจสอบว่าเป็นสัญญาเดิมหรือสัญญาใหม่
@@ -2004,46 +2078,23 @@ document.addEventListener("DOMContentLoaded", () => {
     let installments = [];
 
     if (existing && existing.installments && existing.installments.length === totalInstallments) {
-      // ใช้ตารางงวดเดิมเพื่อรักษาสถานะงวดที่จ่ายไปแล้ว และอัปเดตยอดค่างวดของงวดที่ค้าง
+      // ใช้ตารางงวดเดิมเพื่อรักษาสถานะงวดที่จ่ายไปแล้ว และอัปเดตกำหนดวันที่ชำระใหม่ตาม firstPaymentDate
       installments = existing.installments.map((inst, idx) => {
-        let dueDateStr = inst.dueDate;
-        if (existing.paymentFrequency !== paymentFrequency && inst.status !== "paid") {
-          const d = new Date();
-          if (paymentFrequency === "daily") {
-            d.setDate(d.getDate() + idx);
-            dueDateStr = d.toISOString().slice(0, 10);
-          } else if (paymentFrequency === "weekly") {
-            dueDateStr = `งวดสัปดาห์ที่ ${inst.installmentNo}`;
-          } else {
-            d.setMonth(d.getMonth() + inst.installmentNo);
-            dueDateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
-          }
-        }
+        const i = inst.installmentNo;
+        const newDueDateStr = calculateInstallmentDueDate(firstPaymentDate, paymentFrequency, i);
         if (inst.status !== "paid") {
           return {
             ...inst,
-            dueDate: dueDateStr,
+            dueDate: newDueDateStr,
             amount: installmentAmount
           };
         }
         return inst;
       });
     } else {
-      // สร้างตารางงวดใหม่
-      const now = new Date();
+      // สร้างตารางงวดใหม่ รันวันที่เริ่มจ่ายและงวดถัดไปตาม firstPaymentDate
       for (let i = 1; i <= totalInstallments; i++) {
-        let dueDateStr = "";
-        if (paymentFrequency === "daily") {
-          const d = new Date(now);
-          d.setDate(now.getDate() + (i - 1));
-          dueDateStr = d.toISOString().slice(0, 10);
-        } else if (paymentFrequency === "weekly") {
-          dueDateStr = `งวดสัปดาห์ที่ ${i}`;
-        } else {
-          const d = new Date(now);
-          d.setMonth(now.getMonth() + i);
-          dueDateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
-        }
+        const dueDateStr = calculateInstallmentDueDate(firstPaymentDate, paymentFrequency, i);
 
         // สำหรับงวดสุดท้าย หากผลรวมคลาดเคลื่อนจากเศษ ปรับให้ตรงกับ totalAmount
         let thisInstAmount = installmentAmount;
@@ -2080,9 +2131,14 @@ document.addEventListener("DOMContentLoaded", () => {
       facebookLink: facebookLink || (existing && existing.facebookLink) || "",
       address: address || (existing && existing.address) || "",
       additionalNotes: additionalNotes || (existing && existing.additionalNotes) || "",
+      itemCategory,
       itemFinanced,
+      downPayment,
+      lateFine: (existing && existing.lateFine) || 0,
+      lateFineReason: (existing && existing.lateFineReason) || "",
       totalAmount,
       totalInstallments,
+      firstPaymentDate,
       paymentFrequency,
       dueSchedule,
       duration,
@@ -2113,8 +2169,27 @@ document.addEventListener("DOMContentLoaded", () => {
     formPhone.value = contract.phone || "";
     formAvatar.value = contract.avatar || "";
     formItemFinanced.value = contract.itemFinanced || "";
+    if (formItemCategory) {
+      formItemCategory.value = contract.itemCategory || "general";
+    }
+    if (formDownPayment) {
+      formDownPayment.value = contract.downPayment || 0;
+    }
+    if (formDownPaymentGroup) {
+      formDownPaymentGroup.style.display = (contract.itemCategory === "motorcycle" || contract.itemCategory === "gold") ? "block" : "none";
+    }
     formTotalAmount.value = contract.totalAmount || 0;
     formTotalInstallments.value = contract.totalInstallments || 1;
+    if (formFirstPaymentDate) {
+      if (contract.firstPaymentDate) {
+        formFirstPaymentDate.value = contract.firstPaymentDate;
+      } else if (contract.installments && contract.installments[0]?.dueDate) {
+        const dStr = contract.installments[0].dueDate;
+        formFirstPaymentDate.value = dStr.length >= 10 ? dStr.slice(0, 10) : getLocalDateStr();
+      } else {
+        formFirstPaymentDate.value = getLocalDateStr();
+      }
+    }
     formPaymentFrequency.value = contract.paymentFrequency || "monthly";
     formDueSchedule.value = contract.dueSchedule || "";
     formDuration.value = contract.duration || "";
@@ -2129,21 +2204,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (formInstallmentAmount) {
       formInstallmentAmount.value = firstInstAmt || "";
     }
-    updateContractFormCalculation("display");
 
     contractModalTitle.textContent = `แก้ไขสัญญา ${contract.id}`;
     contractModal.classList.add("active");
   };
 
-  // Global Delete Contract
-  window.deleteContractConfirm = async function (id) {
-    if (confirm(`คุณต้องการลบสัญญา ${id} นี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้`)) {
-      await window.easyFinanceDB.deleteContract(id);
-      showAdminToast(`ลบสัญญา ${id} สำเร็จ`, "success");
-      renderStatsCounters();
-      renderSubTabs();
-      renderActiveTabTable();
-    }
+  // Global Delete Contract (Requirement 1: ต้องใส่รหัสผ่านความปลอดภัยก่อนลบข้อมูลลูกค้า)
+  window.deleteContractConfirm = function (id) {
+    openDeleteSecurityModal(id, "contract");
   };
 
   // Global Quick Mark as Paid (Requirement 2: รองรับระบุวันที่บันทึกชำระ)
@@ -2180,8 +2248,9 @@ document.addEventListener("DOMContentLoaded", () => {
         <div><strong>อีเมลเข้าใช้งาน:</strong> ${contract.email}</div>
         <div><strong>รหัสผ่านลูกค้า:</strong> <code style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; color: #34d399;">${contract.password}</code></div>
         <div><strong>สิ่งที่ผ่อน:</strong> ${contract.itemFinanced}</div>
-        <div><strong>ยอดรวม:</strong> ฿${Number(contract.totalAmount).toLocaleString()} (${contract.duration})</div>
-        <div><strong>กำหนดชำระ:</strong> ${contract.dueSchedule}</div>
+        <div><strong>ยอดรวมสัญญา (รวมดาวน์):</strong> ฿${(Number(contract.totalAmount) + Number(contract.downPayment || 0)).toLocaleString()}${Number(contract.downPayment) > 0 ? ` <span style="color: #38bdf8;">(เงินดาวน์ ฿${Number(contract.downPayment).toLocaleString()} + ผ่อน ฿${Number(contract.totalAmount).toLocaleString()})</span>` : ""}</div>
+        <div><strong>กำหนดชำระ:</strong> ${contract.dueSchedule} (${contract.duration})</div>
+        <div><strong>วันที่เริ่มชำระ:</strong> ${formatDateThai(contract.firstPaymentDate || (contract.installments && contract.installments[0]?.dueDate))}</div>
       </div>
       <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--admin-border); display: flex; gap: 8px; justify-content: flex-end;">
         <button type="button" class="btn-table-action" onclick="contractDetailModal.classList.remove('active'); editContract('${contract.id}');" style="padding: 6px 14px; font-size: 0.8rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
@@ -2393,14 +2462,9 @@ document.addEventListener("DOMContentLoaded", () => {
     badDebtModal.classList.add("active");
   };
 
-  // Global Delete Bad Debt
-  window.deleteBadDebtConfirm = async function (id) {
-    if (confirm(`คุณต้องการลบประวัติหนี้เสียรายการนี้ (${id}) ใช่หรือไม่?`)) {
-      await window.easyFinanceDB.deleteBadDebt(id);
-      showAdminToast(`ลบประวัติหนี้เสียสำเร็จ`, "success");
-      renderSubTabs();
-      renderActiveTabTable();
-    }
+  // Global Delete Bad Debt (Requirement 1: ต้องใส่รหัสผ่านความปลอดภัยก่อนลบข้อมูล)
+  window.deleteBadDebtConfirm = function (id) {
+    openDeleteSecurityModal(id, "bad_debt");
   };
 
   // Bad Debt Form Submit
@@ -2522,7 +2586,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!cust.additionalNotes && c.additionalNotes) cust.additionalNotes = c.additionalNotes;
       if (c.avatar && (!cust.avatar || cust.avatar.includes("unsplash"))) cust.avatar = c.avatar;
 
-      cust.totalFinanced += Number(c.totalAmount) || 0;
+      const downPayment = Number(c.downPayment) || 0;
+      const totalAmount = Number(c.totalAmount) || 0;
+      // 1. หลังบ้านแสดงยอดทั้งหมดที่รวมทั้งเงินดาวน์ด้วย (ยอดปล่อยทั้งหมด = ยอดผ่อนรวม + เงินดาวน์)
+      cust.totalFinanced += (totalAmount + downPayment);
+      // เงินดาวน์นับเป็นยอดที่เก็บมาได้แล้วตั้งแต่เริ่มทำสัญญา
+      cust.totalCollected += downPayment;
       cust.totalContractsCount++;
 
       const installments = c.installments || [];
@@ -2621,6 +2690,15 @@ document.addEventListener("DOMContentLoaded", () => {
       customerDatabaseModal.classList.add("active");
     }
     updateCustomerBadges();
+    if (customerDbSearchInput) {
+      const q = customerDbSearchInput.value.trim();
+      if (btnCustomerDbSearchClear) {
+        btnCustomerDbSearchClear.style.display = q ? "inline-flex" : "none";
+      }
+      setTimeout(() => {
+        customerDbSearchInput.focus();
+      }, 150);
+    }
     renderCustomerDatabaseList();
   }
 
@@ -2639,7 +2717,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderCustomerDatabaseList();
   }
 
-  // 4. แสดงรายชื่อลูกค้าทั้งหมด และปุ่ม 3 ขีด (3.1 & 3.2)
+  // 4. แสดงรายชื่อลูกค้าทั้งหมด และปุ่ม 3 ขีด (3.1 & 3.2, Requirement 1: ค้นหาได้ครบถ้วนทุกฟิลด์)
   function renderCustomerDatabaseList() {
     if (!customerDbTableBody) return;
 
@@ -2657,7 +2735,7 @@ document.addEventListener("DOMContentLoaded", () => {
       customers = customers.filter((c) => c.hasBadDebt);
     }
 
-    // กรองตามคำค้นหา
+    // กรองตามคำค้นหา (Requirement 1: ค้นหาได้จากทุกฟิลด์ของลูกค้า)
     if (query) {
       customers = customers.filter((c) => {
         const nameMatch = c.name && c.name.toLowerCase().includes(query);
@@ -2677,7 +2755,20 @@ document.addEventListener("DOMContentLoaded", () => {
           idMatch = (qClean && idClean.includes(qClean)) || c.idCard.toLowerCase().includes(query);
         }
 
-        return nameMatch || emailMatch || phoneMatch || idMatch || noteMatch || addressMatch;
+        // ค้นหาตามรหัสสัญญา
+        const contractIdMatch = (c.contracts || []).some((k) => k.id && k.id.toLowerCase().includes(query));
+
+        // ค้นหาตามสิ่งที่ผ่อน
+        const itemMatch = (c.contracts || []).some((k) => k.itemFinanced && k.itemFinanced.toLowerCase().includes(query));
+
+        // ค้นหาตามประวัติหนี้เสีย
+        const badDebtMatch = (c.badDebts || []).some((b) =>
+          (b.itemDescription && b.itemDescription.toLowerCase().includes(query)) ||
+          (b.note && b.note.toLowerCase().includes(query)) ||
+          (b.phone && b.phone.toLowerCase().includes(query))
+        );
+
+        return nameMatch || emailMatch || phoneMatch || idMatch || noteMatch || addressMatch || contractIdMatch || itemMatch || badDebtMatch;
       });
     }
 
@@ -2736,10 +2827,16 @@ document.addEventListener("DOMContentLoaded", () => {
         <td><strong style="color: #34d399;">฿${cust.totalFinanced.toLocaleString()}</strong></td>
         <td><strong style="color: #fbbf24;">฿${cust.totalOutstanding.toLocaleString()}</strong></td>
         <td style="text-align: center;">
-          <!-- 3.2 ปุ่ม 3 ขีด สำหรับกดดูข้อมูลทั้งหมด -->
-          <button type="button" class="btn-customer-menu" onclick="openCustomerDossier('${cust.key}')" title="กด 3 ขีด ดูข้อมูลทั้งหมดของลูกค้า">
-            <i class="fa-solid fa-bars"></i>
-          </button>
+          <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+            <!-- 3.2 ปุ่ม 3 ขีด สำหรับกดดูข้อมูลทั้งหมด -->
+            <button type="button" class="btn-customer-menu" onclick="openCustomerDossier('${cust.key}')" title="กด 3 ขีด ดูข้อมูลทั้งหมดของลูกค้า">
+              <i class="fa-solid fa-bars"></i>
+            </button>
+            <!-- 1. ปุ่มลบลูกค้า (ต้องใส่รหัสยืนยัน) -->
+            <button type="button" class="btn-table-action" onclick="deleteCustomerConfirm('${cust.key}')" title="ลบข้อมูลลูกค้า (ต้องใส่รหัสความปลอดภัยก่อนลบ)" style="padding: 6px 9px; color: #f87171; border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.1);">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
         </td>
       `;
       customerDbTableBody.appendChild(tr);
@@ -2858,19 +2955,24 @@ document.addEventListener("DOMContentLoaded", () => {
           <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 16px; margin-bottom: 14px;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
               <div>
-                <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                   <span style="font-weight: 700; font-size: 1rem; color: #38bdf8;">${c.id}</span>
                   <span class="status-badge badge-pending">กำลังผ่อนชำระ</span>
                   <span style="font-size: 0.78rem; color: var(--text-dim);">รอบชำระ: ${c.paymentFrequency === "daily" ? "รายวัน" : c.paymentFrequency === "weekly" ? "รายอาทิตย์" : "รายเดือน"} (${c.dueSchedule || "-"})</span>
+                  ${Number(c.downPayment) > 0 ? `<span class="status-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);"><i class="fa-solid fa-coins"></i> ดาวน์ ฿${Number(c.downPayment).toLocaleString()}</span>` : ""}
+                  ${Number(c.lateFine) > 0 ? `<span class="badge-fine"><i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ฿${Number(c.lateFine).toLocaleString()} (${c.lateFineReason || "เกินกำหนด"})</span>` : ""}
+                  <button type="button" class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
+                    <i class="fa-solid fa-triangle-exclamation"></i> ${Number(c.lateFine) > 0 ? "แก้ไข/ล้างค่าปรับ" : "กรอกค่าปรับ"}
+                  </button>
                 </div>
                 <div style="font-size: 0.88rem; color: #fff; margin-top: 4px; font-weight: 500;">
                   <i class="fa-solid fa-box" style="color: var(--primary); margin-right: 4px;"></i> สิ่งที่ผ่อน: <strong>${c.itemFinanced || "-"}</strong>
                 </div>
               </div>
               <div style="text-align: right;">
-                <div style="font-size: 0.82rem; color: var(--text-muted);">ยอดเงินรวม / คงเหลือรอชำระ</div>
+                <div style="font-size: 0.82rem; color: var(--text-muted);">ยอดเงินรวม (รวมดาวน์) / คงค้างรอเก็บ</div>
                 <div style="font-size: 1rem; font-weight: 700; color: #fff;">
-                  ฿${(Number(c.totalAmount) || 0).toLocaleString()} <span style="font-size: 0.82rem; color: #fbbf24;">(คงค้าง ฿${remainingBal.toLocaleString()})</span>
+                  ฿${(Number(c.totalAmount || 0) + Number(c.downPayment || 0)).toLocaleString()} <span style="font-size: 0.82rem; color: #fbbf24;">(คงค้าง ฿${remainingBal.toLocaleString()})</span>
                 </div>
               </div>
             </div>
@@ -3293,13 +3395,137 @@ document.addEventListener("DOMContentLoaded", () => {
     btnCloseCustomerDbModal.addEventListener("click", () => closeCustomerDatabaseModal());
   }
   if (customerDbSearchInput) {
-    customerDbSearchInput.addEventListener("input", () => renderCustomerDatabaseList());
+    customerDbSearchInput.addEventListener("input", () => {
+      if (btnCustomerDbSearchClear) {
+        btnCustomerDbSearchClear.style.display = customerDbSearchInput.value.trim() ? "inline-flex" : "none";
+      }
+      renderCustomerDatabaseList();
+    });
+  }
+  if (btnCustomerDbSearchClear) {
+    btnCustomerDbSearchClear.addEventListener("click", () => {
+      if (customerDbSearchInput) {
+        customerDbSearchInput.value = "";
+        btnCustomerDbSearchClear.style.display = "none";
+        renderCustomerDatabaseList();
+        customerDbSearchInput.focus();
+      }
+    });
   }
   if (btnCloseDossierModal) {
     btnCloseDossierModal.addEventListener("click", () => {
       customerDossierModal.classList.remove("active");
     });
   }
+
+  // --- 8.5 LATE PAYMENT FINE / PENALTY MANAGEMENT (Requirement 4) ---
+  function openPenaltyModal(contractId) {
+    const contract = window.easyFinanceDB.getContractById(contractId);
+    if (!contract) {
+      showAdminToast("ไม่พบข้อมูลสัญญา", "error");
+      return;
+    }
+
+    if (penaltyContractId) penaltyContractId.value = contract.id;
+    if (penaltyTargetCustomerName) penaltyTargetCustomerName.textContent = contract.name;
+    if (penaltyTargetContractId) penaltyTargetContractId.textContent = contract.id;
+    if (penaltyTargetItemInfo) penaltyTargetItemInfo.textContent = `สิ่งที่ผ่อน: ${contract.itemFinanced || "สินเชื่อทั่วไป"}`;
+
+    const installments = contract.installments || [];
+    const pending = installments.find((i) => i.status !== "paid");
+    if (penaltyTargetDueInfo) {
+      if (pending) {
+        penaltyTargetDueInfo.textContent = `งวดค้างชำระ: งวดที่ ${pending.installmentNo} (ครบกำหนด ${formatDateThai(pending.dueDate)}) ค่างวด ฿${Number(pending.amount).toLocaleString()}`;
+      } else {
+        penaltyTargetDueInfo.textContent = "สถานะ: ปิดสัญญาสมบูรณ์แล้ว";
+      }
+    }
+
+    const currentFine = Number(contract.lateFine) || 0;
+    if (penaltyAmountInput) {
+      penaltyAmountInput.value = currentFine > 0 ? currentFine : "";
+    }
+    if (penaltyReasonInput) {
+      penaltyReasonInput.value = contract.lateFineReason || (currentFine > 0 ? "เกินกำหนดชำระค่างวด" : "");
+    }
+
+    if (currentFineStatusBadge) {
+      if (currentFine > 0) {
+        currentFineStatusBadge.style.display = "inline-flex";
+        currentFineStatusBadge.textContent = `มีค่าปรับค้าง ฿${currentFine.toLocaleString()}`;
+      } else {
+        currentFineStatusBadge.style.display = "none";
+      }
+    }
+
+    if (penaltyModalAdmin) {
+      penaltyModalAdmin.classList.add("active");
+    }
+  }
+
+  function closePenaltyModal() {
+    if (penaltyModalAdmin) {
+      penaltyModalAdmin.classList.remove("active");
+    }
+  }
+
+  window.setQuickFine = function (amount) {
+    if (!penaltyAmountInput) return;
+    const cur = parseFloat(penaltyAmountInput.value) || 0;
+    penaltyAmountInput.value = cur + amount;
+  };
+
+  if (btnClosePenaltyModal) {
+    btnClosePenaltyModal.addEventListener("click", () => closePenaltyModal());
+  }
+
+  if (penaltyAdminForm) {
+    penaltyAdminForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const contractId = penaltyContractId ? penaltyContractId.value : "";
+      if (!contractId) return;
+
+      const fineAmount = parseFloat(penaltyAmountInput ? penaltyAmountInput.value : 0) || 0;
+      const reason = penaltyReasonInput ? penaltyReasonInput.value.trim() : "";
+
+      await window.easyFinanceDB.updateContractLateFine(contractId, fineAmount, reason);
+
+      if (fineAmount > 0) {
+        showAdminToast(`บันทึกค่าปรับสัญญา ${contractId} จำนวน ฿${fineAmount.toLocaleString()} เรียบร้อยแล้ว (ซิงค์หน้าลูกค้าทันที)`, "success");
+      } else {
+        showAdminToast(`ล้างค่าปรับสัญญา ${contractId} เป็น 0 เรียบร้อยแล้ว (หน้าลูกค้าค่าปรับจะหายทันที)`, "success");
+      }
+
+      closePenaltyModal();
+      renderStatsCounters();
+      renderActiveTabTable();
+      if (customerDatabaseModal && customerDatabaseModal.classList.contains("active")) {
+        renderCustomerDatabaseList();
+      }
+      if (customerDossierModal && customerDossierModal.classList.contains("active") && currentViewingCustomerKey) {
+        openCustomerDossier(currentViewingCustomerKey);
+      }
+    });
+  }
+
+  window.clearAndConfirmPenalty = async function () {
+    const contractId = penaltyContractId ? penaltyContractId.value : "";
+    if (!contractId) return;
+
+    if (confirm(`ยืนยันการคีย์ออก / ล้างค่าปรับของสัญญา ${contractId} เป็น 0 บาท ใช่หรือไม่?\n(เมื่อยืนยันแล้ว กรอบค่าปรับหน้าลูกค้าจะหายไปทันที)`)) {
+      await window.easyFinanceDB.updateContractLateFine(contractId, 0, "");
+      showAdminToast(`ล้างค่าปรับสัญญา ${contractId} เป็น 0 สำเร็จ (หน้าลูกค้าค่าปรับหายไปแล้ว)`, "success");
+      closePenaltyModal();
+      renderStatsCounters();
+      renderActiveTabTable();
+      if (customerDatabaseModal && customerDatabaseModal.classList.contains("active")) {
+        renderCustomerDatabaseList();
+      }
+      if (customerDossierModal && customerDossierModal.classList.contains("active") && currentViewingCustomerKey) {
+        openCustomerDossier(currentViewingCustomerKey);
+      }
+    }
+  };
 
   // Expose to window for inline onclick handlers
   window.openCustomerDatabaseModal = openCustomerDatabaseModal;
@@ -3311,6 +3537,167 @@ document.addEventListener("DOMContentLoaded", () => {
   window.downloadCurrentCustomerExcel = downloadCurrentCustomerExcel;
   window.downloadCurrentCustomerPDF = downloadCurrentCustomerPDF;
   window.printCurrentCustomerDossier = printCurrentCustomerDossier;
+  window.openPenaltyModal = openPenaltyModal;
+  window.closePenaltyModal = closePenaltyModal;
+
+  // --- 8.6 SECURE DELETION VERIFICATION (Requirement 1: ใส่รหัสผ่านยืนยันก่อนลบลูกค้า/สัญญา) ---
+  const DELETE_SECURITY_PIN = "delete9999"; // รหัสผ่านยืนยันการลบลูกค้า (คนละชุดกับรหัสผ่านเข้าหลังบ้าน admin123)
+
+  function openDeleteSecurityModal(id, type = "contract") {
+    if (deleteTargetId) deleteTargetId.value = id;
+    if (deleteTargetType) deleteTargetType.value = type;
+    if (deleteSecurityPasswordInput) {
+      deleteSecurityPasswordInput.value = "";
+      deleteSecurityPasswordInput.type = "password";
+    }
+    if (iconToggleDeletePass) {
+      iconToggleDeletePass.className = "fa-solid fa-eye";
+    }
+    if (deleteSecurityErrorMsg) {
+      deleteSecurityErrorMsg.style.display = "none";
+    }
+
+    if (deleteTargetItemLabel) {
+      if (type === "contract") {
+        const c = window.easyFinanceDB.getContractById(id);
+        deleteTargetItemLabel.textContent = c ? `สัญญา ${c.id} (${c.name} - ${c.itemFinanced || "สินเชื่อ"})` : `สัญญา ${id}`;
+      } else if (type === "bad_debt") {
+        const b = window.easyFinanceDB.getBadDebtById ? window.easyFinanceDB.getBadDebtById(id) : null;
+        deleteTargetItemLabel.textContent = b ? `ประวัติหนี้เสีย ${b.name || id}` : `รายการ ${id}`;
+      } else if (type === "customer") {
+        const cust = getAggregatedCustomerByKey(id);
+        const count = cust ? cust.contracts.length : 0;
+        deleteTargetItemLabel.textContent = cust ? `ลูกค้า: ${cust.name} (พร้อมสัญญาทั้งหมด ${count} สัญญา)` : `ลูกค้า ${id}`;
+      } else {
+        deleteTargetItemLabel.textContent = id;
+      }
+    }
+
+    if (deleteSecurityModal) {
+      deleteSecurityModal.classList.add("active");
+      setTimeout(() => {
+        if (deleteSecurityPasswordInput) deleteSecurityPasswordInput.focus();
+      }, 150);
+    }
+  }
+
+  function closeDeleteSecurityModal() {
+    if (deleteSecurityModal) {
+      deleteSecurityModal.classList.remove("active");
+    }
+    if (deleteSecurityPasswordInput) {
+      deleteSecurityPasswordInput.value = "";
+    }
+    if (deleteSecurityErrorMsg) {
+      deleteSecurityErrorMsg.style.display = "none";
+    }
+  }
+
+  if (btnCloseDeleteSecurityModal) {
+    btnCloseDeleteSecurityModal.addEventListener("click", () => closeDeleteSecurityModal());
+  }
+  if (btnCancelDeleteSecurity) {
+    btnCancelDeleteSecurity.addEventListener("click", () => closeDeleteSecurityModal());
+  }
+  if (btnToggleDeletePass && deleteSecurityPasswordInput && iconToggleDeletePass) {
+    btnToggleDeletePass.addEventListener("click", () => {
+      const isPass = deleteSecurityPasswordInput.type === "password";
+      deleteSecurityPasswordInput.type = isPass ? "text" : "password";
+      iconToggleDeletePass.className = isPass ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
+    });
+  }
+
+  if (deleteSecurityForm) {
+    deleteSecurityForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const enteredPass = deleteSecurityPasswordInput ? deleteSecurityPasswordInput.value.trim() : "";
+      const configuredPin = localStorage.getItem("easyfinance_delete_pin") || DELETE_SECURITY_PIN;
+
+      if (enteredPass !== configuredPin) {
+        if (deleteSecurityErrorMsg) {
+          deleteSecurityErrorMsg.style.display = "block";
+          deleteSecurityErrorMsg.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> รหัสผ่านยืนยันการลบไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง';
+        }
+        if (deleteSecurityPasswordInput) {
+          deleteSecurityPasswordInput.focus();
+          deleteSecurityPasswordInput.select();
+        }
+        return;
+      }
+
+      // รหัสถูกต้อง ทำการลบข้อมูล
+      const targetId = deleteTargetId ? deleteTargetId.value : "";
+      const targetType = deleteTargetType ? deleteTargetType.value : "contract";
+
+      if (targetType === "contract") {
+        await window.easyFinanceDB.deleteContract(targetId);
+        showAdminToast(`ลบสัญญา ${targetId} สำเร็จเรียบร้อยแล้ว`, "success");
+      } else if (targetType === "bad_debt") {
+        await window.easyFinanceDB.deleteBadDebt(targetId);
+        showAdminToast(`ลบข้อมูลหนี้เสีย ${targetId} สำเร็จเรียบร้อยแล้ว`, "success");
+      } else if (targetType === "customer") {
+        const cust = getAggregatedCustomerByKey(targetId);
+        if (cust) {
+          for (const c of cust.contracts) {
+            await window.easyFinanceDB.deleteContract(c.id);
+          }
+          for (const b of (cust.badDebts || [])) {
+            if (window.easyFinanceDB.deleteBadDebt) {
+              await window.easyFinanceDB.deleteBadDebt(b.id);
+            }
+          }
+          try {
+            localStorage.removeItem("customer_notes_" + cust.key);
+          } catch (e) {}
+          showAdminToast(`ลบข้อมูลลูกค้า ${cust.name} และสัญญาทั้งหมดสำเร็จเรียบร้อยแล้ว`, "success");
+        }
+      }
+
+      closeDeleteSecurityModal();
+      renderStatsCounters();
+      renderSubTabs();
+      renderActiveTabTable();
+      updateCustomerBadges();
+      if (customerDatabaseModal && customerDatabaseModal.classList.contains("active")) {
+        renderCustomerDatabaseList();
+      }
+      if (customerDossierModal && customerDossierModal.classList.contains("active")) {
+        customerDossierModal.classList.remove("active");
+        renderCustomerDatabaseList();
+      }
+    });
+  }
+
+  // Global Delete Customer
+  window.deleteCustomerConfirm = function (customerKey) {
+    const key = customerKey || currentViewingCustomerKey;
+    if (!key) {
+      showAdminToast("ไม่พบรหัสลูกค้าที่ต้องการลบ", "error");
+      return;
+    }
+    openDeleteSecurityModal(key, "customer");
+  };
+
+  window.openDeleteSecurityModal = openDeleteSecurityModal;
+  window.closeDeleteSecurityModal = closeDeleteSecurityModal;
+
+  // --- 8.7 GLOBAL MODAL CLICK-OUTSIDE & ESCAPE HANDLERS (ป้องกันเว็บค้างและคลิกไม่ติด 100%) ---
+  document.querySelectorAll(".admin-modal-overlay").forEach((overlay) => {
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) {
+        overlay.classList.remove("active");
+      }
+    });
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      const activeModals = document.querySelectorAll(".admin-modal-overlay.active");
+      if (activeModals.length > 0) {
+        activeModals[activeModals.length - 1].classList.remove("active");
+      }
+    }
+  });
 
   // --- 9. REAL-TIME OBSERVER & HELPERS ---
 

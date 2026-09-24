@@ -398,9 +398,28 @@
         <h4 style="font-size: 0.88rem; color: var(--primary-light); margin-top: 14px; margin-bottom: 12px; border-bottom: 1px solid var(--admin-border); padding-bottom: 6px;">
           3. ข้อมูลสัญญาและการผ่อนชำระ (Financing & Installment Setup)
         </h4>
-        <div class="form-group-admin">
-          <label class="form-label-admin">สิ่งที่กำลังผ่อน / วัตถุประสงค์สินเชื่อ *</label>
-          <input type="text" id="formItemFinanced" class="input-admin" placeholder="เช่น ผ่อนทองคำ 1 บาท, สินเชื่อเงินสด, iPhone 16" required>
+        <div class="form-grid-2">
+          <div class="form-group-admin">
+            <label class="form-label-admin">หมวดหมู่สัญญา / สินค้า *</label>
+            <select id="formItemCategory" class="input-admin">
+              <option value="general">สินค้าทั่วไป / มือถือ / อื่นๆ (General)</option>
+              <option value="motorcycle">ผ่อนมอเตอร์ไซค์ (Motorcycle)</option>
+              <option value="gold">ผ่อนทอง (Gold)</option>
+            </select>
+          </div>
+          <div class="form-group-admin">
+            <label class="form-label-admin">สิ่งที่กำลังผ่อน / รายละเอียดสินค้า *</label>
+            <input type="text" id="formItemFinanced" class="input-admin" placeholder="เช่น ผ่อนทองคำ 1 บาท, Honda Wave 110i, iPhone 16" required>
+          </div>
+        </div>
+
+        <!-- 5. ช่องกรอกเงินดาวน์ (แสดงเมื่อเลือกหมวดผ่อนมอไซต์ หรือ ผ่อนทอง) -->
+        <div class="form-group-admin" id="formDownPaymentGroup" style="display: none; background: rgba(56, 189, 248, 0.08); border: 1px dashed rgba(56, 189, 248, 0.35); padding: 12px; border-radius: var(--radius-md);">
+          <label class="form-label-admin" style="color: #38bdf8; font-weight: 600;">
+            <i class="fa-solid fa-coins"></i> เงินดาวน์ (บาท) *
+            <span style="font-size: 0.74rem; color: #94a3b8; font-weight: normal;">(สำหรับหมวดผ่อนมอเตอร์ไซค์ หรือ ผ่อนทอง)</span>
+          </label>
+          <input type="number" id="formDownPayment" class="input-admin" min="0" step="100" placeholder="ระบุจำนวนเงินดาวน์ เช่น 5000">
         </div>
 
         <div class="form-grid-2">
@@ -416,41 +435,44 @@
 
         <div class="form-grid-2">
           <div class="form-group-admin">
-            <label class="form-label-admin">
-              ค่างวดต่องวด (บาท/งวด) 
-              <span style="color: var(--primary-light); font-size: 0.74rem;">(คำนวณอัตโนมัติ/ระบุเองได้)</span>
-            </label>
-            <input type="number" id="formInstallmentAmount" class="input-admin" min="1" placeholder="เช่น 5000">
+            <label class="form-label-admin">ค่างวดต่องวด (บาท/งวด) *</label>
+            <input type="number" id="formInstallmentAmount" class="input-admin" min="1" placeholder="ระบุค่างวดต่องวด เช่น 5000" required>
           </div>
           <div class="form-group-admin">
             <label class="form-label-admin">หมวดการชำระ (Frequency) *</label>
             <select id="formPaymentFrequency" class="input-admin">
-              <option value="daily">รายวัน (Daily)</option>
-              <option value="weekly">รายอาทิตย์ (Weekly)</option>
-              <option value="monthly" selected>รายเดือน (Monthly)</option>
+              <option value="daily">รายวัน (Daily - รันวันละ +1 วัน)</option>
+              <option value="weekly">รายอาทิตย์ (Weekly - รันสัปดาห์ละ +7 วัน)</option>
+              <option value="monthly" selected>รายเดือน (Monthly - รันเดือนละ +1 เดือน)</option>
             </select>
           </div>
         </div>
 
-        <!-- Live Calculation Preview (Point 1: คำนวณงวดอิงจากยอดที่ตั้งให้ลูกค้า) -->
-        <div id="formCalculationPreview" class="calc-preview-banner">
-          💡 สรุปการคำนวณ: ยอดรวม ฿0 ÷ 0 งวด = งวดละ ฿0
+        <div class="form-grid-2">
+          <div class="form-group-admin">
+            <label class="form-label-admin" style="color: #38bdf8; font-weight: 600;">
+              <i class="fa-solid fa-calendar-day"></i> กำหนดวันที่เริ่มจ่าย (งวดที่ 1) *
+            </label>
+            <input type="date" id="formFirstPaymentDate" class="input-admin" required style="border-color: rgba(56, 189, 248, 0.45); font-weight: 600; color: #fff;">
+            <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
+              * ระบบจะรันวันที่ของงวดถัดไปให้อัตโนมัติและแสดงผลตามที่กำหนดไปหน้าลูกค้า
+            </div>
+          </div>
+          <div class="form-group-admin">
+            <label class="form-label-admin">กำหนดวันชำระ (รายละเอียดแสดงผล)</label>
+            <input type="text" id="formDueSchedule" class="input-admin" placeholder="เช่น ทุกวัน, ทุกวันศุกร์, ทุกวันที่ 25">
+          </div>
         </div>
 
         <div class="form-grid-2">
           <div class="form-group-admin">
-            <label class="form-label-admin">กำหนดวันชำระ (รายละเอียด)</label>
-            <input type="text" id="formDueSchedule" class="input-admin" placeholder="เช่น ทุกวัน, ทุกวันศุกร์, ทุกวันที่ 1">
-          </div>
-          <div class="form-group-admin">
             <label class="form-label-admin">ระยะเวลาสัญญา (ข้อความแสดงผล)</label>
             <input type="text" id="formDuration" class="input-admin" placeholder="เช่น 6 เดือน หรือ 30 วัน">
           </div>
-        </div>
-
-        <div class="form-group-admin">
-          <label class="form-label-admin">สัญญาที่ปิดไปแล้วในอดีต (ครั้ง)</label>
-          <input type="number" id="formClosedContractsCount" class="input-admin" value="0" min="0">
+          <div class="form-group-admin">
+            <label class="form-label-admin">สัญญาที่ปิดไปแล้วในอดีต (ครั้ง)</label>
+            <input type="number" id="formClosedContractsCount" class="input-admin" value="0" min="0">
+          </div>
         </div>
 
         <button type="submit" class="btn-primary-action" style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;">
@@ -772,9 +794,12 @@
 
       <!-- Quick Search & Filters for Customer DB -->
       <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
-        <div class="search-input-wrapper" style="flex: 1; min-width: 260px;">
+        <div class="search-input-wrapper" style="flex: 1; min-width: 280px; position: relative;">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" id="customerDbSearchInput" placeholder="ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์, หรือเลขบัตรประชาชน...">
+          <input type="text" id="customerDbSearchInput" placeholder="พิมพ์ค้นหาชื่อลูกค้า, เบอร์โทร, เลขบัตร ปชช, รหัสสัญญา, สิ่งที่ผ่อน..." autocomplete="off">
+          <button type="button" id="btnCustomerDbSearchClear" onclick="clearCustomerDbSearch()" style="display: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: var(--text-dim); cursor: pointer; padding: 4px; font-size: 0.9rem;" title="ล้างคำค้นหา">
+            <i class="fa-solid fa-circle-xmark"></i>
+          </button>
         </div>
         <div class="customer-db-filters" style="display: flex; gap: 6px; flex-wrap: wrap;">
           <button type="button" class="tab-btn active btn-cdb-filter" data-cdb-filter="all" onclick="filterCustomerDb('all')">
@@ -852,6 +877,11 @@
           <button type="button" class="btn-table-action" onclick="printCurrentCustomerDossier()" title="พิมพ์เอกสาร" style="cursor: pointer;">
             <i class="fa-solid fa-print"></i>
           </button>
+          <!-- 1. ปุ่มลบลูกค้า (ต้องใส่รหัสความปลอดภัยก่อนลบ) -->
+          <button type="button" class="btn-table-action" onclick="deleteCustomerConfirm(currentViewingCustomerKey)" title="ลบข้อมูลลูกค้ารายนี้ทั้งหมด" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); color: #fca5a5; font-weight: 600; padding: 7px 14px; cursor: pointer;">
+            <i class="fa-solid fa-user-xmark"></i>
+            <span>ลบลูกค้า</span>
+          </button>
           <button class="btn-close-modal" id="btnCloseDossierModal">
             <i class="fa-solid fa-xmark"></i>
           </button>
@@ -861,6 +891,137 @@
       <!-- Dossier Container -->
       <div id="customerDossierContent" style="display: flex; flex-direction: column; gap: 18px;">
         <!-- Dynamic Content Rendered Here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL 7: LATE PAYMENT FINE / PENALTY (จัดการค่าปรับชำระล่าช้า)
+       4. หลังบ้านสามารถกรอกค่าปรับได้ของลูกค้าแต่ละคนหากเกินวันจ่าย แอดมินสามารถกรอกยอดปรับแล้วจะแสดงหน้าของลูกค้า
+       หากลูกค้าจ่ายมาแล้ว เราสามารถมาคีออกได้ แล้วยืนยันค่าปรับหน้าลูกค้าก็จะหาย
+       ==================================================================== -->
+  <div id="penaltyModalAdmin" class="admin-modal-overlay">
+    <div class="admin-modal-card" style="max-width: 520px; width: 95%;">
+      <div class="admin-modal-header">
+        <div class="admin-modal-title">
+          <i class="fa-solid fa-triangle-exclamation" style="color: #fb923c;"></i>
+          <span>จัดการค่าปรับชำระล่าช้า (Late Payment Fine)</span>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnClosePenaltyModal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div style="padding: 16px 0;">
+        <div style="background: rgba(251, 146, 60, 0.08); border: 1px solid rgba(251, 146, 60, 0.25); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <strong style="color: #fff; font-size: 1.05rem;" id="penaltyTargetCustomerName">ชื่อลูกค้า</strong>
+            <span class="status-badge" style="background: rgba(251, 146, 60, 0.2); color: #fb923c;" id="penaltyTargetContractId">EF-2026-001</span>
+          </div>
+          <div style="font-size: 0.85rem; color: var(--text-dim);" id="penaltyTargetItemInfo">สิ่งที่ผ่อน: -</div>
+          <div style="font-size: 0.85rem; color: #38bdf8; margin-top: 4px; font-weight: 500;" id="penaltyTargetDueInfo">งวดค้างชำระ: -</div>
+        </div>
+
+        <form id="penaltyAdminForm">
+          <input type="hidden" id="penaltyContractId">
+
+          <div class="form-group-admin">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <label class="form-label-admin" style="font-size: 0.9rem; font-weight: 600; color: #fb923c;">
+                <i class="fa-solid fa-coins"></i> จำนวนเงินค่าปรับ (บาท) *
+              </label>
+              <span id="currentFineStatusBadge" class="status-badge" style="display: none; background: rgba(239,68,68,0.2); color: #f87171; font-size: 0.72rem;">มีค่าปรับค้างอยู่</span>
+            </div>
+            <input type="number" id="penaltyAmountInput" class="input-admin" min="0" step="10" placeholder="ระบุจำนวนเงินค่าปรับ เช่น 100, 200, 500" style="font-size: 1.2rem; font-weight: 700; color: #fb923c; border-color: rgba(251, 146, 60, 0.4);">
+            <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+              <button type="button" class="btn-table-action" onclick="setQuickFine(50)" style="padding: 4px 10px; font-size: 0.75rem;">+50฿</button>
+              <button type="button" class="btn-table-action" onclick="setQuickFine(100)" style="padding: 4px 10px; font-size: 0.75rem;">+100฿</button>
+              <button type="button" class="btn-table-action" onclick="setQuickFine(200)" style="padding: 4px 10px; font-size: 0.75rem;">+200฿</button>
+              <button type="button" class="btn-table-action" onclick="setQuickFine(300)" style="padding: 4px 10px; font-size: 0.75rem;">+300฿</button>
+              <button type="button" class="btn-table-action" onclick="setQuickFine(500)" style="padding: 4px 10px; font-size: 0.75rem;">+500฿</button>
+            </div>
+          </div>
+
+          <div class="form-group-admin" style="margin-top: 14px;">
+            <label class="form-label-admin">เหตุผล / ข้อความแจ้งลูกค้า (จะแสดงบนหน้าจอของลูกค้า)</label>
+            <input type="text" id="penaltyReasonInput" class="input-admin" placeholder="เช่น ชำระเกินกำหนด 3 วัน, ค่าปรับผิดนัดชำระ">
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 22px;">
+            <button type="submit" class="btn-primary-action" style="justify-content: center; padding: 12px; font-weight: 600; background: linear-gradient(135deg, #f97316, #ea580c); box-shadow: 0 4px 14px rgba(249, 115, 22, 0.35);">
+              <i class="fa-solid fa-check"></i>
+              <span>ยืนยันบันทึกค่าปรับ (ส่งไปหน้าลูกค้าทันที)</span>
+            </button>
+
+            <!-- 4. ปุ่มคีย์ออก / ล้างค่าปรับ (ให้ค่าปรับหน้าลูกค้าหายไป) -->
+            <button type="button" id="btnClearPenaltyAction" class="btn-table-action" onclick="clearAndConfirmPenalty()" style="justify-content: center; padding: 10px; color: #f87171; border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.08); font-weight: 600;">
+              <i class="fa-solid fa-trash-can"></i>
+              <span>คีย์ออก / ล้างค่าปรับเป็น 0 (ยืนยันแล้วหน้าลูกค้าจะหายทันที)</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL 8: SECURE DELETION CONFIRMATION (ใส่รหัสผ่านก่อนลบลูกค้า/สัญญา)
+       1. อยากเพิ่ม ฟังชั่นใส่รหัสก่อนลบลููกค้า หากกดลบลูกค้าจะต้องใส่รหัสก่อน รหัสคนละอันกันกับรหัสเข้าหลังบ้าน
+       ==================================================================== -->
+  <div id="deleteSecurityModal" class="admin-modal-overlay">
+    <div class="admin-modal-card" style="max-width: 440px; width: 95%;">
+      <div class="admin-modal-header" style="border-bottom-color: rgba(239, 68, 68, 0.3);">
+        <div class="admin-modal-title" style="color: #f87171;">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>ยืนยันรหัสความปลอดภัยก่อนลบข้อมูล</span>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnCloseDeleteSecurityModal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div style="padding: 12px 0;">
+        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+          <div style="font-weight: 600; color: #fff; margin-bottom: 4px;">
+            ต้องการลบ: <span id="deleteTargetItemLabel" style="color: #fca5a5;">-</span>
+          </div>
+          <p style="font-size: 0.8rem; color: #fca5a5; margin: 0; line-height: 1.4;">
+            ⚠️ การลบข้อมูลนี้จะไม่สามารถกู้คืนได้ เพื่อความปลอดภัยกรุณากรอกรหัสผ่านยืนยันการลบ (รหัสผ่านคนละชุดกับรหัสผ่านเข้าหลังบ้าน)
+          </p>
+        </div>
+
+        <form id="deleteSecurityForm">
+          <input type="hidden" id="deleteTargetId">
+          <input type="hidden" id="deleteTargetType" value="contract">
+
+          <div class="form-group-admin">
+            <label class="form-label-admin" style="color: #f87171; font-weight: 600;">
+              <i class="fa-solid fa-key"></i> รหัสผ่านยืนยันการลบข้อมูล (Delete Security PIN) *
+            </label>
+            <div style="position: relative;">
+              <input type="password" id="deleteSecurityPasswordInput" class="input-admin" placeholder="กรอกรหัสผ่านเพื่อลบ" autocomplete="off" required style="border-color: rgba(239,68,68,0.4); padding-right: 40px; font-size: 1.05rem;">
+              <button type="button" id="btnToggleDeletePass" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px 6px;">
+                <i class="fa-solid fa-eye" id="iconToggleDeletePass"></i>
+              </button>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
+              * รหัสผ่านยืนยันการลบ: <code style="background: rgba(255,255,255,0.1); color: #fbbf24; padding: 2px 6px; border-radius: 4px; font-weight: 700;">delete9999</code>
+            </div>
+          </div>
+
+          <div id="deleteSecurityErrorMsg" style="display: none; color: #ef4444; font-size: 0.82rem; margin-top: 10px; font-weight: 600;">
+            <i class="fa-solid fa-circle-xmark"></i> รหัสผ่านยืนยันการลบไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="button" class="btn-table-action" id="btnCancelDeleteSecurity" style="flex: 1; justify-content: center; padding: 10px;">
+              ยกเลิก
+            </button>
+            <button type="submit" class="btn-primary-action" style="flex: 1.5; justify-content: center; padding: 10px; background: linear-gradient(135deg, #ef4444, #dc2626); border: none; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);">
+              <i class="fa-solid fa-trash"></i> ยืนยันการลบ
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

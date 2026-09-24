@@ -29,6 +29,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const nextInstallmentNo = document.getElementById("nextInstallmentNo");
   const paymentFrequencyText = document.getElementById("paymentFrequencyText");
   const totalPaidText = document.getElementById("totalPaidText");
+  const downPaymentStatItem = document.getElementById("downPaymentStatItem");
+  const downPaymentText = document.getElementById("downPaymentText");
+
+  // DOM Elements - Penalty Fee Frame (กรอบค่าปรับชำระล่าช้า)
+  const penaltyFeeBox = document.getElementById("penaltyFeeBox");
+  const penaltyFeeReason = document.getElementById("penaltyFeeReason");
+  const penaltyFeeAmountText = document.getElementById("penaltyFeeAmountText");
+  const baseDueAmountText = document.getElementById("baseDueAmountText");
+  const fineDueAmountText = document.getElementById("fineDueAmountText");
+  const totalDueWithFineText = document.getElementById("totalDueWithFineText");
 
   // DOM Elements - Progress
   const progressFractionText = document.getElementById("progressFractionText");
@@ -47,6 +57,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnClosePayModal = document.getElementById("btnClosePayModal");
   const modalPayInstallmentNo = document.getElementById("modalPayInstallmentNo");
   const modalPayAmount = document.getElementById("modalPayAmount");
+  const modalPayPenaltyNote = document.getElementById("modalPayPenaltyNote");
+  const modalPayPenaltyVal = document.getElementById("modalPayPenaltyVal");
   const modalPayDueDate = document.getElementById("modalPayDueDate");
   const adminPaymentQrImg = document.getElementById("adminPaymentQrImg");
   const displayBankName = document.getElementById("displayBankName");
@@ -182,6 +194,17 @@ document.addEventListener("DOMContentLoaded", () => {
     closedContractsText.textContent = `${contract.closedContractsCount || 0} ครั้ง`;
     totalInstallmentsText.textContent = `${totalInstallments} งวด`;
 
+    // 5. แสดงเงินดาวน์ หากสัญญาเป็นหมวดผ่อนมอเตอร์ไซค์ / ผ่อนทอง และมีเงินดาวน์
+    if (downPaymentStatItem && downPaymentText) {
+      const downPayVal = Number(contract.downPayment) || 0;
+      if (downPayVal > 0) {
+        downPaymentStatItem.style.display = "block";
+        downPaymentText.textContent = `฿${downPayVal.toLocaleString()}`;
+      } else {
+        downPaymentStatItem.style.display = "none";
+      }
+    }
+
     // Frequency Label
     const freqMap = {
       daily: "รายวัน",
@@ -190,15 +213,43 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     paymentFrequencyText.textContent = freqMap[contract.paymentFrequency] || contract.dueSchedule || "ตามกำหนด";
 
+    // 3. จัดการค่าปรับชำระล่าช้า (Late Fee)
+    const lateFine = Math.max(0, Number(contract.lateFine) || 0);
+    const lateFineReason = contract.lateFineReason || "เกินกำหนดชำระค่างวด";
+
     // Next Due Installment
     if (pendingInstallments.length > 0) {
       const nextInst = pendingInstallments[0];
       activePayingInstallment = nextInst;
       nextInstallmentNo.textContent = nextInst.installmentNo;
       nextDueDateText.textContent = formatThaiDate(nextInst.dueDate);
-      nextDueAmountText.textContent = `฿${Number(nextInst.amount).toLocaleString()}`;
+
+      const baseAmount = Number(nextInst.amount) || 0;
+      const totalAmountWithFine = baseAmount + lateFine;
+
+      // แสดงยอดรวมค่าปรับอัตโนมัติหากมีค่าปรับ
+      nextDueAmountText.textContent = `฿${totalAmountWithFine.toLocaleString()}`;
       btnOpenPayment.disabled = false;
-      btnOpenPayment.innerHTML = `<i class="fa-solid fa-qrcode"></i><span>ชำระเงินงวดที่ ${nextInst.installmentNo} (฿${Number(nextInst.amount).toLocaleString()})</span>`;
+
+      if (lateFine > 0) {
+        btnOpenPayment.innerHTML = `<i class="fa-solid fa-triangle-exclamation" style="color: #fb923c;"></i><span>ชำระงวดที่ ${nextInst.installmentNo} (฿${totalAmountWithFine.toLocaleString()} รวมค่าปรับ)</span>`;
+      } else {
+        btnOpenPayment.innerHTML = `<i class="fa-solid fa-qrcode"></i><span>ชำระเงินงวดที่ ${nextInst.installmentNo} (฿${baseAmount.toLocaleString()})</span>`;
+      }
+
+      // แสดง/ซ่อน กรอบเล็กๆ ค่าปรับชำระล่าช้า (Penalty Fee Frame)
+      if (penaltyFeeBox) {
+        if (lateFine > 0) {
+          penaltyFeeBox.style.display = "block";
+          if (penaltyFeeReason) penaltyFeeReason.textContent = lateFineReason;
+          if (penaltyFeeAmountText) penaltyFeeAmountText.textContent = `+฿${lateFine.toLocaleString()}`;
+          if (baseDueAmountText) baseDueAmountText.textContent = `฿${baseAmount.toLocaleString()}`;
+          if (fineDueAmountText) fineDueAmountText.textContent = `฿${lateFine.toLocaleString()}`;
+          if (totalDueWithFineText) totalDueWithFineText.textContent = `฿${totalAmountWithFine.toLocaleString()}`;
+        } else {
+          penaltyFeeBox.style.display = "none";
+        }
+      }
     } else {
       activePayingInstallment = null;
       nextInstallmentNo.textContent = "-";
@@ -206,6 +257,9 @@ document.addEventListener("DOMContentLoaded", () => {
       nextDueAmountText.textContent = "฿0";
       btnOpenPayment.disabled = true;
       btnOpenPayment.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>ปิดสัญญาสมบูรณ์แล้ว (ชำระครบถ้วน)</span>`;
+      if (penaltyFeeBox) {
+        penaltyFeeBox.style.display = "none";
+      }
     }
 
     // Progress Bar
@@ -304,9 +358,25 @@ document.addEventListener("DOMContentLoaded", () => {
     // โหลดการตั้งค่า QR และบัญชีจากระบบ (Firebase / Admin Settings)
     const settings = window.easyFinanceDB.getPaymentSettings();
 
+    // ตรวจสอบค่าปรับของสัญญาปัจจุบันเพื่อรวมเข้ากับยอดชำระ
+    const currentContract = currentContractId ? window.easyFinanceDB.getContractById(currentContractId) : null;
+    const contractFine = currentContract ? Math.max(0, Number(currentContract.lateFine) || 0) : 0;
+    const baseAmt = Number(installment.amount) || 0;
+    const finalAmountToPay = baseAmt + contractFine;
+
     if (modalPayInstallmentNo) modalPayInstallmentNo.textContent = installment.installmentNo;
-    if (modalPayAmount) modalPayAmount.textContent = `฿${Number(installment.amount).toLocaleString()}`;
+    if (modalPayAmount) modalPayAmount.textContent = `฿${finalAmountToPay.toLocaleString()}`;
     if (modalPayDueDate) modalPayDueDate.textContent = formatThaiDate(installment.dueDate);
+
+    // แสดงรายละเอียดค่าปรับใน Modal
+    if (modalPayPenaltyNote && modalPayPenaltyVal) {
+      if (contractFine > 0) {
+        modalPayPenaltyNote.style.display = "block";
+        modalPayPenaltyVal.textContent = contractFine.toLocaleString();
+      } else {
+        modalPayPenaltyNote.style.display = "none";
+      }
+    }
 
     // รูป QR Code ที่แอดมินอัปโหลดไว้
     if (adminPaymentQrImg) {
@@ -665,6 +735,18 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast("ไม่สามารถคัดลอกได้", "error");
     });
   };
+
+  // Real-time Database Subscription: ซิงค์หน้าจอทันทีเมื่อแอดมินแก้ไขข้อมูล / อนุมัติ / บันทึกค่าปรับ / คีย์ค่าปรับออก
+  if (window.easyFinanceDB && typeof window.easyFinanceDB.subscribe === "function") {
+    window.easyFinanceDB.subscribe(() => {
+      if (currentContractId) {
+        const updatedContract = window.easyFinanceDB.getContractById(currentContractId);
+        if (updatedContract) {
+          renderDashboard(updatedContract);
+        }
+      }
+    });
+  }
 
   // Run on start
   checkSession();
