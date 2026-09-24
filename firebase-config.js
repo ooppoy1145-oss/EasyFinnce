@@ -548,73 +548,76 @@ class EasyFinanceDatabase {
     }
   }
 
-  // ผสานข้อมูลระหว่าง Cloud และ Local อย่างชาญฉลาด เพื่อไม่ให้งวดที่เพิ่งจ่ายโดนทับด้วยข้อมูลเก่าจาก Cloud
-  mergeContracts(localContracts, remoteContracts) {
-    if (!remoteContracts || remoteContracts.length === 0) return localContracts;
-    if (!localContracts || localContracts.length === 0) return remoteContracts;
-
-    const merged = [...remoteContracts];
-    localContracts.forEach((local) => {
-      const rIdx = merged.findIndex((r) => r.id === local.id);
-      if (rIdx >= 0) {
-        const remote = merged[rIdx];
-        // หาก local มีการอัปเดตใหม่กว่า หรือมีงวดที่จ่ายแล้วแต่ remote ยังเป็น pending ให้ยึดงวดที่จ่ายแล้ว
-        const localPaidCount = (local.installments || []).filter((i) => i.status === "paid").length;
-        const remotePaidCount = (remote.installments || []).filter((i) => i.status === "paid").length;
-
-        if (localPaidCount > remotePaidCount) {
-          // เก็บงวดที่จ่ายแล้วไว้เสมอ
-          const mergedInstallments = (remote.installments || []).map((rInst) => {
-            const lInst = (local.installments || []).find((li) => li.installmentNo === rInst.installmentNo);
-            if (lInst && lInst.status === "paid") {
-              return lInst;
-            }
-            return rInst;
-          });
-          merged[rIdx] = {
-            ...remote,
-            ...local,
-            installments: mergedInstallments
-          };
-        } else {
-          // คัดลอกฟิลด์ข้อมูลเสริม เช่น facebookLink, additionalNotes, idCard, address ถ้า remote ไม่มี
-          merged[rIdx] = {
-            ...local,
-            ...remote,
-            facebookLink: remote.facebookLink || local.facebookLink || "",
-            additionalNotes: remote.additionalNotes || local.additionalNotes || "",
-            idCard: remote.idCard || local.idCard || "",
-            address: remote.address || local.address || ""
-          };
-        }
-      } else {
-        // สัญญาที่สร้างใหม่ใน local แต่ยังไม่ขึ้น cloud
-        merged.unshift(local);
-      }
-    });
-
-    return merged;
+  // ทำความสะอาด Object ก่อนส่งขึ้น Firestore เพื่อป้องกัน Unsupported field value: undefined
+  sanitizeForFirestore(obj) {
+    if (!obj) return null;
+    return JSON.parse(JSON.stringify(obj, (k, v) => (v === undefined ? null : v)));
   }
 
   setupFirestoreListeners() {
     if (!this.firestore) return;
 
     // Listen to Contracts (ซิงค์สัญญาทั้งหมดแบบ Real-time ตรงจาก Cloud 100%)
-    this.firestore.collection("contracts").onSnapshot((snapshot) => {
+    this.firestore.collection("contracts").onSnapshot(async (snapshot) => {
       const remoteContracts = [];
       snapshot.forEach((doc) => {
         if (doc.id.startsWith("_")) return; // ข้ามเอกสาร config ภายใน
         remoteContracts.push({ id: doc.id, ...doc.data() });
       });
 
-      const currentLocal = this.getContracts();
-      const merged = this.mergeContracts(currentLocal, remoteContracts);
+      if (remoteContracts.length > 0) {
+        // เมื่อมีข้อมูลบน Cloud ให้ยึด Cloud เป็นความจริงหลัก (Single Source of Truth 100%)
+        // เพื่อให้ทุกเครื่อง (PC, มือถือ, เครื่องอื่น) เห็นข้อมูลตรงกันทันที ไม่เด้งข้อมูลเก่ากลับมา
+        const currentLocal = this.getContracts();
+        const finalContracts = remoteContracts.map((rem) => {
+          const loc = currentLocal.find((l) => l.id === rem.id);
+          if (loc && loc.installments) {
+            const mergedInst = (rem.installments || []).map((rInst) => {
+              const lInst = loc.installments.find((li) => li.installmentNo === rInst.installmentNo);
+              // ถ้างวดใน local เพิ่งจ่ายสำเร็จแต่ remote ยังไม่อัปเดต ให้คงสถานะ paid ไว้ชั่วคราว
+              if (lInst && lInst.status === "paid" && rInst.status !== "paid") {
+                return lInst;
+              }
+              return rInst;
+            });
+            return { ...rem, installments: mergedInst };
+          }
+          return rem;
+        });
 
-      localStorage.setItem(
-        this.storageKeyPrefix + "contracts",
-        JSON.stringify(merged)
-      );
-      this.notifyListeners(false);
+        localStorage.setItem(
+          this.storageKeyPrefix + "contracts",
+          JSON.stringify(finalContracts)
+        );
+        this.notifyListeners(false);
+      } else {
+        // กรณีที่ Cloud ยังไม่มีเอกสารใน contracts
+        try {
+          const sysDoc = await this.firestore.collection("settings").doc("system").get();
+          if (sysDoc.exists && sysDoc.data().contractsInitialized) {
+            // ระบบเคยตั้งค่าเริ่มต้นแล้ว แปลว่าผู้ใช้ตั้งใจลบข้อมูลสัญญาจนหมด
+            localStorage.setItem(this.storageKeyPrefix + "contracts", JSON.stringify([]));
+            this.notifyListeners(false);
+          } else {
+            // ใช้งานระบบ Cloud ครั้งแรก: อัปโหลดสัญญาเริ่มต้น (Seed) ขึ้น Firestore ทันที
+            console.log("☁️ Seeding initial contracts to Cloud Firestore...");
+            const currentLocal = this.getContracts();
+            const toSeed = (currentLocal && currentLocal.length > 0) ? currentLocal : INITIAL_CONTRACTS;
+            for (const c of toSeed) {
+              const clean = this.sanitizeForFirestore(c);
+              await this.firestore.collection("contracts").doc(c.id).set(clean, { merge: true });
+            }
+            await this.firestore.collection("settings").doc("system").set(
+              { contractsInitialized: true, seededAt: new Date().toISOString() },
+              { merge: true }
+            );
+            localStorage.setItem(this.storageKeyPrefix + "contracts", JSON.stringify(toSeed));
+            this.notifyListeners(false);
+          }
+        } catch (e) {
+          console.warn("Firestore contracts auto-seed warning:", e);
+        }
+      }
     }, (error) => {
       console.error("❌ Firestore contracts snapshot error:", error);
     });
@@ -632,16 +635,42 @@ class EasyFinanceDatabase {
       console.error("❌ Firestore settings snapshot error:", error);
     });
 
-    // Listen to Bad Debts (ซิงค์ประวัติหนี้เสีย / แบล็คลิส / ผ่อนล่าช้า แบบ Real-time ตรงจาก Cloud 100%)
-    this.firestore.collection("bad_debts").onSnapshot((snapshot) => {
+    // 3. Listen to Bad Debts (ซิงค์ประวัติหนี้เสีย / แบล็คลิส / ผ่อนล่าช้า แบบ Real-time ตรงจาก Cloud 100%)
+    this.firestore.collection("bad_debts").onSnapshot(async (snapshot) => {
       const list = [];
       snapshot.forEach((doc) => {
         if (doc.id.startsWith("_")) return;
         list.push({ id: doc.id, ...doc.data() });
       });
 
-      localStorage.setItem(this.storageKeyPrefix + "bad_debts", JSON.stringify(list));
-      this.notifyListeners(false);
+      if (list.length > 0) {
+        localStorage.setItem(this.storageKeyPrefix + "bad_debts", JSON.stringify(list));
+        this.notifyListeners(false);
+      } else {
+        try {
+          const sysDoc = await this.firestore.collection("settings").doc("system_bad_debts").get();
+          if (sysDoc.exists && sysDoc.data().initialized) {
+            localStorage.setItem(this.storageKeyPrefix + "bad_debts", JSON.stringify([]));
+            this.notifyListeners(false);
+          } else {
+            console.log("☁️ Seeding initial bad debts to Firestore...");
+            const currentBadDebts = this.getBadDebts();
+            const toSeed = (currentBadDebts && currentBadDebts.length > 0) ? currentBadDebts : INITIAL_BAD_DEBTS;
+            for (const item of toSeed) {
+              const clean = this.sanitizeForFirestore(item);
+              await this.firestore.collection("bad_debts").doc(item.id).set(clean, { merge: true });
+            }
+            await this.firestore.collection("settings").doc("system_bad_debts").set(
+              { initialized: true, seededAt: new Date().toISOString() },
+              { merge: true }
+            );
+            localStorage.setItem(this.storageKeyPrefix + "bad_debts", JSON.stringify(toSeed));
+            this.notifyListeners(false);
+          }
+        } catch (e) {
+          console.warn("Firestore bad debts auto-seed warning:", e);
+        }
+      }
     }, (error) => {
       console.error("❌ Firestore bad_debts snapshot error:", error);
     });
@@ -746,7 +775,8 @@ class EasyFinanceDatabase {
     // 3. ซิงค์ขึ้น Firestore ในเบื้องหลัง พร้อมกำหนด Timeout 2.5 วินาที ป้องกัน UI ค้างหากสัญญาณเน็ตช้า
     if (this.isFirebaseConnected && this.firestore) {
       try {
-        const firestoreWrite = this.firestore.collection("contracts").doc(cleanContract.id).set(cleanContract, { merge: true });
+        const sanitized = this.sanitizeForFirestore(cleanContract);
+        const firestoreWrite = this.firestore.collection("contracts").doc(cleanContract.id).set(sanitized, { merge: true });
         const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve("timeout"), 2500));
         await Promise.race([firestoreWrite, timeoutPromise]);
         console.log(`☁️ Synced contract ${cleanContract.id} to Firestore`);
@@ -855,7 +885,8 @@ class EasyFinanceDatabase {
       if (this.isFirebaseConnected && this.firestore) {
         contracts.forEach((c) => {
           if (c.id === phoneOrId || (profileData.phone && c.phone && c.phone.includes(profileData.phone))) {
-            this.firestore.collection("contracts").doc(c.id).set(c, { merge: true }).catch(() => {});
+            const clean = this.sanitizeForFirestore(c);
+            this.firestore.collection("contracts").doc(c.id).set(clean, { merge: true }).catch(() => {});
           }
         });
       }
@@ -972,7 +1003,8 @@ class EasyFinanceDatabase {
     // ซิงค์ Firestore
     if (this.isFirebaseConnected && this.firestore) {
       try {
-        await this.firestore.collection("bad_debts").doc(record.id).set(record, { merge: true });
+        const clean = this.sanitizeForFirestore(record);
+        await this.firestore.collection("bad_debts").doc(record.id).set(clean, { merge: true });
         console.log(`☁️ Synced bad debt ${record.id} to Firestore`);
       } catch (err) {
         console.error("Firestore sync bad debt error:", err);
