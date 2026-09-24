@@ -186,7 +186,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const pendingInstallments = installments.filter((i) => i.status !== "paid");
 
     const totalPaid = paidInstallments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
-    const totalRemaining = pendingInstallments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    const contractTotalAmount = Number(contract.totalAmount) || 0;
+    const totalRemaining = Math.max(0, contractTotalAmount - totalPaid);
 
     remainingBalanceText.textContent = totalRemaining.toLocaleString();
     totalPaidText.textContent = `฿${totalPaid.toLocaleString()}`;
@@ -385,10 +386,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    if (displayBankName) displayBankName.textContent = settings.bankName || "ธนาคารกสิกรไทย (KBANK)";
-    if (displayAccountNumber) displayAccountNumber.textContent = settings.accountNumber || "089-2-88899-0";
-    if (displayAccountName) displayAccountName.textContent = settings.accountName || "บจก. อีซี่ไฟแนนซ์ โซลูชั่นส์";
-    if (displayPromptPay) displayPromptPay.textContent = settings.promptPayNumber || "0891234567";
+    if (displayBankName) displayBankName.textContent = settings.bankName || "-";
+    if (displayAccountNumber) displayAccountNumber.textContent = settings.accountNumber || "-";
+    if (displayAccountName) displayAccountName.textContent = settings.accountName || "-";
+    if (displayPromptPay) displayPromptPay.textContent = settings.promptPayNumber || "-";
 
     // รีเซ็ตฟอร์มสลิป
     resetSlipForm();

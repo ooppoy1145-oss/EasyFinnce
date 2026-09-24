@@ -18,17 +18,16 @@ const defaultFirebaseConfig = {
   appId: "1:1074903630791:web:9c06ad5bc531b60097cfe2"
 };
 
-// ข้อมูลเริ่มต้นสำหรับระบบ (Initial Realistic Seed Data)
+// ข้อมูลเริ่มต้นสำหรับระบบ
 const INITIAL_PAYMENT_SETTINGS = {
-  bankName: "ธนาคารกสิกรไทย (KBANK)",
-  accountNumber: "089-2-88899-0",
-  accountName: "บจก. อีซี่ไฟแนนซ์ โซลูชั่นส์",
-  promptPayNumber: "0891234567",
-  promptPayName: "บจก. อีซี่ไฟแนนซ์ โซลูชั่นส์",
-  officerPhone: "089-123-4567",
-  officerLine: "@easyfinance",
-  // SVG QR Code PromptPay มาตรฐาน (แสดงเป็นรูป QR สวยงามจนกว่าแอดมินจะอัปโหลดรูปของตนเอง)
-  qrImageUrl: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 300' width='300' height='300'><rect width='300' height='300' fill='%23ffffff'/><rect x='20' y='20' width='80' height='80' fill='%23000000'/><rect x='30' y='30' width='60' height='60' fill='%23ffffff'/><rect x='40' y='40' width='40' height='40' fill='%23000000'/><rect x='200' y='20' width='80' height='80' fill='%23000000'/><rect x='210' y='30' width='60' height='60' fill='%23ffffff'/><rect x='220' y='40' width='40' height='40' fill='%23000000'/><rect x='20' y='200' width='80' height='80' fill='%23000000'/><rect x='30' y='210' width='60' height='60' fill='%23ffffff'/><rect x='40' y='220' width='40' height='40' fill='%23000000'/><rect x='120' y='30' width='20' height='60' fill='%23000000'/><rect x='150' y='20' width='30' height='20' fill='%23000000'/><rect x='110' y='110' width='80' height='80' fill='%2300796B'/><text x='150' y='155' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23ffffff' text-anchor='middle'>PROMPT</text><text x='150' y='175' font-family='sans-serif' font-size='16' font-weight='bold' fill='%23ffffff' text-anchor='middle'>PAY</text><rect x='40' y='120' width='50' height='20' fill='%23000000'/><rect x='30' y='160' width='30' height='20' fill='%23000000'/><rect x='220' y='120' width='40' height='30' fill='%23000000'/><rect x='200' y='170' width='60' height='20' fill='%23000000'/><rect x='120' y='210' width='40' height='20' fill='%23000000'/><rect x='170' y='240' width='50' height='30' fill='%23000000'/><rect x='120' y='250' width='30' height='30' fill='%23000000'/><text x='150' y='292' font-family='sans-serif' font-size='11' font-weight='bold' fill='%23333333' text-anchor='middle'>สแกนเพื่อชำระค่างวด EasyFinance</text></svg>",
+  bankName: "",
+  accountNumber: "",
+  accountName: "",
+  promptPayNumber: "",
+  promptPayName: "",
+  officerPhone: "",
+  officerLine: "",
+  qrImageUrl: "",
   updatedAt: new Date().toISOString()
 };
 
@@ -835,6 +834,16 @@ class EasyFinanceDatabase {
     } else {
       installment.verifiedBy = "admin";
       installment.transactionRef = "MANUAL-" + Date.now();
+    }
+
+    // Requirement 4: หากสัญญามีค่าปรับค้างอยู่ เมื่อชำระงวด บันทึกยอดค่าปรับเข้าสะสมและล้างค่าปรับค้าง
+    const activeFine = Math.max(0, Number(contract.lateFine) || 0);
+    if (activeFine > 0) {
+      installment.paidLateFine = activeFine;
+      contract.totalLateFinesCollected = (Number(contract.totalLateFinesCollected) || 0) + activeFine;
+      contract.lateFine = 0;
+      contract.lateFineReason = "";
+      contract.hasLateFine = false;
     }
 
     // คำนวณยอดคงเหลือของแต่ละงวดใหม่ให้ถูกต้องเสมอ

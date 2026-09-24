@@ -24,6 +24,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const statTotalCollected = document.getElementById("statTotalCollected");
   const statTotalOutstanding = document.getElementById("statTotalOutstanding");
   const statContractsCount = document.getElementById("statContractsCount");
+  const statTotalLateFines = document.getElementById("statTotalLateFines");
+  const statLateFinesSub = document.getElementById("statLateFinesSub");
+  const cardStatLateFines = document.getElementById("cardStatLateFines");
 
   // DOM Elements - Table & Search
   const adminSearchInput = document.getElementById("adminSearchInput");
@@ -633,14 +636,11 @@ document.addEventListener("DOMContentLoaded", () => {
       totalCollected += downPayment;
 
       const installments = c.installments || [];
-      installments.forEach((inst) => {
-        const amt = Number(inst.amount) || 0;
-        if (inst.status === "paid") {
-          totalCollected += amt;
-        } else {
-          totalOutstanding += amt;
-        }
-      });
+      const paidAmt = installments
+        .filter((inst) => inst.status === "paid")
+        .reduce((sum, inst) => sum + (Number(inst.amount) || 0), 0);
+      totalCollected += paidAmt;
+      totalOutstanding += Math.max(0, totalAmount - paidAmt);
     });
 
     const paidCustomersCount = list.filter((c) => {
@@ -906,6 +906,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const statLabelCount = document.getElementById("statLabelCount");
 
     if (currentTab === "bad_debt") {
+      if (cardStatLateFines) cardStatLateFines.style.display = "none";
       const allBadDebts = window.easyFinanceDB.getBadDebts ? window.easyFinanceDB.getBadDebts() : [];
       let totalBadAmount = 0;
       let badDebtCount = 0;
@@ -931,6 +932,8 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (cardStatLateFines) cardStatLateFines.style.display = "";
+
     if (statLabelFinanced) statLabelFinanced.textContent = "ยอดปล่อยสินเชื่อรวม";
     if (statLabelCollected) statLabelCollected.textContent = "ยอดเก็บเงินได้แล้ว";
     if (statLabelOutstanding) statLabelOutstanding.textContent = "ยอดคงค้างรอเก็บ";
@@ -940,31 +943,52 @@ document.addEventListener("DOMContentLoaded", () => {
     let totalFinanced = 0;
     let totalCollected = 0;
     let totalOutstanding = 0;
+    let totalLateFinesCollected = 0;
+    let totalLateFinesPending = 0;
 
     contracts.forEach((c) => {
       const downPayment = Number(c.downPayment) || 0;
       const totalAmount = Number(c.totalAmount) || 0;
 
-      // 1. หลังบ้านแสดงยอดทั้งหมดที่รวมทั้งเงินดาวน์ด้วย (ยอดปล่อยทั้งหมด = ยอดผ่อนรวม + เงินดาวน์)
+      // 1. หลังบ้านแสดงยอดทั้งหมดที่รวมทั้งเงินดาวน์ด้วย (ยอดปล่อยทั้งหมด = ยอดผ่อนรวม + เงินดาวน์) ไม่รวมค่าปรับ
       totalFinanced += (totalAmount + downPayment);
-      // เงินดาวน์นับเป็นยอดที่เก็บมาได้แล้ว
       totalCollected += downPayment;
 
       const installments = c.installments || [];
+      const contractPaidAmount = installments
+        .filter((inst) => inst.status === "paid")
+        .reduce((sum, inst) => sum + (Number(inst.amount) || 0), 0);
+      
+      totalCollected += contractPaidAmount;
+      // ยอดคงค้างรอเก็บคำนวณจากยอดต้นลบยอดที่จ่ายแล้วเสมอ
+      totalOutstanding += Math.max(0, totalAmount - contractPaidAmount);
+
+      // Requirement 4: คำนวณยอดค่าปรับแยกต่างหาก ไม่รวมกับยอดปล่อยสินเชื่อรวม
+      const contractCollectedFine = Number(c.totalLateFinesCollected) || 0;
+      let instCollectedFine = 0;
       installments.forEach((inst) => {
-        const amt = Number(inst.amount) || 0;
-        if (inst.status === "paid") {
-          totalCollected += amt;
-        } else {
-          totalOutstanding += amt;
-        }
+        if (inst.paidLateFine) instCollectedFine += Number(inst.paidLateFine) || 0;
       });
+      totalLateFinesCollected += Math.max(contractCollectedFine, instCollectedFine);
+      totalLateFinesPending += Number(c.lateFine) || 0;
     });
 
     statTotalFinanced.textContent = `฿${totalFinanced.toLocaleString()}`;
     statTotalCollected.textContent = `฿${totalCollected.toLocaleString()}`;
     statTotalOutstanding.textContent = `฿${totalOutstanding.toLocaleString()}`;
     statContractsCount.textContent = contracts.length;
+
+    // อัปเดตช่องรวมยอดค่าปรับ (Requirement 4)
+    if (statTotalLateFines) {
+      statTotalLateFines.textContent = `฿${totalLateFinesCollected.toLocaleString()}`;
+    }
+    if (statLateFinesSub) {
+      if (totalLateFinesPending > 0) {
+        statLateFinesSub.textContent = `เก็บได้ ฿${totalLateFinesCollected.toLocaleString()} (ค้าง ฿${totalLateFinesPending.toLocaleString()})`;
+      } else {
+        statLateFinesSub.textContent = `ยอดค่าปรับที่เก็บได้ทั้งหมด`;
+      }
+    }
 
     // Update 3.1 Quick Summary Category Pills (ยอดรวมรายวัน / รายอาทิตย์ / รายเดือน)
     const dailyStats = getCategoryStats("daily");
@@ -1476,9 +1500,11 @@ document.addEventListener("DOMContentLoaded", () => {
     contractsList.forEach((c) => {
       const installments = c.installments || [];
       const pendingInst = installments.find((i) => i.status !== "paid");
-      const remainingBalance = installments
-        .filter((i) => i.status !== "paid")
+      const contractTotal = Number(c.totalAmount) || 0;
+      const totalPaidAmt = installments
+        .filter((i) => i.status === "paid")
         .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+      const remainingBalance = Math.max(0, contractTotal - totalPaidAmt);
 
       // ตรวจสอบสถานะการชำระเงินตามวันที่เลือก
       const dailyStatus = getDailyStatusForDate(c, selectedDailyDate);
@@ -1608,9 +1634,11 @@ document.addEventListener("DOMContentLoaded", () => {
     tableBody.innerHTML = "";
     contractsList.forEach((c) => {
       const installments = c.installments || [];
-      const remainingBalance = installments
-        .filter((i) => i.status !== "paid")
+      const contractTotal = Number(c.totalAmount) || 0;
+      const totalPaidAmt = installments
+        .filter((i) => i.status === "paid")
         .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+      const remainingBalance = Math.max(0, contractTotal - totalPaidAmt);
 
       const statusObj = getWeeklyStatusForRange(c, weeklyStartDate, weeklyEndDate);
       const isPaid = statusObj.status === "paid";
@@ -1738,9 +1766,11 @@ document.addEventListener("DOMContentLoaded", () => {
     tableBody.innerHTML = "";
     contractsList.forEach((c) => {
       const installments = c.installments || [];
-      const remainingBalance = installments
-        .filter((i) => i.status !== "paid")
+      const contractTotal = Number(c.totalAmount) || 0;
+      const totalPaidAmt = installments
+        .filter((i) => i.status === "paid")
         .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+      const remainingBalance = Math.max(0, contractTotal - totalPaidAmt);
 
       const statusObj = getMonthlyStatusForMonth(c, selectedMonthlyMonth);
       const isPaid = statusObj.status === "paid";
@@ -2067,7 +2097,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
     const closedContractsCount = parseInt(formClosedContractsCount.value, 10) || 0;
 
-    // คำนวณค่างวดต่องวด: ให้สิทธิ์แอดมินกรอกเองได้อย่างอิสระ หากไม่กรอกจะเฉลี่ยยอดรวมให้ (เอาสูตรคำนวณอัตโนมัติออกแล้ว)
+    // คำนวณค่างวดต่องวด: ให้สิทธิ์แอดมินกรอกเองได้อย่างอิสระ (Manual 100% เอาสูตรคำนวณอัตโนมัติออกทั้งหมด)
     let installmentAmount = formInstallmentAmount ? parseFloat(formInstallmentAmount.value) : 0;
     if (!installmentAmount || isNaN(installmentAmount) || installmentAmount <= 0) {
       installmentAmount = totalInstallments > 0 ? Math.round(totalAmount / totalInstallments) : totalAmount;
@@ -2078,8 +2108,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let installments = [];
 
     if (existing && existing.installments && existing.installments.length === totalInstallments) {
-      // ใช้ตารางงวดเดิมเพื่อรักษาสถานะงวดที่จ่ายไปแล้ว และอัปเดตกำหนดวันที่ชำระใหม่ตาม firstPaymentDate
-      installments = existing.installments.map((inst, idx) => {
+      // สัญญาเดิม: รักษาสถานะงวดที่จ่ายไปแล้ว อัปเดตกำหนดวันชำระ และยอดค่างวดต่องวดตามที่แอดมินกรอก
+      installments = existing.installments.map((inst) => {
         const i = inst.installmentNo;
         const newDueDateStr = calculateInstallmentDueDate(firstPaymentDate, paymentFrequency, i);
         if (inst.status !== "paid") {
@@ -2092,33 +2122,30 @@ document.addEventListener("DOMContentLoaded", () => {
         return inst;
       });
     } else {
-      // สร้างตารางงวดใหม่ รันวันที่เริ่มจ่ายและงวดถัดไปตาม firstPaymentDate
+      // สร้างตารางงวดใหม่: ทุกงวดใช้ยอดที่แอดมินกรอกตรงๆ (ไม่มีสูตรตัดเศษหรือบวกดอกเบี้ยอัตโนมัติ)
       for (let i = 1; i <= totalInstallments; i++) {
         const dueDateStr = calculateInstallmentDueDate(firstPaymentDate, paymentFrequency, i);
-
-        // สำหรับงวดสุดท้าย หากผลรวมคลาดเคลื่อนจากเศษ ปรับให้ตรงกับ totalAmount
-        let thisInstAmount = installmentAmount;
-        if (i === totalInstallments) {
-          const prevTotal = installmentAmount * (totalInstallments - 1);
-          if (totalAmount > prevTotal) {
-            thisInstAmount = totalAmount - prevTotal;
-          }
-        }
-
-        const remainingAfter = totalAmount - (installmentAmount * (i - 1) + thisInstAmount);
-
         installments.push({
           installmentNo: i,
           dueDate: dueDateStr,
-          amount: thisInstAmount,
+          amount: installmentAmount,
           status: "pending",
           paidAt: null,
           slipUrl: null,
           transactionRef: null,
-          remainingBalanceAfter: remainingAfter > 0 ? remainingAfter : 0
+          remainingBalanceAfter: 0
         });
       }
     }
+
+    // คำนวณยอดคงเหลือ remainingBalanceAfter ของทุกงวดตามยอดต้นใหม่ totalAmount เสมอ
+    let runningBalance = totalAmount;
+    installments.forEach((inst) => {
+      if (inst.status === "paid") {
+        runningBalance -= (Number(inst.amount) || 0);
+      }
+      inst.remainingBalanceAfter = Math.max(0, runningBalance);
+    });
 
     const contractData = {
       id,
@@ -2964,6 +2991,12 @@ document.addEventListener("DOMContentLoaded", () => {
                   <button type="button" class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
                     <i class="fa-solid fa-triangle-exclamation"></i> ${Number(c.lateFine) > 0 ? "แก้ไข/ล้างค่าปรับ" : "กรอกค่าปรับ"}
                   </button>
+                  <button type="button" class="btn-table-action" onclick="toggleContractTableExpand('${c.id}')" id="btnToggleExpand_${c.id}" style="padding: 3px 8px; font-size: 0.74rem; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;" title="ขยายดูตารางงวดทั้งหมด">
+                    <i class="fa-solid fa-up-right-and-down-left-from-center"></i> ขยายตาราง (${totalInst} งวด)
+                  </button>
+                  <button type="button" class="btn-table-action" onclick="printContractPdf('${c.id}')" style="padding: 3px 8px; font-size: 0.74rem; border-color: rgba(168, 85, 247, 0.4); color: #c084fc;" title="พิมพ์หรือบันทึกเฉพาะสัญญานี้เป็น PDF">
+                    <i class="fa-solid fa-file-pdf"></i> พิมพ์ / PDF สัญญานี้
+                  </button>
                 </div>
                 <div style="font-size: 0.88rem; color: #fff; margin-top: 4px; font-weight: 500;">
                   <i class="fa-solid fa-box" style="color: var(--primary); margin-right: 4px;"></i> สิ่งที่ผ่อน: <strong>${c.itemFinanced || "-"}</strong>
@@ -2987,7 +3020,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
             </div>
 
-            <div class="table-container" style="max-height: 240px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.06); border-radius: 6px;">
+            <div id="contractTableContainer_${c.id}" class="table-container contract-installment-table-container" style="max-height: 240px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; transition: max-height 0.25s ease;">
               <table class="admin-data-table" style="width: 100%; font-size: 0.82rem;">
                 <thead>
                   <tr>
@@ -3383,6 +3416,182 @@ document.addEventListener("DOMContentLoaded", () => {
   function printCurrentCustomerDossier() {
     window.print();
   }
+
+  // 10.1 สลับย่อ/ขยายตารางงวดสัญญาให้เห็นครบทุกงวด (Requirement 5)
+  window.toggleContractTableExpand = function (contractId) {
+    const container = document.getElementById(`contractTableContainer_${contractId}`);
+    const btn = document.getElementById(`btnToggleExpand_${contractId}`);
+    if (!container) return;
+
+    const isExpanded = container.classList.contains("expanded");
+    if (isExpanded) {
+      container.classList.remove("expanded");
+      container.style.maxHeight = "240px";
+      if (btn) btn.innerHTML = `<i class="fa-solid fa-up-right-and-down-left-from-center"></i> ขยายตาราง`;
+    } else {
+      container.classList.add("expanded");
+      container.style.maxHeight = "none";
+      if (btn) btn.innerHTML = `<i class="fa-solid fa-down-left-and-up-right-to-center"></i> ย่อตาราง`;
+    }
+  };
+
+  // 10.2 ส่งออก PDF หรือสั่งพิมพ์เฉพาะสัญญานี้โดยตรง เห็นครบทุกงวดไม่ถูกตัด (Requirement 5)
+  window.printContractPdf = function (contractId) {
+    const contract = window.easyFinanceDB.getContractById(contractId);
+    if (!contract) {
+      showAdminToast("ไม่พบข้อมูลสัญญา", "error");
+      return;
+    }
+
+    const installments = contract.installments || [];
+    const paidCount = installments.filter((i) => i.status === "paid").length;
+    const totalInst = installments.length;
+    const totalPaidAmount = installments
+      .filter((i) => i.status === "paid")
+      .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    const totalContractAmt = Number(contract.totalAmount) || 0;
+    const remainingBalance = Math.max(0, totalContractAmt - totalPaidAmount);
+    const downPayment = Number(contract.downPayment) || 0;
+    const lateFine = Number(contract.lateFine) || 0;
+
+    // สร้างเอกสาร Statement เฉพาะสัญญานี้
+    const printContainer = document.createElement("div");
+    printContainer.id = "singleContractPrintDocument";
+    printContainer.style.cssText = "padding: 24px; font-family: 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0f172a; background: #ffffff; max-width: 800px; margin: 0 auto;";
+
+    const rowsHtml = installments.map((inst) => `
+      <tr style="border-bottom: 1px solid #e2e8f0; font-size: 13px;">
+        <td style="padding: 8px 10px; text-align: center; font-weight: 600; border: 1px solid #cbd5e1;">งวดที่ ${inst.installmentNo}</td>
+        <td style="padding: 8px 10px; text-align: center; border: 1px solid #cbd5e1;">${formatDateThai(inst.dueDate)}</td>
+        <td style="padding: 8px 10px; text-align: right; font-weight: 700; border: 1px solid #cbd5e1;">฿${(Number(inst.amount) || 0).toLocaleString()}</td>
+        <td style="padding: 8px 10px; text-align: center; border: 1px solid #cbd5e1;">
+          ${
+            inst.status === "paid"
+              ? '<span style="color: #059669; font-weight: 700; background: #d1fae5; padding: 2px 8px; border-radius: 4px;">✓ ชำระแล้ว</span>'
+              : '<span style="color: #d97706; font-weight: 600; background: #fef3c7; padding: 2px 8px; border-radius: 4px;">รอชำระ</span>'
+          }
+        </td>
+        <td style="padding: 8px 10px; text-align: center; color: #64748b; font-size: 12px; border: 1px solid #cbd5e1;">${inst.paidAt ? formatDateThai(inst.paidAt.slice(0, 10)) : "-"}</td>
+        <td style="padding: 8px 10px; text-align: right; color: #475569; border: 1px solid #cbd5e1;">฿${(Number(inst.remainingBalanceAfter) || 0).toLocaleString()}</td>
+      </tr>
+    `).join("");
+
+    printContainer.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0284c7; padding-bottom: 14px; margin-bottom: 16px;">
+        <div>
+          <h2 style="margin: 0; color: #0284c7; font-size: 22px; font-weight: 700;">EasyFinance Solutions</h2>
+          <div style="font-size: 13px; color: #64748b; margin-top: 3px;">ใบแจ้งยอดและตารางผ่อนชำระค่างวดสินเชื่อ (Loan Statement)</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 17px; font-weight: 700; color: #0f172a;">เลขที่สัญญา: ${contract.id}</div>
+          <div style="font-size: 12px; color: #64748b;">วันที่ออกเอกสาร: ${formatDateThai(getLocalDateStr())}</div>
+        </div>
+      </div>
+
+      <!-- ข้อมูลผู้กู้ / ลูกค้า -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px;">
+        <div>
+          <div><strong style="color: #475569;">ชื่อ-นามสกุล:</strong> <span style="font-weight: 600; color: #0f172a;">${contract.name || "-"}</span></div>
+          <div style="margin-top: 4px;"><strong style="color: #475569;">เบอร์โทรศัพท์:</strong> ${contract.phone || "-"}</div>
+          <div style="margin-top: 4px;"><strong style="color: #475569;">เลขบัตรประชาชน:</strong> ${contract.idCard || "-"}</div>
+          <div style="margin-top: 4px;"><strong style="color: #475569;">ที่อยู่:</strong> ${contract.address || "-"}</div>
+        </div>
+        <div>
+          <div><strong style="color: #475569;">สิ่งที่ผ่อน/รายการสินเชื่อ:</strong> <span style="font-weight: 600; color: #0284c7;">${contract.itemFinanced || "-"}</span></div>
+          <div style="margin-top: 4px;"><strong style="color: #475569;">รอบการชำระ:</strong> ${contract.paymentFrequency === "daily" ? "รายวัน" : contract.paymentFrequency === "weekly" ? "รายอาทิตย์" : "รายเดือน"} (${contract.dueSchedule || "-"})</div>
+          <div style="margin-top: 4px;"><strong style="color: #475569;">สถานะสัญญา:</strong> ${contract.status === "completed" ? "ปิดสัญญาเรียบร้อย" : "กำลังผ่อนชำระ"}</div>
+          ${lateFine > 0 ? `<div style="margin-top: 4px; color: #ea580c; font-weight: 600;"><strong>ค่าปรับชำระล่าช้า:</strong> ฿${lateFine.toLocaleString()} (${contract.lateFineReason || "เกินกำหนด"})</div>` : ""}
+        </div>
+      </div>
+
+      <!-- สรุปตัวเลขยอดเงิน 4 ช่อง -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; text-align: center;">
+        <div style="background: #e0f2fe; padding: 10px; border-radius: 6px; border: 1px solid #bae6fd;">
+          <div style="font-size: 11px; color: #0369a1;">ยอดผ่อนรวม (ต้น+ดอก)</div>
+          <div style="font-size: 16px; font-weight: 700; color: #0284c7; margin-top: 2px;">฿${totalContractAmt.toLocaleString()}</div>
+        </div>
+        <div style="background: #f1f5f9; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1;">
+          <div style="font-size: 11px; color: #475569;">เงินดาวน์</div>
+          <div style="font-size: 16px; font-weight: 700; color: #334155; margin-top: 2px;">฿${downPayment.toLocaleString()}</div>
+        </div>
+        <div style="background: #dcfce7; padding: 10px; border-radius: 6px; border: 1px solid #bbf7d0;">
+          <div style="font-size: 11px; color: #15803d;">ชำระแล้ว (${paidCount}/${totalInst} งวด)</div>
+          <div style="font-size: 16px; font-weight: 700; color: #16a34a; margin-top: 2px;">฿${totalPaidAmount.toLocaleString()}</div>
+        </div>
+        <div style="background: #fef3c7; padding: 10px; border-radius: 6px; border: 1px solid #fde68a;">
+          <div style="font-size: 11px; color: #b45309;">ยอดคงเหลือรอชำระ</div>
+          <div style="font-size: 16px; font-weight: 700; color: #d97706; margin-top: 2px;">฿${remainingBalance.toLocaleString()}</div>
+        </div>
+      </div>
+
+      <!-- ตารางงวดทั้งหมด (เห็นครบทุกงวด 100%) -->
+      <table style="width: 100%; border-collapse: collapse; margin-top: 8px;">
+        <thead>
+          <tr style="background: #0f172a; color: #ffffff; font-size: 12px;">
+            <th style="padding: 8px 10px; border: 1px solid #334155;">งวดที่</th>
+            <th style="padding: 8px 10px; border: 1px solid #334155;">กำหนดชำระ</th>
+            <th style="padding: 8px 10px; border: 1px solid #334155; text-align: right;">ค่างวด (บาท)</th>
+            <th style="padding: 8px 10px; border: 1px solid #334155;">สถานะ</th>
+            <th style="padding: 8px 10px; border: 1px solid #334155;">วันที่ชำระจริง</th>
+            <th style="padding: 8px 10px; border: 1px solid #334155; text-align: right;">คงเหลือหลังชำระ</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+
+      <div style="margin-top: 24px; display: flex; justify-content: space-between; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+        <div>เอกสารออกโดยระบบ EasyFinance Solutions Management</div>
+        <div>หน้า 1 / 1 (ข้อมูลสมบูรณ์)</div>
+      </div>
+    `;
+
+    if (typeof html2pdf !== "undefined") {
+      showAdminToast(`กำลังสร้างไฟล์ PDF สัญญา ${contract.id}...`, "info");
+      const cleanCustomerName = (contract.name || "Customer").replace(/[\/\\?%*:|"<>]/g, "");
+      const opt = {
+        margin: [8, 8, 8, 8],
+        filename: `ตารางสัญญา_${contract.id}_${cleanCustomerName}_${getLocalDateStr()}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+      };
+
+      html2pdf()
+        .set(opt)
+        .from(printContainer)
+        .save()
+        .then(() => {
+          showAdminToast(`ดาวน์โหลดไฟล์ PDF สัญญา ${contract.id} สำเร็จแล้ว`, "success");
+        })
+        .catch((err) => {
+          console.error("Single contract PDF export error:", err);
+          showAdminToast("เกิดข้อผิดพลาดในการสร้าง PDF ลองใช้ปุ่มพิมพ์แทน", "error");
+        });
+    } else {
+      const printWin = window.open("", "_blank");
+      if (printWin) {
+        printWin.document.write(`
+          <html>
+            <head>
+              <title>ตารางสัญญา ${contract.id} - ${contract.name}</title>
+              <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap&subset=thai,latin" rel="stylesheet">
+              <style>
+                body { margin: 0; padding: 20px; font-family: 'Prompt', sans-serif; background: #fff; color: #000; }
+                @page { size: A4 portrait; margin: 10mm; }
+              </style>
+            </head>
+            <body>
+              ${printContainer.outerHTML}
+              <script>window.onload = function() { window.print(); window.close(); };<\/script>
+            </body>
+          </html>
+        `);
+        printWin.document.close();
+      }
+    }
+  };
 
   // Event Listeners สำหรับ Customer Database & Dossier Modals
   if (menuCustomerDb) {

@@ -195,6 +195,18 @@
               <i class="fa-solid fa-users"></i>
             </div>
           </div>
+
+          <!-- ช่องรวมยอดค่าปรับ (Requirement 4: แยกต่างหาก ไม่รวมกับยอดปล่อยสินเชื่อรวม) -->
+          <div class="stat-counter-card" id="cardStatLateFines">
+            <div class="stat-info">
+              <div class="stat-label" id="statLabelLateFines">ยอดรวมค่าปรับ</div>
+              <div class="stat-val" id="statTotalLateFines" style="color: #fb923c;">฿0</div>
+              <div id="statLateFinesSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">แยกเฉพาะค่าปรับ</div>
+            </div>
+            <div class="stat-icon-box" id="statIconLateFines" style="background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3);">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+          </div>
         </div>
 
         <!-- Action Bar: Search, Dashboard Overview Button & Add Contract -->
@@ -530,11 +542,11 @@
         <div class="form-grid-2">
           <div class="form-group-admin">
             <label class="form-label-admin">ชื่อบัญชี</label>
-            <input type="text" id="settingAccountName" class="input-admin" placeholder="เช่น บจก. อีซี่ไฟแนนซ์">
+            <input type="text" id="settingAccountName" class="input-admin" placeholder="ระบุชื่อบัญชีรับเงิน">
           </div>
           <div class="form-group-admin">
             <label class="form-label-admin">เบอร์พร้อมเพย์ (PromptPay)</label>
-            <input type="text" id="settingPromptPay" class="input-admin" placeholder="เช่น 0891234567">
+            <input type="text" id="settingPromptPay" class="input-admin" placeholder="ระบุเบอร์พร้อมเพย์ หรือเลขประจำตัว">
           </div>
         </div>
 
