@@ -131,6 +131,28 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // Safety check: หากเผลอเอารหัสผ่านหัวหน้าหรือพนักงานมาล็อกอินในหน้าลูกค้า ให้พาไปหน้าแอดมินหลังบ้านอัตโนมัติ
+    const managerPass = localStorage.getItem("easyfinance_manager_password") || localStorage.getItem("easyfinance_admin_password") || "Easy123";
+    const staffPass = localStorage.getItem("easyfinance_staff_password") || "Staff123";
+    const passLower = password.toLowerCase();
+    const idLower = identifier.toLowerCase();
+    
+    if (
+      passLower === managerPass.toLowerCase() ||
+      passLower === staffPass.toLowerCase() ||
+      passLower === "easy123" ||
+      passLower === "staff123" ||
+      idLower === "admin" ||
+      idLower === "manager" ||
+      idLower === "staff"
+    ) {
+      showToast("ตรวจพบรหัสผู้ดูแล/พนักงาน กำลังพาไปหน้าระบบหลังบ้าน...", "info");
+      setTimeout(() => {
+        window.location.href = "admin.html";
+      }, 600);
+      return;
+    }
+
     const contract = window.easyFinanceDB.getContractByEmail(identifier);
 
     if (!contract) {

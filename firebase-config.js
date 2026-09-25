@@ -28,6 +28,8 @@ const INITIAL_PAYMENT_SETTINGS = {
   officerPhone: "",
   officerLine: "",
   qrImageUrl: "",
+  managerPassword: "Easy123",
+  staffPassword: "Staff123",
   updatedAt: new Date().toISOString()
 };
 
@@ -621,12 +623,20 @@ class EasyFinanceDatabase {
       console.error("❌ Firestore contracts snapshot error:", error);
     });
 
-    // Listen to Payment Settings (ซิงค์ QR และบัญชีธนาคารแบบ Real-time)
+    // Listen to Payment Settings (ซิงค์ QR, บัญชีธนาคาร และรหัสผ่านหัวหน้า/พนักงานแบบ Real-time ข้ามอุปกรณ์)
     this.firestore.collection("settings").doc("payment").onSnapshot((doc) => {
       if (doc.exists) {
+        const data = doc.data() || {};
+        if (data.managerPassword) {
+          localStorage.setItem("easyfinance_manager_password", data.managerPassword);
+          localStorage.setItem("easyfinance_admin_password", data.managerPassword);
+        }
+        if (data.staffPassword) {
+          localStorage.setItem("easyfinance_staff_password", data.staffPassword);
+        }
         localStorage.setItem(
           this.storageKeyPrefix + "settings",
-          JSON.stringify(doc.data())
+          JSON.stringify(data)
         );
         this.notifyListeners(false);
       }

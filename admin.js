@@ -308,11 +308,36 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 1. AUTHENTICATION & ROLE MANAGEMENT (Requirement 4 & 5) ---
 
   function getManagerPass() {
-    return localStorage.getItem("easyfinance_manager_password") || localStorage.getItem("easyfinance_admin_password") || "Easy123";
+    let dbPass = "";
+    try {
+      if (window.easyFinanceDB && typeof window.easyFinanceDB.getPaymentSettings === "function") {
+        const s = window.easyFinanceDB.getPaymentSettings();
+        if (s && s.managerPassword) dbPass = String(s.managerPassword).trim();
+      }
+    } catch (e) {}
+    return (
+      (localStorage.getItem("easyfinance_manager_password") || "").trim() ||
+      (localStorage.getItem("easyfinance_admin_password") || "").trim() ||
+      (sessionStorage.getItem("easyfinance_manager_password") || "").trim() ||
+      dbPass ||
+      "Easy123"
+    );
   }
 
   function getStaffPass() {
-    return localStorage.getItem("easyfinance_staff_password") || "Staff123";
+    let dbPass = "";
+    try {
+      if (window.easyFinanceDB && typeof window.easyFinanceDB.getPaymentSettings === "function") {
+        const s = window.easyFinanceDB.getPaymentSettings();
+        if (s && s.staffPassword) dbPass = String(s.staffPassword).trim();
+      }
+    } catch (e) {}
+    return (
+      (localStorage.getItem("easyfinance_staff_password") || "").trim() ||
+      (sessionStorage.getItem("easyfinance_staff_password") || "").trim() ||
+      dbPass ||
+      "Staff123"
+    );
   }
 
   function isManagerLoggedIn() {
@@ -362,13 +387,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   adminAuthForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    const pass = adminSecretPass.value.trim();
-    const managerPass = getManagerPass();
-    const staffPass = getStaffPass();
+    const pass = adminSecretPass ? adminSecretPass.value.trim() : "";
+    const managerPass = getManagerPass().trim();
+    const staffPass = getStaffPass().trim();
 
     const passClean = pass.toLowerCase();
-    const isManager = passClean === managerPass.trim().toLowerCase() || passClean === "easy123";
-    const isStaff = passClean === staffPass.trim().toLowerCase() || passClean === "staff123" || passClean === "staff" || passClean === "1234";
+    const isManager = (pass === managerPass) || (passClean === managerPass.toLowerCase()) || (passClean === "easy123");
+    const isStaff = (pass === staffPass) || (passClean === staffPass.toLowerCase()) || (passClean === "staff123") || (passClean === "staff") || (passClean === "1234");
 
     if (isManager) {
       sessionStorage.setItem("easyfinance_admin_auth", "true");
@@ -429,7 +454,12 @@ document.addEventListener("DOMContentLoaded", () => {
     sessionStorage.removeItem("easyfinance_admin_auth");
     sessionStorage.removeItem("easyfinance_admin_role");
     adminLoginOverlay.style.display = "flex";
-    adminSecretPass.value = "";
+    if (adminSecretPass) {
+      adminSecretPass.value = "";
+      adminSecretPass.type = "password";
+      const eyeBtn = adminLoginOverlay ? adminLoginOverlay.querySelector(".btn-toggle-eye i") : null;
+      if (eyeBtn) eyeBtn.className = "fa-solid fa-eye";
+    }
     showAdminToast("ออกจากระบบหลังบ้านแล้ว", "success");
   });
 
@@ -550,10 +580,10 @@ document.addEventListener("DOMContentLoaded", () => {
     passSettingsUnlockForm.addEventListener("submit", (e) => {
       e.preventDefault();
       const entered = passSettingsCurrentInput ? passSettingsCurrentInput.value.trim() : "";
-      const currentManagerPass = getManagerPass();
+      const currentManagerPass = getManagerPass().trim();
 
       const passClean = entered.toLowerCase();
-      const isCorrect = passClean === currentManagerPass.trim().toLowerCase() || passClean === "easy123";
+      const isCorrect = (entered === currentManagerPass) || (passClean === currentManagerPass.toLowerCase()) || (passClean === "easy123");
 
       if (isCorrect) {
         if (passSettingsUnlockError) passSettingsUnlockError.style.display = "none";
@@ -584,23 +614,45 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Phase 2: บันทึกรหัสผ่านใหม่
-  if (passwordSettingsForm) {
-    passwordSettingsForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const newManager = settingManagerPass ? settingManagerPass.value.trim() : "";
-      const newStaff = settingStaffPass ? settingStaffPass.value.trim() : "";
+  window.saveNewAdminPasswords = async function (e) {
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+    const newManager = settingManagerPass ? settingManagerPass.value.trim() : "";
+    const newStaff = settingStaffPass ? settingStaffPass.value.trim() : "";
 
-      if (!newManager || !newStaff) {
-        showAdminToast("กรุณากรอกรหัสผ่านให้ครบทั้ง 2 ช่อง", "error");
-        return;
+    if (!newManager || !newStaff) {
+      showAdminToast("กรุณากรอกรหัสผ่านให้ครบทั้ง 2 ช่อง", "error");
+      return;
+    }
+
+    // 1. บันทึกลง LocalStorage & SessionStorage ทันที
+    localStorage.setItem("easyfinance_manager_password", newManager);
+    localStorage.setItem("easyfinance_admin_password", newManager);
+    localStorage.setItem("easyfinance_staff_password", newStaff);
+    sessionStorage.setItem("easyfinance_manager_password", newManager);
+    sessionStorage.setItem("easyfinance_staff_password", newStaff);
+
+    // 2. ซิงค์ขึ้น Firebase Cloud Database ทันที (เพื่อให้ทุกเครื่อง/มือถือ/iPad ได้รับรหัสใหม่ตรงกัน 100%)
+    if (window.easyFinanceDB && typeof window.easyFinanceDB.savePaymentSettings === "function") {
+      try {
+        await window.easyFinanceDB.savePaymentSettings({
+          managerPassword: newManager,
+          staffPassword: newStaff
+        });
+      } catch (err) {
+        console.warn("Could not sync passwords to cloud settings:", err);
       }
+    }
 
-      localStorage.setItem("easyfinance_manager_password", newManager);
-      localStorage.setItem("easyfinance_admin_password", newManager);
-      localStorage.setItem("easyfinance_staff_password", newStaff);
-      closePasswordSettingsModal();
-      showAdminToast("บันทึกรหัสผ่านหัวหน้าและพนักงานเรียบร้อยแล้ว", "success");
-    });
+    closePasswordSettingsModal();
+    showAdminToast(`บันทึกรหัสผ่านใหม่สำเร็จแล้ว (หัวหน้า: ${newManager} / พนักงาน: ${newStaff})`, "success");
+  };
+
+  if (passwordSettingsForm) {
+    passwordSettingsForm.addEventListener("submit", window.saveNewAdminPasswords);
+  }
+  const btnSavePasswordSettings = document.getElementById("btnSavePasswordSettings");
+  if (btnSavePasswordSettings) {
+    btnSavePasswordSettings.addEventListener("click", window.saveNewAdminPasswords);
   }
 
   window.togglePassInputVisibility = function (inputId, btn) {
@@ -897,18 +949,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // หากผ่อนครบทุกงวดแล้ว ถือว่าสถานะคือจ่ายแล้ว
     if (isFullyPaid) return "paid";
 
-    if (freq === "daily") {
+    if (freq === "daily" || freq === "weekly" || freq === "monthly") {
       return getDailyStatusForDate(contract, selectedDailyDate).status;
-    }
-
-    if (freq === "weekly") {
-      const curWeek = getThisWeekRange(selectedDailyDate);
-      return getWeeklyStatusForRange(contract, curWeek.start, curWeek.end).status;
-    }
-
-    if (freq === "monthly") {
-      const curMonth = selectedDailyDate.slice(0, 7);
-      return getMonthlyStatusForMonth(contract, curMonth).status;
     }
 
     return isFullyPaid ? "paid" : "pending";
@@ -1028,27 +1070,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const paidCustomersCount = list.filter((c) => {
-      if (freq === "daily") {
+      if (freq === "daily" || freq === "weekly" || freq === "monthly") {
         return getDailyStatusForDate(c, selectedDailyDate).status === "paid";
-      } else if (freq === "weekly") {
-        const curWeek = getThisWeekRange(selectedDailyDate);
-        return getWeeklyStatusForRange(c, curWeek.start, curWeek.end).status === "paid";
-      } else if (freq === "monthly") {
-        const curMonth = selectedDailyDate.slice(0, 7);
-        return getMonthlyStatusForMonth(c, curMonth).status === "paid";
       }
       return getCustomerPaymentStatus(c, freq) === "paid";
     }).length;
 
     const pendingCustomersCount = list.filter((c) => {
-      if (freq === "daily") {
+      if (freq === "daily" || freq === "weekly" || freq === "monthly") {
         return getDailyStatusForDate(c, selectedDailyDate).status === "pending";
-      } else if (freq === "weekly") {
-        const curWeek = getThisWeekRange(selectedDailyDate);
-        return getWeeklyStatusForRange(c, curWeek.start, curWeek.end).status === "pending";
-      } else if (freq === "monthly") {
-        const curMonth = selectedDailyDate.slice(0, 7);
-        return getMonthlyStatusForMonth(c, curMonth).status === "pending";
       }
       return getCustomerPaymentStatus(c, freq) === "pending";
     }).length;
@@ -1119,8 +1149,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Toggle elements for dateFilterBar (Daily, Weekly, Monthly)
-    if (tabName === "daily" || tabName === "weekly" || tabName === "monthly") {
+    // Toggle elements for dateFilterBar (Daily, Weekly, Monthly, Motorcycle)
+    if (tabName === "daily" || tabName === "weekly" || tabName === "monthly" || tabName === "motorcycle") {
       if (dateFilterBar) dateFilterBar.style.display = "flex";
 
       if (dateFilterLabelText) {
@@ -1128,7 +1158,9 @@ document.addEventListener("DOMContentLoaded", () => {
           ? "เลือกวันที่สรุปยอดรายวัน:"
           : tabName === "weekly"
             ? "เลือกวันที่สรุปยอดรายอาทิตย์:"
-            : "เลือกวันที่สรุปยอดรายเดือน:";
+            : tabName === "monthly"
+              ? "เลือกวันที่สรุปยอดรายเดือน:"
+              : "เลือกวันที่สรุปยอดมอไซต์:";
       }
       if (dateFilterIcon) {
         if (tabName === "daily") {
@@ -1137,20 +1169,19 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (tabName === "weekly") {
           dateFilterIcon.className = "fa-solid fa-calendar-week";
           dateFilterIcon.style.color = "#60a5fa";
-        } else {
+        } else if (tabName === "monthly") {
           dateFilterIcon.className = "fa-solid fa-calendar-days";
           dateFilterIcon.style.color = "#c084fc";
+        } else {
+          dateFilterIcon.className = "fa-solid fa-motorcycle";
+          dateFilterIcon.style.color = "#38bdf8";
         }
       }
       if (btnDateToday) {
         btnDateToday.textContent = "วันนี้";
       }
       if (dateTotalLabelText) {
-        dateTotalLabelText.textContent = tabName === "daily"
-          ? "ยอดรวมของวัน:"
-          : tabName === "weekly"
-            ? "ยอดรวมของสัปดาห์:"
-            : "ยอดรวมของเดือน:";
+        dateTotalLabelText.textContent = "ยอดรวมของวัน:";
       }
       updatePeriodDateInputs();
     } else {
@@ -1216,22 +1247,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Helper to sync single date input value and toggle active class on quick buttons
+  // Helper to sync single date input value and toggle active class on quick buttons
   function updatePeriodDateInputs() {
     syncPeriodDates();
     if (adminDateFilter) adminDateFilter.value = selectedDailyDate;
 
     const todayStr = getLocalDateStr();
     if (btnDateToday) {
-      if (currentTab === "daily") {
-        btnDateToday.classList.toggle("active", selectedDailyDate === todayStr);
-      } else if (currentTab === "weekly") {
-        const thisWeek = getThisWeekRange(todayStr);
-        btnDateToday.classList.toggle("active", weeklyStartDate === thisWeek.start);
-      } else if (currentTab === "monthly") {
-        btnDateToday.classList.toggle("active", selectedMonthlyMonth === todayStr.slice(0, 7));
-      } else {
-        btnDateToday.classList.toggle("active", selectedDailyDate === todayStr);
-      }
+      btnDateToday.classList.toggle("active", selectedDailyDate === todayStr);
     }
   }
 
@@ -1261,15 +1284,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (btnDatePrev) {
     btnDatePrev.addEventListener("click", () => {
-      if (currentTab === "daily") {
-        selectedDailyDate = shiftDateStr(selectedDailyDate, -1);
-      } else if (currentTab === "weekly") {
-        selectedDailyDate = shiftDateStr(selectedDailyDate, -7);
-      } else if (currentTab === "monthly") {
-        const curMonth = selectedDailyDate.slice(0, 7);
-        const prevMonth = shiftMonthStr(curMonth, -1);
-        selectedDailyDate = `${prevMonth}-01`;
-      }
+      selectedDailyDate = shiftDateStr(selectedDailyDate, -1);
       syncPeriodDates();
       updatePeriodDateInputs();
       renderStatsCounters();
@@ -1280,15 +1295,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (btnDateNext) {
     btnDateNext.addEventListener("click", () => {
-      if (currentTab === "daily") {
-        selectedDailyDate = shiftDateStr(selectedDailyDate, 1);
-      } else if (currentTab === "weekly") {
-        selectedDailyDate = shiftDateStr(selectedDailyDate, 7);
-      } else if (currentTab === "monthly") {
-        const curMonth = selectedDailyDate.slice(0, 7);
-        const nextMonth = shiftMonthStr(curMonth, 1);
-        selectedDailyDate = `${nextMonth}-01`;
-      }
+      selectedDailyDate = shiftDateStr(selectedDailyDate, 1);
       syncPeriodDates();
       updatePeriodDateInputs();
       renderStatsCounters();
@@ -1747,61 +1754,81 @@ document.addEventListener("DOMContentLoaded", () => {
     ).length;
     const activeContractsCount = allContracts.length - completedContractsCount;
 
+    const dateDisplay = formatDateThai(selectedDailyDate);
+
     if (currentTab === "daily") {
-      const dateDisplay = formatDateThai(selectedDailyDate);
+      const allDailyContracts = allContracts.filter((c) => c.paymentFrequency === "daily" && !isMotorcycleContract(c));
+      let paidCount = 0;
+      let pendingCount = 0;
+      allDailyContracts.forEach((c) => {
+        if (getDailyStatusForDate(c, selectedDailyDate).status === "paid") paidCount++;
+        else pendingCount++;
+      });
       adminSubTabNav.innerHTML = `
         <button class="tab-btn ${currentSubFilter === "all" ? "active" : ""}" onclick="setSubFilter('all')">
           <i class="fa-solid fa-users"></i>
           <span>ลูกค้าทั้งหมดของรายวัน</span>
-          <span class="tab-count-badge">${dailyStats.contractsCount}</span>
+          <span class="tab-count-badge">${allDailyContracts.length}</span>
         </button>
         <button class="tab-btn ${currentSubFilter === "paid" ? "active" : ""}" onclick="setSubFilter('paid')">
           <i class="fa-solid fa-circle-check" style="color: #34d399;"></i>
           <span>จ่ายแล้ว (${dateDisplay})</span>
-          <span class="tab-count-badge">${dailyStats.paidCustomersCount}</span>
+          <span class="tab-count-badge">${paidCount}</span>
         </button>
         <button class="tab-btn ${currentSubFilter === "pending" ? "active" : ""}" onclick="setSubFilter('pending')">
           <i class="fa-solid fa-clock" style="color: #fbbf24;"></i>
           <span>ค้างจ่าย (${dateDisplay})</span>
-          <span class="tab-count-badge">${dailyStats.pendingCustomersCount}</span>
+          <span class="tab-count-badge">${pendingCount}</span>
         </button>
       `;
     } else if (currentTab === "weekly") {
-      const rangeDisplay = `${formatDateThai(weeklyStartDate)} - ${formatDateThai(weeklyEndDate)}`;
+      const allWeeklyContracts = allContracts.filter((c) => c.paymentFrequency === "weekly" && !isMotorcycleContract(c));
+      let paidCount = 0;
+      let pendingCount = 0;
+      allWeeklyContracts.forEach((c) => {
+        if (getDailyStatusForDate(c, selectedDailyDate).status === "paid") paidCount++;
+        else pendingCount++;
+      });
       adminSubTabNav.innerHTML = `
         <button class="tab-btn ${currentSubFilter === "all" ? "active" : ""}" onclick="setSubFilter('all')">
           <i class="fa-solid fa-users"></i>
           <span>ลูกค้าทั้งหมดของรายอาทิตย์</span>
-          <span class="tab-count-badge">${weeklyStats.contractsCount}</span>
+          <span class="tab-count-badge">${allWeeklyContracts.length}</span>
         </button>
         <button class="tab-btn ${currentSubFilter === "paid" ? "active" : ""}" onclick="setSubFilter('paid')">
           <i class="fa-solid fa-circle-check" style="color: #60a5fa;"></i>
-          <span>จ่ายแล้ว (${rangeDisplay})</span>
-          <span class="tab-count-badge">${weeklyStats.paidCustomersCount}</span>
+          <span>จ่ายแล้ว (${dateDisplay})</span>
+          <span class="tab-count-badge">${paidCount}</span>
         </button>
         <button class="tab-btn ${currentSubFilter === "pending" ? "active" : ""}" onclick="setSubFilter('pending')">
           <i class="fa-solid fa-clock" style="color: #fbbf24;"></i>
-          <span>ค้างจ่าย (${rangeDisplay})</span>
-          <span class="tab-count-badge">${weeklyStats.pendingCustomersCount}</span>
+          <span>ค้างจ่าย (${dateDisplay})</span>
+          <span class="tab-count-badge">${pendingCount}</span>
         </button>
       `;
     } else if (currentTab === "monthly") {
-      const monthDisplay = formatMonthThai(selectedMonthlyMonth);
+      const allMonthlyContracts = allContracts.filter((c) => c.paymentFrequency === "monthly" && !isMotorcycleContract(c));
+      let paidCount = 0;
+      let pendingCount = 0;
+      allMonthlyContracts.forEach((c) => {
+        if (getDailyStatusForDate(c, selectedDailyDate).status === "paid") paidCount++;
+        else pendingCount++;
+      });
       adminSubTabNav.innerHTML = `
         <button class="tab-btn ${currentSubFilter === "all" ? "active" : ""}" onclick="setSubFilter('all')">
           <i class="fa-solid fa-users"></i>
           <span>ลูกค้าทั้งหมดของรายเดือน</span>
-          <span class="tab-count-badge">${monthlyStats.contractsCount}</span>
+          <span class="tab-count-badge">${allMonthlyContracts.length}</span>
         </button>
         <button class="tab-btn ${currentSubFilter === "paid" ? "active" : ""}" onclick="setSubFilter('paid')">
           <i class="fa-solid fa-circle-check" style="color: #c084fc;"></i>
-          <span>จ่ายแล้ว (${monthDisplay})</span>
-          <span class="tab-count-badge">${monthlyStats.paidCustomersCount}</span>
+          <span>จ่ายแล้ว (${dateDisplay})</span>
+          <span class="tab-count-badge">${paidCount}</span>
         </button>
         <button class="tab-btn ${currentSubFilter === "pending" ? "active" : ""}" onclick="setSubFilter('pending')">
           <i class="fa-solid fa-clock" style="color: #fbbf24;"></i>
-          <span>ค้างจ่าย (${monthDisplay})</span>
-          <span class="tab-count-badge">${monthlyStats.pendingCustomersCount}</span>
+          <span>ค้างจ่าย (${dateDisplay})</span>
+          <span class="tab-count-badge">${pendingCount}</span>
         </button>
       `;
     } else if (currentTab === "overview") {
@@ -1866,22 +1893,28 @@ document.addEventListener("DOMContentLoaded", () => {
         </button>
       `;
     } else if (currentTab === "motorcycle") {
-      const mcStats = getMotorcycleStats();
+      const allMotorcycleContracts = allContracts.filter(isMotorcycleContract);
+      let paidCount = 0;
+      let pendingCount = 0;
+      allMotorcycleContracts.forEach((c) => {
+        if (getDailyStatusForDate(c, selectedDailyDate).status === "paid") paidCount++;
+        else pendingCount++;
+      });
       adminSubTabNav.innerHTML = `
         <button class="tab-btn ${currentSubFilter === "all" ? "active" : ""}" onclick="setSubFilter('all')">
           <i class="fa-solid fa-motorcycle" style="color: #38bdf8;"></i>
           <span>สัญญามอเตอร์ไซค์ทั้งหมด</span>
-          <span class="tab-count-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">${mcStats.contractsCount}</span>
-        </button>
-        <button class="tab-btn ${currentSubFilter === "pending" ? "active" : ""}" onclick="setSubFilter('pending')">
-          <i class="fa-solid fa-clock" style="color: #fbbf24;"></i>
-          <span>กำลังผ่อนชำระ</span>
-          <span class="tab-count-badge">${mcStats.pendingCustomersCount}</span>
+          <span class="tab-count-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">${allMotorcycleContracts.length}</span>
         </button>
         <button class="tab-btn ${currentSubFilter === "paid" ? "active" : ""}" onclick="setSubFilter('paid')">
           <i class="fa-solid fa-circle-check" style="color: #34d399;"></i>
-          <span>ปิดสัญญาแล้ว</span>
-          <span class="tab-count-badge">${mcStats.paidCustomersCount}</span>
+          <span>จ่ายแล้ว (${dateDisplay})</span>
+          <span class="tab-count-badge">${paidCount}</span>
+        </button>
+        <button class="tab-btn ${currentSubFilter === "pending" ? "active" : ""}" onclick="setSubFilter('pending')">
+          <i class="fa-solid fa-clock" style="color: #fbbf24;"></i>
+          <span>ค้างจ่าย (${dateDisplay})</span>
+          <span class="tab-count-badge">${pendingCount}</span>
         </button>
       `;
     } else {
@@ -1981,8 +2014,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // 3. Filter by Sub-filter (Requirement 2 & 3: กรองตรงตาม Badge)
     if (currentSubFilter !== "all") {
       filtered = filtered.filter((c) => {
-        if (currentTab === "all" || currentTab === "motorcycle") {
-          // สัญญาทั้งหมด หรือ สัญญามอเตอร์ไซค์: กำลังผ่อนชำระ vs ปิดสัญญาแล้ว
+        if (currentTab === "all") {
+          // สัญญาทั้งหมด: กำลังผ่อนชำระ vs ปิดสัญญาแล้ว
           const installments = c.installments || [];
           const isCompleted = installments.length > 0 && installments.every((i) => i.status === "paid");
           if (currentSubFilter === "pending") {
@@ -1991,15 +2024,9 @@ document.addEventListener("DOMContentLoaded", () => {
             return isCompleted; // ปิดสัญญาแล้ว
           }
           return true;
-        } else if (currentTab === "daily") {
-          // Requirement 2: กรองตามวันที่เลือกใน Daily Date Filter
+        } else if (currentTab === "daily" || currentTab === "weekly" || currentTab === "monthly" || currentTab === "motorcycle") {
+          // ค้นเป็นต่อวันได้เลย: กรองสถานะจ่ายแล้ว/ค้างจ่าย ตามวันที่เลือก
           return getDailyStatusForDate(c, selectedDailyDate).status === currentSubFilter;
-        } else if (currentTab === "weekly") {
-          // กรองตามช่วงวันที่เลือกใน Weekly Date Range
-          return getWeeklyStatusForRange(c, weeklyStartDate, weeklyEndDate).status === currentSubFilter;
-        } else if (currentTab === "monthly") {
-          // กรองตามเดือนที่เลือกใน Monthly Month Filter
-          return getMonthlyStatusForMonth(c, selectedMonthlyMonth).status === currentSubFilter;
         } else {
           const freq = c.paymentFrequency || "monthly";
           return getCustomerPaymentStatus(c, freq) === currentSubFilter;
@@ -2165,24 +2192,28 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- 4.2 WEEKLY TABLE (ช่วงตั้งแต่วันที่ ... ถึงวันที่ ...) ---
+  // --- 4.2 WEEKLY TABLE (ค้นหาและสรุปยอดรายวัน) ---
   function renderWeeklyTable(contractsList) {
-    updatePeriodDateInputs();
+    if (dateFilterBar) {
+      dateFilterBar.style.display = "flex";
+      if (adminDateFilter) adminDateFilter.value = selectedDailyDate;
+      updatePeriodDateInputs();
+    }
 
-    const rangeDisplay = `${formatDateThai(weeklyStartDate)} - ${formatDateThai(weeklyEndDate)}`;
+    const dateDisplay = formatDateThai(selectedDailyDate);
 
     tableHeaderRow.innerHTML = `
       <th>ลูกค้า</th>
       <th>สิ่งที่ผ่อน</th>
       <th>กำหนดชำระ</th>
       <th>ค่างวด/สัปดาห์</th>
-      <th>สถานะ (${rangeDisplay})</th>
+      <th>สถานะ (${dateDisplay})</th>
       <th>คงเหลือรวม</th>
       <th>จัดการ</th>
     `;
 
-    // คำนวณสรุปยอดรายอาทิตย์ประจำช่วงวันที่เลือก
-    const allWeeklyContracts = window.easyFinanceDB.getContracts().filter((c) => c.paymentFrequency === "weekly");
+    // คำนวณสรุปยอดรายอาทิตย์ประจำวันที่เลือก
+    const allWeeklyContracts = window.easyFinanceDB.getContracts().filter((c) => c.paymentFrequency === "weekly" && !isMotorcycleContract(c));
     let weeklyTotalAmount = 0;
     let weeklyPaidAmount = 0;
     let weeklyPendingAmount = 0;
@@ -2190,7 +2221,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let pendingCount = 0;
 
     allWeeklyContracts.forEach((c) => {
-      const statusObj = getWeeklyStatusForRange(c, weeklyStartDate, weeklyEndDate);
+      const statusObj = getDailyStatusForDate(c, selectedDailyDate);
       const amt = Number(statusObj.amount) || 0;
       weeklyTotalAmount += amt;
       if (statusObj.status === "paid") {
@@ -2225,14 +2256,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (dateFilterSummary) {
       dateFilterSummary.innerHTML = `
-        <span>สรุปประจำช่วงวันที่ <strong>${rangeDisplay}</strong>:</span>
+        <span>สรุปประจำวันที่ <strong>${dateDisplay}</strong>:</span>
         <span class="date-stat-chip chip-paid"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว ${paidCount} ราย</span>
         <span class="date-stat-chip chip-pending"><i class="fa-solid fa-clock"></i> ค้างจ่าย ${pendingCount} ราย</span>
       `;
     }
 
     if (contractsList.length === 0) {
-      const filterLabel = currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${rangeDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${rangeDisplay})` : "ทั้งหมด";
+      const filterLabel = currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${dateDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${dateDisplay})` : "ทั้งหมด";
       tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 30px;">ไม่พบข้อมูลลูกค้ารายอาทิตย์ (${filterLabel})</td></tr>`;
       return;
     }
@@ -2246,7 +2277,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
       const remainingBalance = Math.max(0, contractTotal - totalPaidAmt);
 
-      const statusObj = getWeeklyStatusForRange(c, weeklyStartDate, weeklyEndDate);
+      const statusObj = getDailyStatusForDate(c, selectedDailyDate);
       const isPaid = statusObj.status === "paid";
 
       const tr = document.createElement("tr");
@@ -2263,9 +2294,9 @@ document.addEventListener("DOMContentLoaded", () => {
         </td>
         <td>
           <span style="color: #fff; font-weight: 500;">${c.itemFinanced || "-"}</span>
-          <div style="font-size: 0.72rem; color: var(--text-dim);">${c.dueSchedule || "ทุกวันศุกร์"}</div>
+          <div style="font-size: 0.72rem; color: var(--text-dim);">${c.dueSchedule || "ทุกสัปดาห์"}</div>
         </td>
-        <td><span style="color: #38bdf8; font-weight: 500;">${c.dueSchedule || "ทุกวันศุกร์"}</span></td>
+        <td><span style="color: #38bdf8; font-weight: 500;">${c.dueSchedule || "ทุกสัปดาห์"}</span></td>
         <td><strong style="color: var(--primary-light);">฿${Number(statusObj.installment ? statusObj.installment.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong></td>
         <td>
           ${isPaid
@@ -2277,7 +2308,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>
           <div class="table-actions">
             ${!isPaid && statusObj.installment
-          ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${weeklyStartDate}')" title="บันทึกรับชำระ">
+          ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
                     <i class="fa-solid fa-check"></i> บันทึกรับชำระ
                    </button>`
           : '<span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
@@ -2301,24 +2332,28 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- 4.3 MONTHLY TABLE (เลือกเดือน) ---
+  // --- 4.3 MONTHLY TABLE (ค้นหาและสรุปยอดรายวัน) ---
   function renderMonthlyTable(contractsList) {
-    updatePeriodDateInputs();
+    if (dateFilterBar) {
+      dateFilterBar.style.display = "flex";
+      if (adminDateFilter) adminDateFilter.value = selectedDailyDate;
+      updatePeriodDateInputs();
+    }
 
-    const monthDisplay = formatMonthThai(selectedMonthlyMonth);
+    const dateDisplay = formatDateThai(selectedDailyDate);
 
     tableHeaderRow.innerHTML = `
       <th>ลูกค้า</th>
       <th>สิ่งที่ผ่อน</th>
       <th>กำหนดชำระ</th>
       <th>ค่างวด/เดือน</th>
-      <th>สถานะ (${monthDisplay})</th>
+      <th>สถานะ (${dateDisplay})</th>
       <th>คงเหลือรวม</th>
       <th>จัดการ</th>
     `;
 
-    // คำนวณสรุปยอดรายเดือนประจำเดือนที่เลือก
-    const allMonthlyContracts = window.easyFinanceDB.getContracts().filter((c) => c.paymentFrequency === "monthly");
+    // คำนวณสรุปยอดรายเดือนประจำวันที่เลือก
+    const allMonthlyContracts = window.easyFinanceDB.getContracts().filter((c) => c.paymentFrequency === "monthly" && !isMotorcycleContract(c));
     let monthlyTotalAmount = 0;
     let monthlyPaidAmount = 0;
     let monthlyPendingAmount = 0;
@@ -2326,7 +2361,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let pendingCount = 0;
 
     allMonthlyContracts.forEach((c) => {
-      const statusObj = getMonthlyStatusForMonth(c, selectedMonthlyMonth);
+      const statusObj = getDailyStatusForDate(c, selectedDailyDate);
       const amt = Number(statusObj.amount) || 0;
       monthlyTotalAmount += amt;
       if (statusObj.status === "paid") {
@@ -2361,14 +2396,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (dateFilterSummary) {
       dateFilterSummary.innerHTML = `
-        <span>สรุปประจำเดือน <strong>${monthDisplay}</strong>:</span>
+        <span>สรุปประจำวันที่ <strong>${dateDisplay}</strong>:</span>
         <span class="date-stat-chip chip-paid"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว ${paidCount} ราย</span>
         <span class="date-stat-chip chip-pending"><i class="fa-solid fa-clock"></i> ค้างจ่าย ${pendingCount} ราย</span>
       `;
     }
 
     if (contractsList.length === 0) {
-      const filterLabel = currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${monthDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${monthDisplay})` : "ทั้งหมด";
+      const filterLabel = currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${dateDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${dateDisplay})` : "ทั้งหมด";
       tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 30px;">ไม่พบข้อมูลลูกค้ารายเดือน (${filterLabel})</td></tr>`;
       return;
     }
@@ -2382,7 +2417,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
       const remainingBalance = Math.max(0, contractTotal - totalPaidAmt);
 
-      const statusObj = getMonthlyStatusForMonth(c, selectedMonthlyMonth);
+      const statusObj = getDailyStatusForDate(c, selectedDailyDate);
       const isPaid = statusObj.status === "paid";
 
       const tr = document.createElement("tr");
@@ -2413,7 +2448,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>
           <div class="table-actions">
             ${!isPaid && statusObj.installment
-          ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedMonthlyMonth}-01')" title="บันทึกรับชำระ">
+          ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
                     <i class="fa-solid fa-check"></i> บันทึกรับชำระ
                    </button>`
           : '<span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
@@ -2529,28 +2564,79 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- 4.4.1 MOTORCYCLE CONTRACTS TABLE (สรุปยอดรวมหมวดรถมอไซต์ต่างหาก) ---
+  // --- 4.4.1 MOTORCYCLE CONTRACTS TABLE (สรุปยอดรวมหมวดรถมอไซต์ต่างหาก ค้นหาวันที่ได้เหมือนรายวัน) ---
   function renderMotorcycleTable(contractsList) {
-    if (dateFilterBar) dateFilterBar.style.display = "none";
+    if (dateFilterBar) {
+      dateFilterBar.style.display = "flex";
+      if (adminDateFilter) adminDateFilter.value = selectedDailyDate;
+      updatePeriodDateInputs();
+    }
+
+    const dateDisplay = formatDateThai(selectedDailyDate);
 
     tableHeaderRow.innerHTML = `
       <th>รหัสสัญญา</th>
       <th>ลูกค้า & ข้อมูลติดต่อ</th>
       <th>รุ่นรถมอเตอร์ไซค์</th>
       <th>ยอดปล่อย & เงินดาวน์</th>
-      <th>ความคืบหน้าการผ่อน</th>
-      <th>สถานะสัญญา</th>
+      <th>ค่างวด</th>
+      <th>สถานะ (${dateDisplay})</th>
       <th>ยอดคงเหลือรอเก็บ</th>
       <th>จัดการ</th>
     `;
 
+    // คำนวณสรุปยอดประจำวันที่เลือกสำหรับหมวดมอเตอร์ไซค์
+    const allMotorcycleContracts = window.easyFinanceDB.getContracts().filter(isMotorcycleContract);
+    let mcTotalAmount = 0;
+    let mcPaidAmount = 0;
+    let mcPendingAmount = 0;
+    let paidCount = 0;
+    let pendingCount = 0;
+
+    allMotorcycleContracts.forEach((c) => {
+      const dailyStatus = getDailyStatusForDate(c, selectedDailyDate);
+      const amt = Number(dailyStatus.amount) || 0;
+      mcTotalAmount += amt;
+      if (dailyStatus.status === "paid") {
+        paidCount++;
+        mcPaidAmount += amt;
+      } else {
+        pendingCount++;
+        mcPendingAmount += amt;
+      }
+    });
+
+    const isManager = isManagerLoggedIn();
+    if (dailyTotalAmountVal) {
+      dailyTotalAmountVal.textContent = isManager ? ("฿" + mcTotalAmount.toLocaleString()) : "฿******";
+      dailyTotalAmountVal.classList.toggle("masked-stat-text", !isManager);
+    }
+    if (dailyPaidAmountVal) {
+      dailyPaidAmountVal.innerHTML = isManager
+        ? `<i class="fa-solid fa-circle-check"></i> รับแล้ว ฿${mcPaidAmount.toLocaleString()}`
+        : `<i class="fa-solid fa-circle-check"></i> รับแล้ว ฿******`;
+    }
+    if (dailyPendingAmountVal) {
+      dailyPendingAmountVal.innerHTML = isManager
+        ? `<i class="fa-solid fa-clock"></i> รอเก็บ ฿${mcPendingAmount.toLocaleString()}`
+        : `<i class="fa-solid fa-clock"></i> รอเก็บ ฿******`;
+    }
+    if (dateDailyTotalBadge) {
+      dateDailyTotalBadge.classList.remove("pop-animate");
+      void dateDailyTotalBadge.offsetWidth;
+      dateDailyTotalBadge.classList.add("pop-animate");
+    }
+
+    if (dateFilterSummary) {
+      dateFilterSummary.innerHTML = `
+        <span>สรุปประจำวันที่ <strong>${dateDisplay}</strong>:</span>
+        <span class="date-stat-chip chip-paid"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว ${paidCount} ราย</span>
+        <span class="date-stat-chip chip-pending"><i class="fa-solid fa-clock"></i> ค้างจ่าย ${pendingCount} ราย</span>
+      `;
+    }
+
     if (contractsList.length === 0) {
-      const subLabels = {
-        all: "ทั้งหมด",
-        pending: "ที่กำลังผ่อนชำระ",
-        paid: "ที่ปิดสัญญาแล้ว"
-      };
-      const label = subLabels[currentSubFilter] || "ทั้งหมด";
+      const filterLabel = currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${dateDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${dateDisplay})` : "ทั้งหมด";
       tableBody.innerHTML = `
         <tr>
           <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 40px;">
@@ -2558,7 +2644,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <i class="fa-solid fa-motorcycle"></i>
             </div>
             <div style="font-weight: 600; color: #fff; font-size: 1rem; margin-bottom: 6px;">
-              ไม่พบรายการสัญญารถมอเตอร์ไซค์ (${label})
+              ไม่พบรายการสัญญารถมอเตอร์ไซค์ (${filterLabel})
             </div>
             <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
               สามารถกดปุ่ม "+ เพิ่มสัญญาใหม่" เพื่อบันทึกสัญญาผ่อนรถมอเตอร์ไซค์แยกหมวดได้ทันที
@@ -2575,10 +2661,8 @@ document.addEventListener("DOMContentLoaded", () => {
     tableBody.innerHTML = "";
     contractsList.forEach((c) => {
       const installments = c.installments || [];
-      const paidCount = installments.filter((i) => i.status === "paid").length;
+      const paidInstCount = installments.filter((i) => i.status === "paid").length;
       const totalCount = installments.length;
-      const percent = totalCount > 0 ? Math.round((paidCount / totalCount) * 100) : 0;
-      const isCompleted = paidCount === totalCount && totalCount > 0;
       const downPayment = Number(c.downPayment) || 0;
       const totalAmount = Number(c.totalAmount) || 0;
       const totalFinanced = totalAmount + downPayment;
@@ -2586,6 +2670,10 @@ document.addEventListener("DOMContentLoaded", () => {
         .filter((i) => i.status === "paid")
         .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
       const remainingBalance = Math.max(0, totalAmount - totalPaidAmt);
+
+      const dailyStatus = getDailyStatusForDate(c, selectedDailyDate);
+      const isPaid = dailyStatus.status === "paid";
+      const instAmt = Number(dailyStatus.installment ? dailyStatus.installment.amount : (installments[0]?.amount || 0));
 
       const freqLabels = {
         daily: '<span class="overview-card-badge badge-daily" style="font-size: 0.68rem; padding: 2px 6px;">รายวัน</span>',
@@ -2627,17 +2715,13 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         </td>
         <td>
-          <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 3px;">
-            ${paidCount} / ${totalCount} งวด (${percent}%)
-          </div>
-          <div class="progress-track" style="height: 6px;">
-            <div class="progress-bar-fill" style="width: ${percent}%; background: linear-gradient(90deg, #38bdf8 0%, #0ea5e9 100%);"></div>
-          </div>
+          <strong style="color: var(--primary-light); font-size: 0.95rem;">฿${instAmt.toLocaleString()}</strong>
+          <div style="font-size: 0.72rem; color: var(--text-dim);">${paidInstCount} / ${totalCount} งวด</div>
         </td>
         <td>
-          ${isCompleted
-            ? '<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>'
-            : '<span class="status-badge badge-pending" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);"><i class="fa-solid fa-spinner"></i> กำลังผ่อนชำระ</span>'
+          ${isPaid
+            ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${dailyStatus.label}</span>`
+            : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${dailyStatus.label}</span>`
           }
           ${Number(c.lateFine) > 0 ? `<div style="margin-top: 4px;"><span class="badge-fine"><i class="fa-solid fa-triangle-exclamation"></i> ปรับ ฿${Number(c.lateFine).toLocaleString()}</span></div>` : ""}
         </td>
@@ -2646,6 +2730,12 @@ document.addEventListener("DOMContentLoaded", () => {
         </td>
         <td>
           <div class="table-actions">
+            ${!isPaid && dailyStatus.installment
+              ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${dailyStatus.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
+                  <i class="fa-solid fa-check"></i> บันทึกรับชำระ
+                </button>`
+              : '<span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
+            }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ
             </button>
@@ -2748,9 +2838,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- 5. ADD / EDIT CONTRACT LOGIC ---
 
-  // ช่องกรอกเงินดาวน์: ให้สามารถระบุยอดใดก็ได้ (Requirement 1)
-  if (formDownPaymentGroup) {
-    formDownPaymentGroup.style.display = "block";
+  // ช่องกรอกเงินดาวน์: แสดงสำหรับหมวดผ่อนมอเตอร์ไซค์ และ ผ่อนทอง (หมวดสินค้าทั่วไปจะไม่มีเงินดาวน์)
+  function updateDownPaymentVisibility() {
+    const cat = formItemCategory ? formItemCategory.value : "general";
+    const hasDownPayment = cat === "motorcycle" || cat === "gold";
+    if (formDownPaymentGroup) {
+      formDownPaymentGroup.style.display = hasDownPayment ? "block" : "none";
+    }
+    const lblTitle = document.getElementById("lblDownPaymentTitle");
+    if (lblTitle) {
+      if (cat === "gold") {
+        lblTitle.innerHTML = '<i class="fa-solid fa-coins"></i> เงินดาวน์ผ่อนทอง (บาท)';
+      } else if (cat === "motorcycle") {
+        lblTitle.innerHTML = '<i class="fa-solid fa-motorcycle"></i> เงินดาวน์รถมอเตอร์ไซค์ (บาท)';
+      } else {
+        lblTitle.innerHTML = '<i class="fa-solid fa-coins"></i> เงินดาวน์ (บาท)';
+      }
+    }
+    if (!hasDownPayment && formDownPayment) {
+      formDownPayment.value = "0";
+    }
+  }
+
+  if (formItemCategory) {
+    formItemCategory.addEventListener("change", () => {
+      updateDownPaymentVisibility();
+      if (formItemFinanced) {
+        formItemFinanced.placeholder = formItemCategory.value === "motorcycle"
+          ? "เช่น Honda Wave 110i, Yamaha Grand Filano, Honda PCX 160"
+          : "เช่น ผ่อนทองคำ 1 บาท, Honda Wave 110i, iPhone 16";
+      }
+    });
   }
 
   // รอบการชำระเปลี่ยน: ตั้งค่ากำหนดชำระและระยะเวลาแนะนำให้อัตโนมัติ (ไม่แทรกแซงหรือคำนวณค่างวดทับที่แอดมินพิมพ์)
@@ -2785,8 +2903,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ? "เช่น Honda Wave 110i, Yamaha Grand Filano, Honda PCX 160"
         : "เช่น ผ่อนทองคำ 1 บาท, Honda Wave 110i, iPhone 16";
     }
-    if (formDownPaymentGroup) formDownPaymentGroup.style.display = "block";
-    if (formDownPayment) formDownPayment.value = "0";
+    updateDownPaymentVisibility();
     if (formFirstPaymentDate) formFirstPaymentDate.value = getLocalDateStr();
 
     // สุ่มรหัสสัญญาใหม่
@@ -2829,8 +2946,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const avatar = formAvatar.value.trim() || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150";
     const itemFinanced = formItemFinanced.value.trim();
     const itemCategory = formItemCategory ? formItemCategory.value : "general";
-    // Requirement 1: สามารถระบุยอดดาวน์ใดก็ได้ตอนกรอก ไม่ต้องคำนวณและไม่จำกัดหมวดหมู่
-    const downPayment = formDownPayment ? (parseFloat(formDownPayment.value) || 0) : 0;
+    const hasDownPayment = itemCategory === "motorcycle" || itemCategory === "gold";
+    // ช่องเงินดาวน์: มีสำหรับหมวดรถมอเตอร์ไซค์ และ ผ่อนทอง (หมวดสินค้าทั่วไปไม่มีเงินดาวน์ 0 บาท)
+    const downPayment = (hasDownPayment && formDownPayment) ? (parseFloat(formDownPayment.value) || 0) : 0;
     const idCard = formIdCard ? formIdCard.value.trim() : "";
     const facebookLink = formFacebook ? formFacebook.value.trim() : "";
     const address = formAddress ? formAddress.value.trim() : "";
@@ -2961,13 +3079,12 @@ document.addEventListener("DOMContentLoaded", () => {
     formAvatar.value = contract.avatar || "";
     formItemFinanced.value = contract.itemFinanced || "";
     if (formItemCategory) {
-      formItemCategory.value = contract.itemCategory || "general";
+      formItemCategory.value = contract.itemCategory || (isMotorcycleContract(contract) ? "motorcycle" : "general");
     }
+    updateDownPaymentVisibility();
     if (formDownPayment) {
-      formDownPayment.value = contract.downPayment !== undefined ? contract.downPayment : 0;
-    }
-    if (formDownPaymentGroup) {
-      formDownPaymentGroup.style.display = "block";
+      const hasDownPayment = formItemCategory && (formItemCategory.value === "motorcycle" || formItemCategory.value === "gold");
+      formDownPayment.value = (hasDownPayment && contract.downPayment !== undefined) ? contract.downPayment : 0;
     }
     formTotalAmount.value = contract.totalAmount || 0;
     formTotalInstallments.value = contract.totalInstallments || 1;
