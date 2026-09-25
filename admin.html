@@ -33,16 +33,21 @@
 
       <form id="adminAuthForm">
         <div class="form-group-admin" style="text-align: left;">
-          <label class="form-label-admin" for="adminSecretPass">กรุณาเข้าสู่ระบบ</label>
+          <label class="form-label-admin" for="adminSecretPass">รหัสผ่านเข้าสู่ระบบ </label>
           <div class="input-with-icon">
             <i class="fa-solid fa-key" style="left: 14px; position: absolute; color: var(--text-dim);"></i>
             <input type="password" id="adminSecretPass" class="input-admin" style="padding-left: 42px;"
-              placeholder="ระบุรหัสผ่านเข้าหลังบ้าน" required>
+              placeholder="ระบุรหัสหัวหน้า หรือ รหัสพนักงาน" required>
+          </div>
+          <div style="font-size: 0.74rem; color: var(--text-dim); margin-top: 8px; line-height: 1.4;">
+
+
+
           </div>
         </div>
 
         <button type="submit" class="btn-primary-action"
-          style="width: 100%; justify-content: center; margin-top: 14px; padding: 12px;">
+          style="width: 100%; justify-content: center; margin-top: 16px; padding: 12px;">
           <i class="fa-solid fa-lock-open"></i>
           <span>เข้าสู่ระบบหลังบ้าน</span>
         </button>
@@ -55,6 +60,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Backdrop for mobile/iPad sidebar (Requirement 2) -->
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
   <!-- ====================================================================
        ADMIN MAIN LAYOUT
@@ -71,6 +79,11 @@
           <h2>Easy Wealth Finance</h2>
           <span>Admin Portal</span>
         </div>
+        <!-- Close / Back Button for iPad & Mobile (Requirement 2) -->
+        <button type="button" class="btn-close-sidebar" id="btnCloseSidebar" title="ย้อนกลับ / ปิดเมนู"
+          aria-label="ปิดเมนู">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
 
       <nav class="sidebar-menu">
@@ -78,6 +91,9 @@
         <a class="sidebar-item" data-tab="overview">
           <i class="fa-solid fa-chart-pie"></i>
           <span>สรุปแดชบอร์ด (Overview)</span>
+          <i class="fa-solid fa-lock" id="iconOverviewLock"
+            style="margin-left: auto; font-size: 0.72rem; color: #f59e0b; display: none;"
+            title="ต้องใช้รหัสหัวหน้า"></i>
         </a>
         <a class="sidebar-item active" data-tab="daily">
           <i class="fa-solid fa-calendar-day"></i>
@@ -90,6 +106,12 @@
         <a class="sidebar-item" data-tab="monthly">
           <i class="fa-solid fa-calendar-days"></i>
           <span>สรุปรายเดือน (Monthly)</span>
+        </a>
+        <a class="sidebar-item" data-tab="motorcycle" id="menuMotorcycle">
+          <i class="fa-solid fa-motorcycle" style="color: #38bdf8;"></i>
+          <span>หมวดรถมอไซต์ (Motorcycle)</span>
+          <span id="motorcycleCountBadge" class="tab-count-badge"
+            style="margin-left: auto; background: rgba(56, 189, 248, 0.2); color: #38bdf8; display: inline-flex;">0</span>
         </a>
         <a class="sidebar-item" data-tab="all">
           <i class="fa-solid fa-file-contract"></i>
@@ -117,6 +139,12 @@
           <i class="fa-solid fa-shield-halved"></i>
           <span>ระบบตรวจสลิป (Bank API)</span>
         </a>
+        <a class="sidebar-item" id="btnMenuPassSettings">
+          <i class="fa-solid fa-key" style="color: #f59e0b;"></i>
+          <span>ตั้งรหัสหัวหน้า / พนักงาน</span>
+          <span style="margin-left: auto; font-size: 0.7rem; color: #f59e0b; opacity: 0.85;"
+            title="ต้องใช้รหัสผ่านหัวหน้าเพื่อเข้า"><i class="fa-solid fa-lock"></i></span>
+        </a>
       </nav>
 
       <div class="sidebar-footer">
@@ -141,6 +169,13 @@
         </div>
 
         <div class="nav-right">
+          <!-- Role Badge (Manager / Staff Indicator & Unlock) -->
+          <div class="admin-role-badge manager" id="adminRoleBadge" title="คลิกเพื่อจัดการสิทธิ์">
+            <i class="fa-solid fa-crown" id="roleBadgeIcon"></i>
+            <span id="roleBadgeText">หัวหน้า</span>
+            <button type="button" id="btnRoleAction" class="btn-role-action" title="ปลดล็อก / สลับสิทธิ์"></button>
+          </div>
+
           <div class="cloud-status-badge" id="cloudStatusBadge">
             <i class="fa-solid fa-circle-dot"></i>
             <span id="cloudStatusText">LocalStorage Ready</span>
@@ -211,6 +246,22 @@
               <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
           </div>
+
+          <!-- ช่องยอดรวมมอไซต์ (Requirement: แยกยอดออกมาต่างหาก ไม่ต้องยกยอดไปรวมกับยอดปล่อยสินเชื่อรวม) -->
+          <div class="stat-counter-card" id="cardStatMotorcycle" style="cursor: pointer;" onclick="switchTab('motorcycle')" title="คลิกเพื่อดูสรุปหมวดรถมอไซต์">
+            <div class="stat-info">
+              <div class="stat-label" id="statLabelMotorcycle" style="color: #38bdf8;">
+                <i class="fa-solid fa-motorcycle"></i> ยอดรวมมอไซต์
+              </div>
+              <div class="stat-val" id="statTotalMotorcycle" style="color: #38bdf8;">฿0</div>
+              <div id="statMotorcycleSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
+                แยกเฉพาะหมวดมอไซต์</div>
+            </div>
+            <div class="stat-icon-box" id="statIconMotorcycle"
+              style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);">
+              <i class="fa-solid fa-motorcycle"></i>
+            </div>
+          </div>
         </div>
 
         <!-- Action Bar: Search, Dashboard Overview Button & Add Contract -->
@@ -248,7 +299,7 @@
           </div>
         </div>
 
-        <!-- 3.1 Quick Summary Category Pills (ยอดรวมรายวัน / ยอดรวมรายอาทิตย์ / ยอดรวมรายเดือน) -->
+        <!-- 3.1 Quick Summary Category Pills (ยอดรวมรายวัน / ยอดรวมรายอาทิตย์ / ยอดรวมรายเดือน / ยอดรวมมอไซต์) -->
         <div class="summary-pills-bar" id="summaryQuickPills">
           <button class="summary-pill-btn active" id="pillDailyBtn" onclick="switchTab('daily')">
             <i class="fa-solid fa-calendar-day" style="color: var(--primary);"></i>
@@ -261,6 +312,10 @@
           <button class="summary-pill-btn" id="pillMonthlyBtn" onclick="switchTab('monthly')">
             <i class="fa-solid fa-calendar-days" style="color: #c084fc;"></i>
             <span>ยอดรวมรายเดือน: <strong class="pill-val" id="quickPillMonthly">฿0</strong></span>
+          </button>
+          <button class="summary-pill-btn" id="pillMotorcycleBtn" onclick="switchTab('motorcycle')" style="border-color: rgba(56, 189, 248, 0.35);">
+            <i class="fa-solid fa-motorcycle" style="color: #38bdf8;"></i>
+            <span>ยอดรวมมอไซต์: <strong class="pill-val" id="quickPillMotorcycle" style="color: #38bdf8;">฿0</strong></span>
           </button>
         </div>
 
@@ -371,7 +426,12 @@
         <div class="form-grid-2">
           <div class="form-group-admin">
             <label class="form-label-admin">อีเมลเข้าสู่ระบบ (Email) *</label>
-            <input type="email" id="formEmail" class="input-admin" placeholder="เช่น customer@easyfinance.com" required>
+            <div class="email-input-group">
+              <input type="text" id="formEmailPrefix" class="input-admin email-prefix-input"
+                placeholder="เช่น somchai123" required autocomplete="off">
+              <span class="email-domain-addon">@Easy.com</span>
+            </div>
+            <input type="hidden" id="formEmail">
           </div>
           <div class="form-group-admin">
             <label class="form-label-admin">รหัสผ่านที่แอดมินตั้งให้ (Password) *</label>
@@ -438,22 +498,22 @@
           </div>
         </div>
 
-        <!-- 5. ช่องกรอกเงินดาวน์ (แสดงเมื่อเลือกหมวดผ่อนมอไซต์ หรือ ผ่อนทอง) -->
+        <!-- 5. ช่องกรอกเงินดาวน์ (Requirement 1: ระบุยอดใดก็ได้ ใส่เศษ/ทศนิยมได้ตามจริง) -->
         <div class="form-group-admin" id="formDownPaymentGroup"
-          style="display: none; background: rgba(56, 189, 248, 0.08); border: 1px dashed rgba(56, 189, 248, 0.35); padding: 12px; border-radius: var(--radius-md);">
+          style="background: rgba(56, 189, 248, 0.08); border: 1px dashed rgba(56, 189, 248, 0.35); padding: 12px; border-radius: var(--radius-md);">
           <label class="form-label-admin" style="color: #38bdf8; font-weight: 600;">
-            <i class="fa-solid fa-coins"></i> เงินดาวน์ (บาท) *
-            <span style="font-size: 0.74rem; color: #94a3b8; font-weight: normal;">(สำหรับหมวดผ่อนมอเตอร์ไซค์ หรือ
-              ผ่อนทอง)</span>
+            <i class="fa-solid fa-coins"></i> เงินดาวน์ (บาท)
+            <span style="font-size: 0.74rem; color: #94a3b8; font-weight: normal;">(ระบุยอดใดก็ได้
+              ใส่เศษ/ทศนิยมได้ตามจริง หรือใส่ 0 หากไม่มี)</span>
           </label>
-          <input type="number" id="formDownPayment" class="input-admin" min="0" step="100"
-            placeholder="ระบุจำนวนเงินดาวน์ เช่น 5000">
+          <input type="number" id="formDownPayment" class="input-admin" min="0" step="any"
+            placeholder="ระบุจำนวนเงินดาวน์ เช่น 5000 (ใส่ได้ทุกยอด)">
         </div>
 
         <div class="form-grid-2">
           <div class="form-group-admin">
             <label class="form-label-admin">ยอดเงินกู้ / ยอดผ่อนรวม (บาท) *</label>
-            <input type="number" id="formTotalAmount" class="input-admin" min="100" step="100" placeholder="เช่น 30000"
+            <input type="number" id="formTotalAmount" class="input-admin" min="0" step="any" placeholder="เช่น 30000"
               required>
           </div>
           <div class="form-group-admin">
@@ -466,7 +526,7 @@
         <div class="form-grid-2">
           <div class="form-group-admin">
             <label class="form-label-admin">ค่างวดต่องวด (บาท/งวด) *</label>
-            <input type="number" id="formInstallmentAmount" class="input-admin" min="1"
+            <input type="number" id="formInstallmentAmount" class="input-admin" min="0" step="any"
               placeholder="ระบุค่างวดต่องวด เช่น 5000" required>
           </div>
           <div class="form-group-admin">
@@ -508,11 +568,16 @@
           </div>
         </div>
 
-        <button type="submit" class="btn-primary-action"
-          style="width: 100%; justify-content: center; margin-top: 20px; padding: 12px;">
-          <i class="fa-solid fa-floppy-disk"></i>
-          <span>บันทึกข้อมูลสัญญาและสร้างตารางงวด</span>
-        </button>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn-table-action" id="btnCancelContractModal"
+            style="flex: 1; justify-content: center; padding: 12px; background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); color: #cbd5e1; cursor: pointer;">
+            <i class="fa-solid fa-xmark"></i> ยกเลิก
+          </button>
+          <button type="submit" class="btn-primary-action" style="flex: 2; justify-content: center; padding: 12px;">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>บันทึกข้อมูลสัญญาและสร้างตารางงวด</span>
+          </button>
+        </div>
       </form>
     </div>
   </div>
@@ -1111,6 +1176,191 @@
           </div>
         </form>
       </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL 8: MANAGER AUTH MODAL (Requirement 4: ยืนยันรหัสหัวหน้าก่อนเข้าสรุปแดชบอร์ด)
+       ==================================================================== -->
+  <div id="managerAuthModal" class="admin-modal-overlay">
+    <div class="admin-modal-card" style="max-width: 440px;">
+      <div class="admin-modal-header">
+        <div class="admin-modal-title" style="color: #fbbf24;">
+          <i class="fa-solid fa-lock"></i>
+          <span>ยืนยันรหัสผ่านหัวหน้า (Manager Required)</span>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnCloseManagerAuthModal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div style="padding: 16px 0 6px 0; text-align: center;">
+        <div
+          style="width: 58px; height: 58px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); color: #fbbf24; display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 12px; border: 1px solid rgba(245, 158, 11, 0.3);">
+          <i class="fa-solid fa-chart-pie" id="managerAuthIcon"></i>
+        </div>
+        <h3 id="managerAuthTitle" style="font-size: 1.1rem; color: #fff; margin-bottom: 6px;">สรุปแดชบอร์ดภาพรวมการเงิน
+        </h3>
+        <p id="managerAuthDesc" style="font-size: 0.85rem; color: #94a3b8; line-height: 1.5; margin-bottom: 18px;">
+          หน้านี้และยอดสรุปสงวนสิทธิ์เฉพาะหัวหน้าเท่านั้น<br>
+          <span style="color: #cbd5e1;">กรุณาระบุรหัสผ่านหัวหน้าเพื่อปลดล็อกเข้าดูข้อมูล</span>
+        </p>
+
+        <form id="managerAuthForm" style="text-align: left;">
+          <div class="form-group-admin">
+            <label class="form-label-admin" for="managerAuthPassInput" style="color: #fbbf24;">
+              <i class="fa-solid fa-key"></i> รหัสผ่านหัวหน้า (Manager Password)
+            </label>
+            <div style="position: relative;">
+              <input type="password" id="managerAuthPassInput" class="input-admin" placeholder="ระบุรหัสหัวหน้า"
+                required autofocus style="padding-right: 40px; border-color: rgba(245, 158, 11, 0.4);">
+              <button type="button" id="btnToggleManagerAuthPass"
+                style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px 6px;">
+                <i class="fa-solid fa-eye" id="iconToggleManagerAuthPass"></i>
+              </button>
+            </div>
+            <div style="font-size: 0.74rem; color: var(--text-dim); margin-top: 5px;">
+
+            </div>
+          </div>
+
+          <div id="managerAuthErrorMsg"
+            style="display: none; color: #f87171; font-size: 0.82rem; margin-top: 10px; font-weight: 600;">
+            <i class="fa-solid fa-circle-xmark"></i> รหัสผ่านหัวหน้าไม่ถูกต้อง
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="button" class="btn-table-action" id="btnCancelManagerAuth"
+              style="flex: 1; justify-content: center; padding: 10px; background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); color: #cbd5e1; cursor: pointer;">
+              ยกเลิก
+            </button>
+            <button type="submit" class="btn-primary-action"
+              style="flex: 1.5; justify-content: center; padding: 10px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);">
+              <i class="fa-solid fa-unlock"></i> ปลดล็อกดูข้อมูล
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL 9: MANAGE PASSWORDS (ตั้งค่ารหัสผ่านหัวหน้า และ พนักงาน)
+       ==================================================================== -->
+  <div id="passwordSettingsModal" class="admin-modal-overlay">
+    <div class="admin-modal-card" style="max-width: 480px;">
+      <div class="admin-modal-header">
+        <div class="admin-modal-title" style="color: #fbbf24;">
+          <i class="fa-solid fa-key"></i>
+          <span id="passSettingsModalTitleText">ตั้งค่ารหัสผ่าน (หัวหน้า / พนักงาน)</span>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnClosePasswordSettingsModal">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Phase 1: ล็อกไว้ ต้องใส่รหัสหัวหน้าก่อนถึงเข้าเปลี่ยนได้ -->
+      <div id="passSettingsLockSection" style="padding: 16px 0 6px 0; text-align: center;">
+        <div
+          style="width: 58px; height: 58px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); color: #fbbf24; display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 12px; border: 1px solid rgba(245, 158, 11, 0.3);">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+        <h3 style="font-size: 1.1rem; color: #fff; margin-bottom: 6px;">ล็อกการตั้งค่ารหัสผ่าน</h3>
+        <p style="font-size: 0.85rem; color: #94a3b8; line-height: 1.5; margin-bottom: 18px;">
+          ส่วนนี้ถูกล็อกไว้เพื่อความปลอดภัย<br>
+          <span style="color: #cbd5e1;">กรุณาระบุรหัสผ่านหัวหน้าปัจจุบันก่อนเข้าเปลี่ยนรหัสผ่าน</span>
+        </p>
+
+        <form id="passSettingsUnlockForm" style="text-align: left;">
+          <div class="form-group-admin">
+            <label class="form-label-admin" for="passSettingsCurrentInput" style="color: #fbbf24; font-weight: 600;">
+              <i class="fa-solid fa-key"></i> รหัสผ่านหัวหน้าปัจจุบัน *
+            </label>
+            <div style="position: relative;">
+              <input type="password" id="passSettingsCurrentInput" class="input-admin" placeholder="กรอกรหัสผ่านหัวหน้า"
+                required autofocus style="padding-right: 40px; border-color: rgba(245, 158, 11, 0.4);">
+              <button type="button" class="btn-toggle-eye"
+                onclick="togglePassInputVisibility('passSettingsCurrentInput', this)"
+                style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px 6px;">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </div>
+            <div style="font-size: 0.74rem; color: var(--text-dim); margin-top: 5px;">
+              * ค่าเริ่มต้นของระบบ: <code
+                style="background: rgba(255,255,255,0.1); color: #fbbf24; padding: 2px 6px; border-radius: 4px;">กรุณาแจ้งคุณเป้</code>
+            </div>
+          </div>
+
+          <div id="passSettingsUnlockError"
+            style="display: none; color: #f87171; font-size: 0.82rem; margin-top: 10px; font-weight: 600;">
+            <i class="fa-solid fa-circle-xmark"></i> รหัสผ่านหัวหน้าไม่ถูกต้อง
+          </div>
+
+          <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="button" class="btn-table-action" id="btnCancelPassSettingsUnlock"
+              style="flex: 1; justify-content: center; padding: 10px; background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); color: #cbd5e1; cursor: pointer;">
+              ยกเลิก
+            </button>
+            <button type="submit" class="btn-primary-action"
+              style="flex: 1.5; justify-content: center; padding: 10px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);">
+              <i class="fa-solid fa-unlock"></i> ปลดล็อกเข้าแก้ไข
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Phase 2: ฟอร์มตั้งค่ารหัสผ่านหัวหน้าและพนักงาน (เปิดเมื่อปลดล็อกรหัสผ่านสำเร็จ) -->
+      <form id="passwordSettingsForm" style="display: none; padding-top: 14px;">
+        <div
+          style="margin-bottom: 14px; padding: 8px 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; font-size: 0.8rem; color: #34d399; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-circle-check"></i>
+          <span>ยืนยันรหัสหัวหน้าสำเร็จ สามารถเปลี่ยนหรือตั้งรหัสผ่านใหม่ได้ทันที</span>
+        </div>
+
+        <div class="form-group-admin">
+          <label class="form-label-admin" style="color: #fbbf24; font-weight: 600;">
+            <i class="fa-solid fa-crown"></i> รหัสผ่านหัวหน้า (Manager Password) *
+          </label>
+          <div style="position: relative;">
+            <input type="password" id="settingManagerPass" class="input-admin" placeholder="เช่น Easy123" required
+              style="padding-right: 40px;">
+            <button type="button" class="btn-toggle-eye" onclick="togglePassInputVisibility('settingManagerPass', this)"
+              style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px 6px;">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+          <div style="font-size: 0.74rem; color: var(--text-dim); margin-top: 4px;">
+            สำหรับหัวหน้า: ปลดล็อกดูยอดรวมทั้งหมด และเข้าหน้าสรุปแดชบอร์ดภาพรวม
+          </div>
+        </div>
+
+        <div class="form-group-admin" style="margin-top: 14px;">
+          <label class="form-label-admin" style="color: #38bdf8; font-weight: 600;">
+            <i class="fa-solid fa-user-tie"></i> รหัสผ่านพนักงาน (Staff Password) *
+          </label>
+          <div style="position: relative;">
+            <input type="password" id="settingStaffPass" class="input-admin" placeholder="เช่น Staff123" required
+              style="padding-right: 40px;">
+            <button type="button" class="btn-toggle-eye" onclick="togglePassInputVisibility('settingStaffPass', this)"
+              style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px 6px;">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+          <div style="font-size: 0.74rem; color: var(--text-dim); margin-top: 4px;">
+            สำหรับพนักงาน: ปิดยอดรวมเป็น * และจำกัดการเข้าหน้าสรุปแดชบอร์ด
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 22px;">
+          <button type="button" class="btn-table-action" id="btnCancelPasswordSettings"
+            style="flex: 1; justify-content: center; padding: 10px; background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); color: #cbd5e1; cursor: pointer;">
+            ยกเลิก
+          </button>
+          <button type="submit" class="btn-primary-action" style="flex: 1.5; justify-content: center; padding: 10px;">
+            <i class="fa-solid fa-floppy-disk"></i> บันทึกรหัสผ่านใหม่
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

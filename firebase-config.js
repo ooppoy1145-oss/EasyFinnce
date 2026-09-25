@@ -707,13 +707,24 @@ class EasyFinanceDatabase {
   getContractByEmail(email) {
     if (!email) return null;
     const cleanEmail = email.trim().toLowerCase();
+    const prefix = cleanEmail.includes("@") ? cleanEmail.split("@")[0] : cleanEmail;
     const contracts = this.getContracts();
-    return contracts.find(
-      (c) =>
-        c.email.toLowerCase() === cleanEmail ||
-        c.id.toLowerCase() === cleanEmail ||
-        (c.phone && c.phone.replace(/\D/g, "") === cleanEmail.replace(/\D/g, ""))
-    ) || null;
+    return contracts.find((c) => {
+      if (!c) return false;
+      const cEmail = (c.email || "").toLowerCase();
+      const cPrefix = cEmail.includes("@") ? cEmail.split("@")[0] : cEmail;
+      const cId = (c.id || "").toLowerCase();
+      const cPhone = c.phone ? c.phone.replace(/\D/g, "") : "";
+      const qPhone = cleanEmail.replace(/\D/g, "");
+
+      return (
+        cEmail === cleanEmail ||
+        cPrefix === cleanEmail ||
+        cPrefix === prefix ||
+        cId === cleanEmail ||
+        (qPhone.length >= 8 && cPhone === qPhone)
+      );
+    }) || null;
   }
 
   async saveContract(contract) {

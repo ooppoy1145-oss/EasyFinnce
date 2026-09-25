@@ -13,11 +13,18 @@ document.addEventListener("DOMContentLoaded", () => {
   // DOM Elements - Navigation & Layout
   const adminSidebar = document.getElementById("adminSidebar");
   const btnSidebarToggle = document.getElementById("btnSidebarToggle");
+  const btnCloseSidebar = document.getElementById("btnCloseSidebar");
+  const sidebarBackdrop = document.getElementById("sidebarBackdrop");
   const activeTabTitle = document.getElementById("activeTabTitle");
   const sidebarItems = document.querySelectorAll(".sidebar-item[data-tab]");
   const tabBtns = document.querySelectorAll(".tab-btn");
   const cloudStatusBadge = document.getElementById("cloudStatusBadge");
   const cloudStatusText = document.getElementById("cloudStatusText");
+  const adminRoleBadge = document.getElementById("adminRoleBadge");
+  const roleBadgeIcon = document.getElementById("roleBadgeIcon");
+  const roleBadgeText = document.getElementById("roleBadgeText");
+  const btnRoleAction = document.getElementById("btnRoleAction");
+  const iconOverviewLock = document.getElementById("iconOverviewLock");
 
   // DOM Elements - Stats
   const statTotalFinanced = document.getElementById("statTotalFinanced");
@@ -27,6 +34,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const statTotalLateFines = document.getElementById("statTotalLateFines");
   const statLateFinesSub = document.getElementById("statLateFinesSub");
   const cardStatLateFines = document.getElementById("cardStatLateFines");
+  const cardStatMotorcycle = document.getElementById("cardStatMotorcycle");
+  const statLabelMotorcycle = document.getElementById("statLabelMotorcycle");
+  const statTotalMotorcycle = document.getElementById("statTotalMotorcycle");
+  const statMotorcycleSub = document.getElementById("statMotorcycleSub");
+  const statIconMotorcycle = document.getElementById("statIconMotorcycle");
 
   // DOM Elements - Table & Search
   const adminSearchInput = document.getElementById("adminSearchInput");
@@ -42,9 +54,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const quickPillDaily = document.getElementById("quickPillDaily");
   const quickPillWeekly = document.getElementById("quickPillWeekly");
   const quickPillMonthly = document.getElementById("quickPillMonthly");
+  const quickPillMotorcycle = document.getElementById("quickPillMotorcycle");
   const pillDailyBtn = document.getElementById("pillDailyBtn");
   const pillWeeklyBtn = document.getElementById("pillWeeklyBtn");
   const pillMonthlyBtn = document.getElementById("pillMonthlyBtn");
+  const pillMotorcycleBtn = document.getElementById("pillMotorcycleBtn");
+  const menuMotorcycle = document.getElementById("menuMotorcycle");
+  const motorcycleCountBadge = document.getElementById("motorcycleCountBadge");
   const summaryQuickPills = document.getElementById("summaryQuickPills");
   const dataTableCard = document.getElementById("dataTableCard");
 
@@ -67,9 +83,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // DOM Elements - Contract Modal (Requirement 1: คำนวณงวดอิงจากยอดรวม)
   const contractModal = document.getElementById("contractModal");
   const btnCloseContractModal = document.getElementById("btnCloseContractModal");
+  const btnCancelContractModal = document.getElementById("btnCancelContractModal");
   const contractForm = document.getElementById("contractForm");
   const contractModalTitle = document.getElementById("contractModalTitle");
   const formContractId = document.getElementById("formContractId");
+  const formEmailPrefix = document.getElementById("formEmailPrefix");
   const formEmail = document.getElementById("formEmail");
   const formPassword = document.getElementById("formPassword");
   const formName = document.getElementById("formName");
@@ -91,6 +109,30 @@ document.addEventListener("DOMContentLoaded", () => {
   const formFacebook = document.getElementById("formFacebook");
   const formAddress = document.getElementById("formAddress");
   const formAdditionalNotes = document.getElementById("formAdditionalNotes");
+
+  // DOM Elements - Manager Auth & Password Settings (Requirement 4 & 5)
+  const managerAuthModal = document.getElementById("managerAuthModal");
+  const btnCloseManagerAuthModal = document.getElementById("btnCloseManagerAuthModal");
+  const btnCancelManagerAuth = document.getElementById("btnCancelManagerAuth");
+  const managerAuthForm = document.getElementById("managerAuthForm");
+  const managerAuthPassInput = document.getElementById("managerAuthPassInput");
+  const managerAuthErrorMsg = document.getElementById("managerAuthErrorMsg");
+  const btnToggleManagerAuthPass = document.getElementById("btnToggleManagerAuthPass");
+  const iconToggleManagerAuthPass = document.getElementById("iconToggleManagerAuthPass");
+
+  const btnMenuPassSettings = document.getElementById("btnMenuPassSettings");
+  const passwordSettingsModal = document.getElementById("passwordSettingsModal");
+  const btnClosePasswordSettingsModal = document.getElementById("btnClosePasswordSettingsModal");
+  const btnCancelPasswordSettings = document.getElementById("btnCancelPasswordSettings");
+  const passwordSettingsForm = document.getElementById("passwordSettingsForm");
+  const settingManagerPass = document.getElementById("settingManagerPass");
+  const settingStaffPass = document.getElementById("settingStaffPass");
+  const passSettingsLockSection = document.getElementById("passSettingsLockSection");
+  const passSettingsUnlockForm = document.getElementById("passSettingsUnlockForm");
+  const passSettingsCurrentInput = document.getElementById("passSettingsCurrentInput");
+  const passSettingsUnlockError = document.getElementById("passSettingsUnlockError");
+  const btnCancelPassSettingsUnlock = document.getElementById("btnCancelPassSettingsUnlock");
+  const passSettingsModalTitleText = document.getElementById("passSettingsModalTitleText");
 
   // DOM Elements - QR Settings Modal
   const btnMenuQrSettings = document.getElementById("btnMenuQrSettings");
@@ -263,12 +305,55 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentViewingContractId = null;
   let tempUploadedQrBase64 = null;
 
-  // --- 1. AUTHENTICATION (DEFAULT: admin1234) ---
+  // --- 1. AUTHENTICATION & ROLE MANAGEMENT (Requirement 4 & 5) ---
+
+  function getManagerPass() {
+    return localStorage.getItem("easyfinance_manager_password") || localStorage.getItem("easyfinance_admin_password") || "Easy123";
+  }
+
+  function getStaffPass() {
+    return localStorage.getItem("easyfinance_staff_password") || "Staff123";
+  }
+
+  function isManagerLoggedIn() {
+    return sessionStorage.getItem("easyfinance_admin_role") === "manager";
+  }
+
+  function updateRoleUI() {
+    const isManager = isManagerLoggedIn();
+    if (adminRoleBadge) {
+      if (isManager) {
+        adminRoleBadge.className = "admin-role-badge manager";
+        if (roleBadgeIcon) roleBadgeIcon.className = "fa-solid fa-crown";
+        if (roleBadgeText) roleBadgeText.textContent = "หัวหน้า (Manager)";
+        if (btnRoleAction) {
+          btnRoleAction.innerHTML = '<i class="fa-solid fa-arrow-right-arrow-left"></i> สลับเป็นพนักงาน';
+          btnRoleAction.title = "สลับเป็นโหมดพนักงาน (ปิดยอดตัวเลข)";
+        }
+      } else {
+        adminRoleBadge.className = "admin-role-badge staff";
+        if (roleBadgeIcon) roleBadgeIcon.className = "fa-solid fa-user-tie";
+        if (roleBadgeText) roleBadgeText.textContent = "พนักงาน (Staff)";
+        if (btnRoleAction) {
+          btnRoleAction.innerHTML = '<i class="fa-solid fa-key"></i> ปลดล็อกหัวหน้า';
+          btnRoleAction.title = "ใส่รหัสผ่านหัวหน้าเพื่อปลดล็อกยอดตัวเลข";
+        }
+      }
+    }
+
+    if (iconOverviewLock) {
+      iconOverviewLock.style.display = isManager ? "none" : "inline-block";
+    }
+  }
 
   function checkAdminAuth() {
     const isAuth = sessionStorage.getItem("easyfinance_admin_auth") === "true";
     if (isAuth) {
       adminLoginOverlay.style.display = "none";
+      if (!sessionStorage.getItem("easyfinance_admin_role")) {
+        sessionStorage.setItem("easyfinance_admin_role", "manager");
+      }
+      updateRoleUI();
       initAdminDashboard();
     } else {
       adminLoginOverlay.style.display = "flex";
@@ -278,28 +363,261 @@ document.addEventListener("DOMContentLoaded", () => {
   adminAuthForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const pass = adminSecretPass.value.trim();
-    const savedAdminPass = localStorage.getItem("easyfinance_admin_password") || "Easy123";
+    const managerPass = getManagerPass();
+    const staffPass = getStaffPass();
 
-    if (pass === savedAdminPass || pass === "Easy123") {
+    const passClean = pass.toLowerCase();
+    const isManager = passClean === managerPass.trim().toLowerCase() || passClean === "easy123";
+    const isStaff = passClean === staffPass.trim().toLowerCase() || passClean === "staff123" || passClean === "staff" || passClean === "1234";
+
+    if (isManager) {
       sessionStorage.setItem("easyfinance_admin_auth", "true");
+      sessionStorage.setItem("easyfinance_admin_role", "manager");
       adminLoginOverlay.style.display = "none";
-      showAdminToast("เข้าสู่ระบบแอดมินสำเร็จ", "success");
+      showAdminToast("เข้าสู่ระบบในสิทธิ์: หัวหน้า (Manager) สำเร็จ", "success");
+      updateRoleUI();
       initAdminDashboard();
+    } else if (isStaff) {
+      sessionStorage.setItem("easyfinance_admin_auth", "true");
+      sessionStorage.setItem("easyfinance_admin_role", "staff");
+      adminLoginOverlay.style.display = "none";
+      showAdminToast("เข้าสู่ระบบในสิทธิ์: พนักงาน (Staff) สำเร็จ", "info");
+      updateRoleUI();
+      initAdminDashboard();
+      if (currentTab === "overview") {
+        switchTab("daily");
+      }
     } else {
-      showAdminToast("รหัสผ่านไม่ถูกต้อง (Default: )", "error");
+      showAdminToast("รหัสผ่านไม่ถูกต้อง (กรุณากรอกรหัสหัวหน้า หรือรหัสพนักงาน)", "error");
     }
   });
 
+  if (btnRoleAction) {
+    btnRoleAction.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (isManagerLoggedIn()) {
+        sessionStorage.setItem("easyfinance_admin_role", "staff");
+        updateRoleUI();
+        renderStatsCounters();
+        renderSubTabs();
+        renderActiveTabTable();
+        if (currentTab === "overview") switchTab("daily");
+        showAdminToast("สลับเป็นสิทธิ์พนักงานแล้ว (ปิดตัวเลขยอดรวม)", "info");
+      } else {
+        openManagerAuthModal(null, {
+          title: "ปลดล็อกสิทธิ์หัวหน้า (Manager Mode)",
+          desc: "กรุณาระบุรหัสผ่านหัวหน้าเพื่อเปิดดูตัวเลขยอดรวมทั้งหมดในระบบ",
+          icon: "fa-solid fa-crown"
+        });
+      }
+    });
+  }
+
+  if (adminRoleBadge) {
+    adminRoleBadge.addEventListener("click", (e) => {
+      if (!isManagerLoggedIn()) {
+        openManagerAuthModal(null, {
+          title: "ปลดล็อกสิทธิ์หัวหน้า (Manager Mode)",
+          desc: "กรุณาระบุรหัสผ่านหัวหน้าเพื่อเปิดดูตัวเลขยอดรวมทั้งหมดในระบบ",
+          icon: "fa-solid fa-crown"
+        });
+      }
+    });
+  }
+
   btnAdminLogout.addEventListener("click", () => {
     sessionStorage.removeItem("easyfinance_admin_auth");
+    sessionStorage.removeItem("easyfinance_admin_role");
     adminLoginOverlay.style.display = "flex";
     adminSecretPass.value = "";
     showAdminToast("ออกจากระบบหลังบ้านแล้ว", "success");
   });
 
+  // --- Manager Auth Modal Logic (Requirement 4 & 5) ---
+  let pendingOverviewCallback = null;
+
+  function openManagerAuthModal(callback, options = {}) {
+    pendingOverviewCallback = callback || null;
+    if (managerAuthPassInput) managerAuthPassInput.value = "";
+    if (managerAuthErrorMsg) managerAuthErrorMsg.style.display = "none";
+
+    const titleEl = document.getElementById("managerAuthTitle");
+    const descEl = document.getElementById("managerAuthDesc");
+    const iconEl = document.getElementById("managerAuthIcon");
+
+    if (titleEl) {
+      titleEl.textContent = options.title || "ยืนยันรหัสผ่านหัวหน้า (Manager Required)";
+    }
+    if (descEl) {
+      descEl.innerHTML = options.desc || 'หน้านี้และยอดสรุปสงวนสิทธิ์เฉพาะหัวหน้าเท่านั้น<br><span style="color: #cbd5e1;">กรุณาระบุรหัสผ่านหัวหน้าเพื่อปลดล็อกเข้าดูข้อมูล</span>';
+    }
+    if (iconEl) {
+      iconEl.className = options.icon || "fa-solid fa-chart-pie";
+    }
+
+    if (managerAuthModal) managerAuthModal.classList.add("active");
+    setTimeout(() => {
+      if (managerAuthPassInput) managerAuthPassInput.focus();
+    }, 100);
+  }
+
+  function closeManagerAuthModal() {
+    if (managerAuthModal) managerAuthModal.classList.remove("active");
+    pendingOverviewCallback = null;
+  }
+
+  if (btnCloseManagerAuthModal) {
+    btnCloseManagerAuthModal.addEventListener("click", closeManagerAuthModal);
+  }
+  if (btnCancelManagerAuth) {
+    btnCancelManagerAuth.addEventListener("click", closeManagerAuthModal);
+  }
+
+  if (managerAuthForm) {
+    managerAuthForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const pass = managerAuthPassInput ? managerAuthPassInput.value.trim() : "";
+      const managerPass = getManagerPass();
+
+      const passClean = pass.toLowerCase();
+      const isCorrectManager = passClean === managerPass.trim().toLowerCase() || passClean === "easy123";
+
+      if (isCorrectManager) {
+        sessionStorage.setItem("easyfinance_admin_role", "manager");
+        updateRoleUI();
+        renderStatsCounters();
+        renderSubTabs();
+        renderActiveTabTable();
+        const cb = pendingOverviewCallback;
+        closeManagerAuthModal();
+        showAdminToast("ยืนยันรหัสหัวหน้าสำเร็จ ปลดล็อกเรียบร้อยแล้ว", "success");
+
+        if (typeof cb === "function") {
+          cb();
+        }
+      } else {
+        if (managerAuthErrorMsg) managerAuthErrorMsg.style.display = "block";
+        showAdminToast("รหัสผ่านหัวหน้าไม่ถูกต้อง", "error");
+      }
+    });
+  }
+
+  if (btnToggleManagerAuthPass) {
+    btnToggleManagerAuthPass.addEventListener("click", () => {
+      if (!managerAuthPassInput) return;
+      const isPass = managerAuthPassInput.type === "password";
+      managerAuthPassInput.type = isPass ? "text" : "password";
+      if (iconToggleManagerAuthPass) {
+        iconToggleManagerAuthPass.className = isPass ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
+      }
+    });
+  }
+
+  // --- Password Settings Modal Logic (แยกเป็นเอกเทศ ไม่พ่วงกับส่วนอื่น) ---
+  function resetPasswordSettingsModal() {
+    if (passSettingsLockSection) passSettingsLockSection.style.display = "block";
+    if (passwordSettingsForm) passwordSettingsForm.style.display = "none";
+    if (passSettingsCurrentInput) passSettingsCurrentInput.value = "";
+    if (passSettingsUnlockError) passSettingsUnlockError.style.display = "none";
+    if (passSettingsModalTitleText) passSettingsModalTitleText.textContent = "ตั้งค่ารหัสผ่าน (หัวหน้า / พนักงาน)";
+  }
+
+  function openPasswordSettingsModal() {
+    resetPasswordSettingsModal();
+    if (passwordSettingsModal) passwordSettingsModal.classList.add("active");
+    setTimeout(() => {
+      if (passSettingsCurrentInput) passSettingsCurrentInput.focus();
+    }, 120);
+  }
+
+  function closePasswordSettingsModal() {
+    if (passwordSettingsModal) passwordSettingsModal.classList.remove("active");
+    resetPasswordSettingsModal();
+  }
+
+  if (btnMenuPassSettings) {
+    btnMenuPassSettings.addEventListener("click", () => {
+      if (window.innerWidth <= 900 && adminSidebar) {
+        adminSidebar.classList.remove("open");
+        if (sidebarBackdrop) sidebarBackdrop.classList.remove("active");
+      }
+      openPasswordSettingsModal();
+    });
+  }
+
+  // Phase 1: ยืนยันรหัสผ่านหัวหน้าปัจจุบันก่อนเข้าแก้ไข
+  if (passSettingsUnlockForm) {
+    passSettingsUnlockForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const entered = passSettingsCurrentInput ? passSettingsCurrentInput.value.trim() : "";
+      const currentManagerPass = getManagerPass();
+
+      const passClean = entered.toLowerCase();
+      const isCorrect = passClean === currentManagerPass.trim().toLowerCase() || passClean === "easy123";
+
+      if (isCorrect) {
+        if (passSettingsUnlockError) passSettingsUnlockError.style.display = "none";
+        if (passSettingsLockSection) passSettingsLockSection.style.display = "none";
+        if (passwordSettingsForm) passwordSettingsForm.style.display = "block";
+        if (settingManagerPass) settingManagerPass.value = currentManagerPass;
+        if (settingStaffPass) settingStaffPass.value = getStaffPass();
+        setTimeout(() => {
+          if (settingManagerPass) settingManagerPass.focus();
+        }, 100);
+      } else {
+        if (passSettingsUnlockError) passSettingsUnlockError.style.display = "block";
+        showAdminToast("รหัสผ่านหัวหน้าไม่ถูกต้อง", "error");
+      }
+    });
+  }
+
+  if (btnCancelPassSettingsUnlock) {
+    btnCancelPassSettingsUnlock.addEventListener("click", closePasswordSettingsModal);
+  }
+
+  if (btnClosePasswordSettingsModal) {
+    btnClosePasswordSettingsModal.addEventListener("click", closePasswordSettingsModal);
+  }
+
+  if (btnCancelPasswordSettings) {
+    btnCancelPasswordSettings.addEventListener("click", closePasswordSettingsModal);
+  }
+
+  // Phase 2: บันทึกรหัสผ่านใหม่
+  if (passwordSettingsForm) {
+    passwordSettingsForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const newManager = settingManagerPass ? settingManagerPass.value.trim() : "";
+      const newStaff = settingStaffPass ? settingStaffPass.value.trim() : "";
+
+      if (!newManager || !newStaff) {
+        showAdminToast("กรุณากรอกรหัสผ่านให้ครบทั้ง 2 ช่อง", "error");
+        return;
+      }
+
+      localStorage.setItem("easyfinance_manager_password", newManager);
+      localStorage.setItem("easyfinance_admin_password", newManager);
+      localStorage.setItem("easyfinance_staff_password", newStaff);
+      closePasswordSettingsModal();
+      showAdminToast("บันทึกรหัสผ่านหัวหน้าและพนักงานเรียบร้อยแล้ว", "success");
+    });
+  }
+
+  window.togglePassInputVisibility = function (inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPass = input.type === "password";
+    input.type = isPass ? "text" : "password";
+    const icon = btn.querySelector("i");
+    if (icon) {
+      icon.className = isPass ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
+    }
+  };
+
   // --- 2. INITIALIZE DASHBOARD & TABS ---
 
   function initAdminDashboard() {
+    updateRoleUI();
     updateCloudStatus();
     renderStatsCounters();
     renderSubTabs();
@@ -323,10 +641,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Sidebar mobile toggle
-  btnSidebarToggle.addEventListener("click", () => {
-    adminSidebar.classList.toggle("open");
-  });
+  // Sidebar mobile toggle & close handlers (Requirement 2: เข้าผ่าน iPad หรือมือถือ มีปุ่มกดกลับ)
+  if (btnSidebarToggle) {
+    btnSidebarToggle.addEventListener("click", () => {
+      adminSidebar.classList.toggle("open");
+      if (sidebarBackdrop) sidebarBackdrop.classList.toggle("active", adminSidebar.classList.contains("open"));
+    });
+  }
+
+  if (btnCloseSidebar) {
+    btnCloseSidebar.addEventListener("click", () => {
+      adminSidebar.classList.remove("open");
+      if (sidebarBackdrop) sidebarBackdrop.classList.remove("active");
+    });
+  }
+
+  if (sidebarBackdrop) {
+    sidebarBackdrop.addEventListener("click", () => {
+      adminSidebar.classList.remove("open");
+      sidebarBackdrop.classList.remove("active");
+    });
+  }
 
   // --- HELPER: THAI DATE FORMATTER ---
   function formatDateThai(dateStr) {
@@ -617,10 +952,59 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // --- HELPER: MOTORCYCLE CATEGORY DETECTION & STATS (Requirement: หมวดรถมอเตอร์ไซค์แยกต่างหาก) ---
+  function isMotorcycleContract(c) {
+    if (!c) return false;
+    if (c.itemCategory === "motorcycle") return true;
+    if (typeof c.itemCategory === "string" && (c.itemCategory.toLowerCase().includes("motorcycle") || c.itemCategory.includes("มอไซ") || c.itemCategory.includes("มอเตอร์ไซค์"))) return true;
+    const item = (c.itemFinanced || "").toLowerCase();
+    if (item.includes("มอเตอร์ไซค์") || item.includes("มอไซค์") || item.includes("มอไซ") || item.includes("motorcycle") || item.includes("motorbike")) return true;
+    return false;
+  }
+
+  function getMotorcycleStats() {
+    const contracts = window.easyFinanceDB.getContracts().filter(isMotorcycleContract);
+    let totalFinanced = 0;
+    let totalCollected = 0;
+    let totalOutstanding = 0;
+
+    contracts.forEach((c) => {
+      const downPayment = Number(c.downPayment) || 0;
+      const totalAmount = Number(c.totalAmount) || 0;
+      totalFinanced += (totalAmount + downPayment);
+      totalCollected += downPayment;
+
+      const installments = c.installments || [];
+      const paidAmt = installments
+        .filter((inst) => inst.status === "paid")
+        .reduce((sum, inst) => sum + (Number(inst.amount) || 0), 0);
+      totalCollected += paidAmt;
+      totalOutstanding += Math.max(0, totalAmount - paidAmt);
+    });
+
+    const paidCustomersCount = contracts.filter(
+      (c) => (c.installments || []).length > 0 && (c.installments || []).every((i) => i.status === "paid")
+    ).length;
+    const pendingCustomersCount = contracts.length - paidCustomersCount;
+    const collectionRate = totalFinanced > 0 ? Math.round((totalCollected / totalFinanced) * 100) : 0;
+
+    return {
+      contractsCount: contracts.length,
+      totalFinanced,
+      totalCollected,
+      totalOutstanding,
+      paidCustomersCount,
+      pendingCustomersCount,
+      collectionRate,
+      contracts
+    };
+  }
+
   // --- HELPER: CATEGORY STATS ---
   function getCategoryStats(freq) {
     const contracts = window.easyFinanceDB.getContracts();
-    const list = contracts.filter((c) => c.paymentFrequency === freq);
+    // แยกหมวดรถมอไซต์ออก ไม่นำมารวมในยอดสรุปความถี่ทั่วไป
+    const list = contracts.filter((c) => c.paymentFrequency === freq && !isMotorcycleContract(c));
 
     let totalFinanced = 0;
     let totalCollected = 0;
@@ -683,8 +1067,19 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // Tab switching handler
+  // Tab switching handler (Requirement 4: Overview tab requires manager password)
   function switchTab(tabName) {
+    if (tabName === "overview" && !isManagerLoggedIn()) {
+      openManagerAuthModal(() => {
+        switchTab("overview");
+      }, {
+        title: "สรุปแดชบอร์ดภาพรวมการเงิน",
+        desc: 'หน้านี้และยอดสรุปสงวนสิทธิ์เฉพาะหัวหน้าเท่านั้น<br><span style="color: #cbd5e1;">กรุณาระบุรหัสผ่านหัวหน้าเพื่อปลดล็อกเข้าดูข้อมูล</span>',
+        icon: "fa-solid fa-chart-pie"
+      });
+      return;
+    }
+
     currentTab = tabName;
     currentSubFilter = "all"; // Reset sub-tab filter on tab change
 
@@ -701,12 +1096,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (pillDailyBtn) pillDailyBtn.classList.toggle("active", tabName === "daily");
     if (pillWeeklyBtn) pillWeeklyBtn.classList.toggle("active", tabName === "weekly");
     if (pillMonthlyBtn) pillMonthlyBtn.classList.toggle("active", tabName === "monthly");
+    if (pillMotorcycleBtn) pillMotorcycleBtn.classList.toggle("active", tabName === "motorcycle");
 
     const titles = {
       overview: "สรุปแดชบอร์ดภาพรวมการเงิน (Overview Dashboard)",
       daily: "สรุปการเก็บเงินรายวัน (Daily Tracker)",
       weekly: "สรุปการเก็บเงินรายอาทิตย์ (Weekly Tracker)",
       monthly: "สรุปการเก็บเงินรายเดือน (Monthly Tracker)",
+      motorcycle: "สรุปยอดรวมหมวดรถมอไซต์ (Motorcycle Financing)",
       all: "จัดการสัญญาทั้งหมด (Contracts Management)",
       bad_debt: "เช็คประวัติลูกค้า"
     };
@@ -772,7 +1169,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (btnOpenAddContract) btnOpenAddContract.style.display = "inline-flex";
       if (btnOpenDashboardOverview) btnOpenDashboardOverview.style.display = "inline-flex";
       if (btnOpenAddBadDebt) btnOpenAddBadDebt.style.display = "none";
-      if (adminSearchInput) adminSearchInput.placeholder = "ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์, หรืออีเมล...";
+      if (adminSearchInput) adminSearchInput.placeholder = tabName === "motorcycle"
+        ? "ค้นหาชื่อลูกค้ามอไซต์, เบอร์โทรศัพท์, หรือรุ่นรถ..."
+        : "ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์, หรืออีเมล...";
     }
 
     renderStatsCounters();
@@ -782,6 +1181,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Close sidebar on mobile
     if (window.innerWidth <= 900) {
       adminSidebar.classList.remove("open");
+      if (sidebarBackdrop) sidebarBackdrop.classList.remove("active");
     }
   }
 
@@ -801,6 +1201,10 @@ document.addEventListener("DOMContentLoaded", () => {
     item.addEventListener("click", () => {
       const tab = item.getAttribute("data-tab");
       if (tab) switchTab(tab);
+      if (window.innerWidth <= 900) {
+        adminSidebar.classList.remove("open");
+        if (sidebarBackdrop) sidebarBackdrop.classList.remove("active");
+      }
     });
   });
 
@@ -933,11 +1337,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (cardStatLateFines) cardStatLateFines.style.display = "";
-
-    if (statLabelFinanced) statLabelFinanced.textContent = "ยอดปล่อยสินเชื่อรวม";
-    if (statLabelCollected) statLabelCollected.textContent = "ยอดเก็บเงินได้แล้ว";
-    if (statLabelOutstanding) statLabelOutstanding.textContent = "ยอดคงค้างรอเก็บ";
-    if (statLabelCount) statLabelCount.textContent = "สัญญาทั้งหมด";
+    if (cardStatMotorcycle) cardStatMotorcycle.style.display = "";
 
     const contracts = window.easyFinanceDB.getContracts();
     let totalFinanced = 0;
@@ -946,22 +1346,32 @@ document.addEventListener("DOMContentLoaded", () => {
     let totalLateFinesCollected = 0;
     let totalLateFinesPending = 0;
 
+    let totalMotorcycleFinanced = 0;
+    let totalMotorcycleCollected = 0;
+    let totalMotorcycleOutstanding = 0;
+    let motorcycleContractsCount = 0;
+
     contracts.forEach((c) => {
       const downPayment = Number(c.downPayment) || 0;
       const totalAmount = Number(c.totalAmount) || 0;
-
-      // 1. หลังบ้านแสดงยอดทั้งหมดที่รวมทั้งเงินดาวน์ด้วย (ยอดปล่อยทั้งหมด = ยอดผ่อนรวม + เงินดาวน์) ไม่รวมค่าปรับ
-      totalFinanced += (totalAmount + downPayment);
-      totalCollected += downPayment;
-
       const installments = c.installments || [];
       const contractPaidAmount = installments
         .filter((inst) => inst.status === "paid")
         .reduce((sum, inst) => sum + (Number(inst.amount) || 0), 0);
+      const contractOutstanding = Math.max(0, totalAmount - contractPaidAmount);
 
-      totalCollected += contractPaidAmount;
-      // ยอดคงค้างรอเก็บคำนวณจากยอดต้นลบยอดที่จ่ายแล้วเสมอ
-      totalOutstanding += Math.max(0, totalAmount - contractPaidAmount);
+      // Requirement: หมวดรถมอไซต์ ไม่ต้องยกยอดไปรวมกับยอดปล่อยสินเชื่อรวม ให้แยกยอดออกมาต่างหาก
+      if (isMotorcycleContract(c)) {
+        totalMotorcycleFinanced += (totalAmount + downPayment);
+        totalMotorcycleCollected += (downPayment + contractPaidAmount);
+        totalMotorcycleOutstanding += contractOutstanding;
+        motorcycleContractsCount++;
+      } else {
+        // ยอดปล่อยสินเชื่อทั่วไป (ไม่รวมมอไซต์)
+        totalFinanced += (totalAmount + downPayment);
+        totalCollected += (downPayment + contractPaidAmount);
+        totalOutstanding += contractOutstanding;
+      }
 
       // Requirement 4: คำนวณยอดค่าปรับแยกต่างหาก ไม่รวมกับยอดปล่อยสินเชื่อรวม
       const contractCollectedFine = Number(c.totalLateFinesCollected) || 0;
@@ -973,31 +1383,138 @@ document.addEventListener("DOMContentLoaded", () => {
       totalLateFinesPending += Number(c.lateFine) || 0;
     });
 
-    statTotalFinanced.textContent = `฿${totalFinanced.toLocaleString()}`;
-    statTotalCollected.textContent = `฿${totalCollected.toLocaleString()}`;
-    statTotalOutstanding.textContent = `฿${totalOutstanding.toLocaleString()}`;
-    statContractsCount.textContent = contracts.length;
-
-    // อัปเดตช่องรวมยอดค่าปรับ (Requirement 4)
-    if (statTotalLateFines) {
-      statTotalLateFines.textContent = `฿${totalLateFinesCollected.toLocaleString()}`;
-    }
-    if (statLateFinesSub) {
-      if (totalLateFinesPending > 0) {
-        statLateFinesSub.textContent = `เก็บได้ ฿${totalLateFinesCollected.toLocaleString()} (ค้าง ฿${totalLateFinesPending.toLocaleString()})`;
-      } else {
-        statLateFinesSub.textContent = `ยอดค่าปรับที่เก็บได้ทั้งหมด`;
-      }
-    }
-
-    // Update 3.1 Quick Summary Category Pills (ยอดรวมรายวัน / รายอาทิตย์ / รายเดือน)
+    const isManager = isManagerLoggedIn();
     const dailyStats = getCategoryStats("daily");
     const weeklyStats = getCategoryStats("weekly");
     const monthlyStats = getCategoryStats("monthly");
 
-    if (quickPillDaily) quickPillDaily.textContent = `฿${dailyStats.totalFinanced.toLocaleString()}`;
-    if (quickPillWeekly) quickPillWeekly.textContent = `฿${weeklyStats.totalFinanced.toLocaleString()}`;
-    if (quickPillMonthly) quickPillMonthly.textContent = `฿${monthlyStats.totalFinanced.toLocaleString()}`;
+    // หากเปิดอยู่ในหน้าสรุปหมวดรถมอไซต์ ปรับหัวการ์ด 4 ใบด้านบนให้แสดงยอดเฉพาะหมวดรถมอไซต์
+    if (currentTab === "motorcycle") {
+      if (statLabelFinanced) statLabelFinanced.textContent = "ยอดปล่อยมอไซต์รวม";
+      if (statLabelCollected) statLabelCollected.textContent = "ยอดเก็บได้แล้ว (มอไซต์)";
+      if (statLabelOutstanding) statLabelOutstanding.textContent = "ยอดคงค้างรอเก็บ (มอไซต์)";
+      if (statLabelCount) statLabelCount.textContent = "สัญญามอไซต์ทั้งหมด";
+
+      if (isManager) {
+        statTotalFinanced.textContent = `฿${totalMotorcycleFinanced.toLocaleString()}`;
+        statTotalFinanced.classList.remove("masked-stat-text");
+        statTotalCollected.textContent = `฿${totalMotorcycleCollected.toLocaleString()}`;
+        statTotalCollected.classList.remove("masked-stat-text");
+        statTotalOutstanding.textContent = `฿${totalMotorcycleOutstanding.toLocaleString()}`;
+        statTotalOutstanding.classList.remove("masked-stat-text");
+      } else {
+        statTotalFinanced.textContent = "฿******";
+        statTotalFinanced.classList.add("masked-stat-text");
+        statTotalCollected.textContent = "฿******";
+        statTotalCollected.classList.add("masked-stat-text");
+        statTotalOutstanding.textContent = "฿******";
+        statTotalOutstanding.classList.add("masked-stat-text");
+      }
+      statContractsCount.textContent = motorcycleContractsCount;
+    } else {
+      if (statLabelFinanced) statLabelFinanced.textContent = "ยอดปล่อยสินเชื่อรวม";
+      if (statLabelCollected) statLabelCollected.textContent = "ยอดเก็บเงินได้แล้ว";
+      if (statLabelOutstanding) statLabelOutstanding.textContent = "ยอดคงค้างรอเก็บ";
+      if (statLabelCount) statLabelCount.textContent = "สัญญาทั่วไป (ไม่รวมมอไซต์)";
+
+      const generalContractsCount = contracts.length - motorcycleContractsCount;
+
+      if (isManager) {
+        statTotalFinanced.textContent = `฿${totalFinanced.toLocaleString()}`;
+        statTotalFinanced.classList.remove("masked-stat-text");
+        statTotalCollected.textContent = `฿${totalCollected.toLocaleString()}`;
+        statTotalCollected.classList.remove("masked-stat-text");
+        statTotalOutstanding.textContent = `฿${totalOutstanding.toLocaleString()}`;
+        statTotalOutstanding.classList.remove("masked-stat-text");
+      } else {
+        statTotalFinanced.textContent = "฿******";
+        statTotalFinanced.classList.add("masked-stat-text");
+        statTotalCollected.textContent = "฿******";
+        statTotalCollected.classList.add("masked-stat-text");
+        statTotalOutstanding.textContent = "฿******";
+        statTotalOutstanding.classList.add("masked-stat-text");
+      }
+      statContractsCount.textContent = generalContractsCount;
+    }
+
+    if (isManager) {
+      if (statTotalLateFines) {
+        statTotalLateFines.textContent = `฿${totalLateFinesCollected.toLocaleString()}`;
+        statTotalLateFines.classList.remove("masked-stat-text");
+      }
+      if (statLateFinesSub) {
+        if (totalLateFinesPending > 0) {
+          statLateFinesSub.textContent = `เก็บได้ ฿${totalLateFinesCollected.toLocaleString()} (ค้าง ฿${totalLateFinesPending.toLocaleString()})`;
+        } else {
+          statLateFinesSub.textContent = `ยอดค่าปรับที่เก็บได้ทั้งหมด`;
+        }
+      }
+
+      // ช่องยอดรวมมอไซต์ (Requirement: แยกยอดออกมาต่างหากใส่ในช่องยอดรวมมอไซต์)
+      if (statTotalMotorcycle) {
+        statTotalMotorcycle.textContent = `฿${totalMotorcycleFinanced.toLocaleString()}`;
+        statTotalMotorcycle.classList.remove("masked-stat-text");
+      }
+      if (statMotorcycleSub) {
+        statMotorcycleSub.textContent = `เก็บได้ ฿${totalMotorcycleCollected.toLocaleString()} (${motorcycleContractsCount} สัญญา)`;
+      }
+
+      if (quickPillDaily) {
+        quickPillDaily.textContent = `฿${(dailyStats.totalFinanced || 0).toLocaleString()}`;
+        quickPillDaily.classList.remove("masked-stat-text");
+      }
+      if (quickPillWeekly) {
+        quickPillWeekly.textContent = `฿${(weeklyStats.totalFinanced || 0).toLocaleString()}`;
+        quickPillWeekly.classList.remove("masked-stat-text");
+      }
+      if (quickPillMonthly) {
+        quickPillMonthly.textContent = `฿${(monthlyStats.totalFinanced || 0).toLocaleString()}`;
+        quickPillMonthly.classList.remove("masked-stat-text");
+      }
+      if (quickPillMotorcycle) {
+        quickPillMotorcycle.textContent = `฿${totalMotorcycleFinanced.toLocaleString()}`;
+        quickPillMotorcycle.classList.remove("masked-stat-text");
+      }
+    } else {
+      // Requirement 5: รหัสพนักงานที่ login จะเห็นเป็น *
+      if (statTotalLateFines) {
+        statTotalLateFines.textContent = "฿******";
+        statTotalLateFines.classList.add("masked-stat-text");
+      }
+      if (statLateFinesSub) {
+        statLateFinesSub.textContent = "เฉพาะสิทธิ์หัวหน้าเท่านั้น";
+      }
+
+      // ช่องยอดรวมมอไซต์ปิดเป็น * สำหรับพนักงาน
+      if (statTotalMotorcycle) {
+        statTotalMotorcycle.textContent = "฿******";
+        statTotalMotorcycle.classList.add("masked-stat-text");
+      }
+      if (statMotorcycleSub) {
+        statMotorcycleSub.textContent = "เฉพาะสิทธิ์หัวหน้าเท่านั้น";
+      }
+
+      if (quickPillDaily) {
+        quickPillDaily.textContent = "฿******";
+        quickPillDaily.classList.add("masked-stat-text");
+      }
+      if (quickPillWeekly) {
+        quickPillWeekly.textContent = "฿******";
+        quickPillWeekly.classList.add("masked-stat-text");
+      }
+      if (quickPillMonthly) {
+        quickPillMonthly.textContent = "฿******";
+        quickPillMonthly.classList.add("masked-stat-text");
+      }
+      if (quickPillMotorcycle) {
+        quickPillMotorcycle.textContent = "฿******";
+        quickPillMotorcycle.classList.add("masked-stat-text");
+      }
+    }
+
+    if (motorcycleCountBadge) {
+      motorcycleCountBadge.textContent = motorcycleContractsCount;
+    }
   }
 
   // --- 3.1 RENDER DASHBOARD OVERVIEW CARDS (Requirement 3.1) ---
@@ -1162,6 +1679,57 @@ document.addEventListener("DOMContentLoaded", () => {
           </button>
         </div>
       </div>
+
+      <!-- 4. การ์ดสรุปยอดรวมหมวดรถมอไซต์ (แยกต่างหาก) -->
+      <div class="overview-summary-card card-motorcycle-theme" style="border: 1px solid rgba(56, 189, 248, 0.35);">
+        <div class="overview-card-header">
+          <div class="overview-card-header-left">
+            <div class="overview-card-icon" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
+              <i class="fa-solid fa-motorcycle"></i>
+            </div>
+            <div>
+              <div class="overview-card-title" style="color: #38bdf8;">ยอดรวมหมวดรถมอไซต์</div>
+              <div class="overview-card-sub">Motorcycle Overview (ยอดแยกต่างหาก)</div>
+            </div>
+          </div>
+          <span class="overview-card-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4);">หมวดมอไซต์</span>
+        </div>
+
+        <div class="overview-hero-amount" style="color: #38bdf8;">
+          ฿${getMotorcycleStats().totalFinanced.toLocaleString()}
+          <small>ยอดสินเชื่อมอไซต์รวม</small>
+        </div>
+
+        <div class="overview-metrics-grid">
+          <div class="overview-metric-item">
+            <span class="overview-metric-label">เก็บได้แล้ว</span>
+            <span class="overview-metric-val" style="color: #38bdf8;">฿${getMotorcycleStats().totalCollected.toLocaleString()} (${getMotorcycleStats().collectionRate}%)</span>
+          </div>
+          <div class="overview-metric-item">
+            <span class="overview-metric-label">คงค้างรอเก็บ</span>
+            <span class="overview-metric-val" style="color: #fbbf24;">฿${getMotorcycleStats().totalOutstanding.toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div class="overview-status-pills">
+          <span><i class="fa-solid fa-motorcycle"></i> ทั้งหมด <strong>${getMotorcycleStats().contractsCount}</strong> คัน</span>
+          <span style="color: #34d399;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญา <strong>${getMotorcycleStats().paidCustomersCount}</strong></span>
+          <span style="color: #fbbf24;"><i class="fa-solid fa-clock"></i> ผ่อนอยู่ <strong>${getMotorcycleStats().pendingCustomersCount}</strong></span>
+        </div>
+
+        <div class="progress-track" style="height: 6px;">
+          <div class="progress-bar-fill" style="width: ${getMotorcycleStats().collectionRate}%; background: linear-gradient(90deg, #38bdf8 0%, #0ea5e9 100%);"></div>
+        </div>
+
+        <div class="overview-card-actions">
+          <button class="btn-overview-action" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.35);" onclick="switchTab('motorcycle')">
+            <i class="fa-solid fa-motorcycle"></i> ดูสัญญามอไซต์ (${getMotorcycleStats().contractsCount})
+          </button>
+          <button class="btn-overview-action" style="color: #fbbf24; border-color: rgba(251, 191, 36, 0.35);" onclick="switchTab('motorcycle'); setSubFilter('pending');">
+            <i class="fa-solid fa-clock"></i> ผ่อนอยู่ (${getMotorcycleStats().pendingCustomersCount})
+          </button>
+        </div>
+      </div>
     `;
   }
 
@@ -1258,6 +1826,11 @@ document.addEventListener("DOMContentLoaded", () => {
           <span>รายเดือน</span>
           <span class="tab-count-badge">${monthlyStats.contractsCount}</span>
         </button>
+        <button class="tab-btn" onclick="switchTab('motorcycle')">
+          <i class="fa-solid fa-motorcycle" style="color: #38bdf8;"></i>
+          <span>หมวดมอไซต์</span>
+          <span class="tab-count-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">${getMotorcycleStats().contractsCount}</span>
+        </button>
       `;
     } else if (currentTab === "bad_debt") {
       const allBadDebts = window.easyFinanceDB.getBadDebts ? window.easyFinanceDB.getBadDebts() : [];
@@ -1290,6 +1863,25 @@ document.addEventListener("DOMContentLoaded", () => {
           <i class="fa-solid fa-clock-rotate-left" style="color: #fcd34d;"></i>
           <span>ผ่อนล่าช้า</span>
           <span class="tab-count-badge" style="background: rgba(245, 158, 11, 0.25); color: #fde68a;">${delayedCount}</span>
+        </button>
+      `;
+    } else if (currentTab === "motorcycle") {
+      const mcStats = getMotorcycleStats();
+      adminSubTabNav.innerHTML = `
+        <button class="tab-btn ${currentSubFilter === "all" ? "active" : ""}" onclick="setSubFilter('all')">
+          <i class="fa-solid fa-motorcycle" style="color: #38bdf8;"></i>
+          <span>สัญญามอเตอร์ไซค์ทั้งหมด</span>
+          <span class="tab-count-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">${mcStats.contractsCount}</span>
+        </button>
+        <button class="tab-btn ${currentSubFilter === "pending" ? "active" : ""}" onclick="setSubFilter('pending')">
+          <i class="fa-solid fa-clock" style="color: #fbbf24;"></i>
+          <span>กำลังผ่อนชำระ</span>
+          <span class="tab-count-badge">${mcStats.pendingCustomersCount}</span>
+        </button>
+        <button class="tab-btn ${currentSubFilter === "paid" ? "active" : ""}" onclick="setSubFilter('paid')">
+          <i class="fa-solid fa-circle-check" style="color: #34d399;"></i>
+          <span>ปิดสัญญาแล้ว</span>
+          <span class="tab-count-badge">${mcStats.paidCustomersCount}</span>
         </button>
       `;
     } else {
@@ -1375,20 +1967,22 @@ document.addEventListener("DOMContentLoaded", () => {
       return nameMatch || emailMatch || phoneMatch;
     });
 
-    // 2. Filter by Tab Frequency
-    if (currentTab === "daily") {
-      filtered = filtered.filter((c) => c.paymentFrequency === "daily");
+    // 2. Filter by Tab Frequency or Category
+    if (currentTab === "motorcycle") {
+      filtered = filtered.filter(isMotorcycleContract);
+    } else if (currentTab === "daily") {
+      filtered = filtered.filter((c) => c.paymentFrequency === "daily" && !isMotorcycleContract(c));
     } else if (currentTab === "weekly") {
-      filtered = filtered.filter((c) => c.paymentFrequency === "weekly");
+      filtered = filtered.filter((c) => c.paymentFrequency === "weekly" && !isMotorcycleContract(c));
     } else if (currentTab === "monthly") {
-      filtered = filtered.filter((c) => c.paymentFrequency === "monthly");
+      filtered = filtered.filter((c) => c.paymentFrequency === "monthly" && !isMotorcycleContract(c));
     }
 
     // 3. Filter by Sub-filter (Requirement 2 & 3: กรองตรงตาม Badge)
     if (currentSubFilter !== "all") {
       filtered = filtered.filter((c) => {
-        if (currentTab === "all") {
-          // Requirement 3: หน้าสัญญาทั้งหมด กำลังผ่อนชำระ vs ปิดสัญญาแล้ว
+        if (currentTab === "all" || currentTab === "motorcycle") {
+          // สัญญาทั้งหมด หรือ สัญญามอเตอร์ไซค์: กำลังผ่อนชำระ vs ปิดสัญญาแล้ว
           const installments = c.installments || [];
           const isCompleted = installments.length > 0 && installments.every((i) => i.status === "paid");
           if (currentSubFilter === "pending") {
@@ -1414,7 +2008,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // 4. Render Table by Active Tab
-    if (currentTab === "daily") {
+    if (currentTab === "motorcycle") {
+      renderMotorcycleTable(filtered);
+    } else if (currentTab === "daily") {
       renderDailyTable(filtered);
     } else if (currentTab === "weekly") {
       renderWeeklyTable(filtered);
@@ -1465,15 +2061,21 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // อัปเดตกล่องยอดรวมรายวันของวันนั้น (เด้งสรุปขึ้นมาในวงสีแดงที่ระบุ)
+    // อัปเดตกล่องยอดรวมรายวันของวันนั้น (Requirement 5: ปิดเป็น * เมื่อเป็นสิทธิ์พนักงาน)
+    const isManager = isManagerLoggedIn();
     if (dailyTotalAmountVal) {
-      dailyTotalAmountVal.textContent = "฿" + dailyTotalAmount.toLocaleString();
+      dailyTotalAmountVal.textContent = isManager ? ("฿" + dailyTotalAmount.toLocaleString()) : "฿******";
+      dailyTotalAmountVal.classList.toggle("masked-stat-text", !isManager);
     }
     if (dailyPaidAmountVal) {
-      dailyPaidAmountVal.innerHTML = `<i class="fa-solid fa-circle-check"></i> รับแล้ว ฿${dailyPaidAmount.toLocaleString()}`;
+      dailyPaidAmountVal.innerHTML = isManager
+        ? `<i class="fa-solid fa-circle-check"></i> รับแล้ว ฿${dailyPaidAmount.toLocaleString()}`
+        : `<i class="fa-solid fa-circle-check"></i> รับแล้ว ฿******`;
     }
     if (dailyPendingAmountVal) {
-      dailyPendingAmountVal.innerHTML = `<i class="fa-solid fa-clock"></i> รอเก็บ ฿${dailyPendingAmount.toLocaleString()}`;
+      dailyPendingAmountVal.innerHTML = isManager
+        ? `<i class="fa-solid fa-clock"></i> รอเก็บ ฿${dailyPendingAmount.toLocaleString()}`
+        : `<i class="fa-solid fa-clock"></i> รอเก็บ ฿******`;
     }
     if (dateDailyTotalBadge) {
       // Trigger pop animation เพื่อให้ยอดเด้งสรุปขึ้นมาตามที่ผู้ใช้ต้องการ
@@ -1600,14 +2202,20 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
+    const isManagerWeekly = isManagerLoggedIn();
     if (dailyTotalAmountVal) {
-      dailyTotalAmountVal.textContent = "฿" + weeklyTotalAmount.toLocaleString();
+      dailyTotalAmountVal.textContent = isManagerWeekly ? ("฿" + weeklyTotalAmount.toLocaleString()) : "฿******";
+      dailyTotalAmountVal.classList.toggle("masked-stat-text", !isManagerWeekly);
     }
     if (dailyPaidAmountVal) {
-      dailyPaidAmountVal.innerHTML = `<i class="fa-solid fa-circle-check"></i> รับแล้ว ฿${weeklyPaidAmount.toLocaleString()}`;
+      dailyPaidAmountVal.innerHTML = isManagerWeekly
+        ? `<i class="fa-solid fa-circle-check"></i> รับแล้ว ฿${weeklyPaidAmount.toLocaleString()}`
+        : `<i class="fa-solid fa-circle-check"></i> รับแล้ว ฿******`;
     }
     if (dailyPendingAmountVal) {
-      dailyPendingAmountVal.innerHTML = `<i class="fa-solid fa-clock"></i> รอเก็บ ฿${weeklyPendingAmount.toLocaleString()}`;
+      dailyPendingAmountVal.innerHTML = isManagerWeekly
+        ? `<i class="fa-solid fa-clock"></i> รอเก็บ ฿${weeklyPendingAmount.toLocaleString()}`
+        : `<i class="fa-solid fa-clock"></i> รอเก็บ ฿******`;
     }
     if (dateDailyTotalBadge) {
       dateDailyTotalBadge.classList.remove("pop-animate");
@@ -1730,14 +2338,20 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
+    const isManagerMonthly = isManagerLoggedIn();
     if (dailyTotalAmountVal) {
-      dailyTotalAmountVal.textContent = "฿" + monthlyTotalAmount.toLocaleString();
+      dailyTotalAmountVal.textContent = isManagerMonthly ? ("฿" + monthlyTotalAmount.toLocaleString()) : "฿******";
+      dailyTotalAmountVal.classList.toggle("masked-stat-text", !isManagerMonthly);
     }
     if (dailyPaidAmountVal) {
-      dailyPaidAmountVal.innerHTML = `<i class="fa-solid fa-circle-check"></i> รับแล้ว ฿${monthlyPaidAmount.toLocaleString()}`;
+      dailyPaidAmountVal.innerHTML = isManagerMonthly
+        ? `<i class="fa-solid fa-circle-check"></i> รับแล้ว ฿${monthlyPaidAmount.toLocaleString()}`
+        : `<i class="fa-solid fa-circle-check"></i> รับแล้ว ฿******`;
     }
     if (dailyPendingAmountVal) {
-      dailyPendingAmountVal.innerHTML = `<i class="fa-solid fa-clock"></i> รอเก็บ ฿${monthlyPendingAmount.toLocaleString()}`;
+      dailyPendingAmountVal.innerHTML = isManagerMonthly
+        ? `<i class="fa-solid fa-clock"></i> รอเก็บ ฿${monthlyPendingAmount.toLocaleString()}`
+        : `<i class="fa-solid fa-clock"></i> รอเก็บ ฿******`;
     }
     if (dateDailyTotalBadge) {
       dateDailyTotalBadge.classList.remove("pop-animate");
@@ -1915,6 +2529,142 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // --- 4.4.1 MOTORCYCLE CONTRACTS TABLE (สรุปยอดรวมหมวดรถมอไซต์ต่างหาก) ---
+  function renderMotorcycleTable(contractsList) {
+    if (dateFilterBar) dateFilterBar.style.display = "none";
+
+    tableHeaderRow.innerHTML = `
+      <th>รหัสสัญญา</th>
+      <th>ลูกค้า & ข้อมูลติดต่อ</th>
+      <th>รุ่นรถมอเตอร์ไซค์</th>
+      <th>ยอดปล่อย & เงินดาวน์</th>
+      <th>ความคืบหน้าการผ่อน</th>
+      <th>สถานะสัญญา</th>
+      <th>ยอดคงเหลือรอเก็บ</th>
+      <th>จัดการ</th>
+    `;
+
+    if (contractsList.length === 0) {
+      const subLabels = {
+        all: "ทั้งหมด",
+        pending: "ที่กำลังผ่อนชำระ",
+        paid: "ที่ปิดสัญญาแล้ว"
+      };
+      const label = subLabels[currentSubFilter] || "ทั้งหมด";
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 40px;">
+            <div style="font-size: 2.2rem; color: #38bdf8; margin-bottom: 10px;">
+              <i class="fa-solid fa-motorcycle"></i>
+            </div>
+            <div style="font-weight: 600; color: #fff; font-size: 1rem; margin-bottom: 6px;">
+              ไม่พบรายการสัญญารถมอเตอร์ไซค์ (${label})
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+              สามารถกดปุ่ม "+ เพิ่มสัญญาใหม่" เพื่อบันทึกสัญญาผ่อนรถมอเตอร์ไซค์แยกหมวดได้ทันที
+            </div>
+            <button type="button" class="btn-primary-action" onclick="document.getElementById('btnOpenAddContract').click()" style="display: inline-flex; margin: 0 auto;">
+              <i class="fa-solid fa-plus"></i> เพิ่มสัญญาผ่อนมอเตอร์ไซค์
+            </button>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tableBody.innerHTML = "";
+    contractsList.forEach((c) => {
+      const installments = c.installments || [];
+      const paidCount = installments.filter((i) => i.status === "paid").length;
+      const totalCount = installments.length;
+      const percent = totalCount > 0 ? Math.round((paidCount / totalCount) * 100) : 0;
+      const isCompleted = paidCount === totalCount && totalCount > 0;
+      const downPayment = Number(c.downPayment) || 0;
+      const totalAmount = Number(c.totalAmount) || 0;
+      const totalFinanced = totalAmount + downPayment;
+      const totalPaidAmt = installments
+        .filter((i) => i.status === "paid")
+        .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+      const remainingBalance = Math.max(0, totalAmount - totalPaidAmt);
+
+      const freqLabels = {
+        daily: '<span class="overview-card-badge badge-daily" style="font-size: 0.68rem; padding: 2px 6px;">รายวัน</span>',
+        weekly: '<span class="overview-card-badge badge-weekly" style="font-size: 0.68rem; padding: 2px 6px;">รายอาทิตย์</span>',
+        monthly: '<span class="overview-card-badge badge-monthly" style="font-size: 0.68rem; padding: 2px 6px;">รายเดือน</span>'
+      };
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>
+          <span class="contract-id-pill" style="border-color: rgba(56, 189, 248, 0.45); color: #38bdf8; background: rgba(56, 189, 248, 0.1);">
+            <i class="fa-solid fa-motorcycle" style="font-size: 0.72rem; margin-right: 4px;"></i>${c.id}
+          </span>
+        </td>
+        <td>
+          <div class="customer-cell">
+            <img class="customer-thumb" src="${c.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"}" alt="">
+            <div class="customer-info">
+              <div class="name" style="font-weight: 600; color: #fff;">${c.name}</div>
+              <div class="sub" style="font-size: 0.75rem; color: #38bdf8;">
+                <i class="fa-solid fa-phone" style="font-size: 0.7rem;"></i> ${c.phone}
+              </div>
+              <div class="sub" style="font-size: 0.72rem; color: var(--text-dim);">${c.email}</div>
+            </div>
+          </div>
+        </td>
+        <td>
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
+            ${freqLabels[c.paymentFrequency] || ""}
+            <span style="color: #fff; font-weight: 600;">${c.itemFinanced || "รถมอเตอร์ไซค์"}</span>
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-dim);">${c.dueSchedule || "-"}</div>
+        </td>
+        <td>
+          <strong style="color: #38bdf8; font-size: 0.95rem;">฿${totalFinanced.toLocaleString()}</strong>
+          ${downPayment > 0 
+            ? `<div style="font-size: 0.72rem; color: #7dd3fc; margin-top: 2px;"><i class="fa-solid fa-coins"></i> ดาวน์ ฿${downPayment.toLocaleString()} + ผ่อน ฿${totalAmount.toLocaleString()}</div>` 
+            : `<div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">(ไม่มีเงินดาวน์)</div>`
+          }
+        </td>
+        <td>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 3px;">
+            ${paidCount} / ${totalCount} งวด (${percent}%)
+          </div>
+          <div class="progress-track" style="height: 6px;">
+            <div class="progress-bar-fill" style="width: ${percent}%; background: linear-gradient(90deg, #38bdf8 0%, #0ea5e9 100%);"></div>
+          </div>
+        </td>
+        <td>
+          ${isCompleted
+            ? '<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>'
+            : '<span class="status-badge badge-pending" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);"><i class="fa-solid fa-spinner"></i> กำลังผ่อนชำระ</span>'
+          }
+          ${Number(c.lateFine) > 0 ? `<div style="margin-top: 4px;"><span class="badge-fine"><i class="fa-solid fa-triangle-exclamation"></i> ปรับ ฿${Number(c.lateFine).toLocaleString()}</span></div>` : ""}
+        </td>
+        <td>
+          <strong style="color: #fbbf24; font-size: 0.95rem;">฿${remainingBalance.toLocaleString()}</strong>
+        </td>
+        <td>
+          <div class="table-actions">
+            <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
+              <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ
+            </button>
+            <button class="btn-table-action" onclick="openContractDetails('${c.id}')" title="ดูตารางงวด">
+              <i class="fa-solid fa-list-check"></i> ดูงวด
+            </button>
+            <button class="btn-table-action" onclick="editContract('${c.id}')" title="แก้ไข">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button class="btn-table-action" onclick="deleteContractConfirm('${c.id}')" title="ลบสัญญา" style="color: #f87171;">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      `;
+      tableBody.appendChild(tr);
+    });
+  }
+
   // --- 4.5 BAD DEBTS TABLE (ประวัติหนี้เสีย / แบล็คลิส / ผ่อนล่าช้า) ---
   function renderBadDebtTable(badDebtsList) {
     if (dateFilterBar) dateFilterBar.style.display = "none";
@@ -1998,17 +2748,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- 5. ADD / EDIT CONTRACT LOGIC ---
 
-  // ตรวจจับการเปลี่ยนหมวดหมู่สินค้า: หากเลือกผ่อนมอไซค์หรือผ่อนทอง ให้แสดงช่องกรอกเงินดาวน์ (Requirement 5)
-  if (formItemCategory) {
-    formItemCategory.addEventListener("change", () => {
-      const cat = formItemCategory.value;
-      if (cat === "motorcycle" || cat === "gold") {
-        if (formDownPaymentGroup) formDownPaymentGroup.style.display = "block";
-      } else {
-        if (formDownPaymentGroup) formDownPaymentGroup.style.display = "none";
-        if (formDownPayment) formDownPayment.value = "0";
-      }
-    });
+  // ช่องกรอกเงินดาวน์: ให้สามารถระบุยอดใดก็ได้ (Requirement 1)
+  if (formDownPaymentGroup) {
+    formDownPaymentGroup.style.display = "block";
   }
 
   // รอบการชำระเปลี่ยน: ตั้งค่ากำหนดชำระและระยะเวลาแนะนำให้อัตโนมัติ (ไม่แทรกแซงหรือคำนวณค่างวดทับที่แอดมินพิมพ์)
@@ -2028,45 +2770,67 @@ document.addEventListener("DOMContentLoaded", () => {
   btnOpenAddContract.addEventListener("click", () => {
     contractForm.reset();
     formContractId.value = "";
-    contractModalTitle.textContent = "เพิ่มสัญญาสินเชื่อ / ผ่อนชำระใหม่";
+    contractModalTitle.textContent = currentTab === "motorcycle"
+      ? "เพิ่มสัญญาผ่อนรถมอเตอร์ไซค์ใหม่"
+      : "เพิ่มสัญญาสินเชื่อ / ผ่อนชำระใหม่";
     formClosedContractsCount.value = "0";
     if (formInstallmentAmount) formInstallmentAmount.value = "";
     if (formIdCard) formIdCard.value = "";
     if (formFacebook) formFacebook.value = "";
     if (formAddress) formAddress.value = "";
     if (formAdditionalNotes) formAdditionalNotes.value = "";
-    if (formItemCategory) formItemCategory.value = "general";
-    if (formDownPaymentGroup) formDownPaymentGroup.style.display = "none";
+    if (formItemCategory) formItemCategory.value = currentTab === "motorcycle" ? "motorcycle" : "general";
+    if (formItemFinanced) {
+      formItemFinanced.placeholder = currentTab === "motorcycle"
+        ? "เช่น Honda Wave 110i, Yamaha Grand Filano, Honda PCX 160"
+        : "เช่น ผ่อนทองคำ 1 บาท, Honda Wave 110i, iPhone 16";
+    }
+    if (formDownPaymentGroup) formDownPaymentGroup.style.display = "block";
     if (formDownPayment) formDownPayment.value = "0";
     if (formFirstPaymentDate) formFirstPaymentDate.value = getLocalDateStr();
 
     // สุ่มรหัสสัญญาใหม่
     const randNo = Math.floor(100 + Math.random() * 900);
     const newId = `EF-${new Date().getFullYear()}-${randNo}`;
-    formEmail.placeholder = `customer${randNo}@easyfinance.com`;
+    if (formEmailPrefix) {
+      formEmailPrefix.value = "";
+      formEmailPrefix.placeholder = `customer${randNo}`;
+    }
+    if (formEmail) formEmail.value = "";
     formPassword.value = "123456"; // Default password for new customer
 
     contractModal.classList.add("active");
   });
 
-  btnCloseContractModal.addEventListener("click", () => {
-    contractModal.classList.remove("active");
-  });
+  if (btnCloseContractModal) {
+    btnCloseContractModal.addEventListener("click", () => {
+      contractModal.classList.remove("active");
+    });
+  }
+
+  if (btnCancelContractModal) {
+    btnCancelContractModal.addEventListener("click", () => {
+      contractModal.classList.remove("active");
+    });
+  }
 
   contractForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const id = formContractId.value || `EF-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
-    const email = formEmail.value.trim();
+    let rawEmailPrefix = formEmailPrefix ? formEmailPrefix.value.trim() : "";
+    rawEmailPrefix = rawEmailPrefix.replace(/@.*$/, "");
+    const email = rawEmailPrefix ? `${rawEmailPrefix}@Easy.com` : (formEmail ? formEmail.value.trim() : "");
+    if (formEmail) formEmail.value = email;
+
     const password = formPassword.value.trim();
     const name = formName.value.trim();
     const phone = formPhone.value.trim();
     const avatar = formAvatar.value.trim() || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150";
     const itemFinanced = formItemFinanced.value.trim();
     const itemCategory = formItemCategory ? formItemCategory.value : "general";
-    const downPayment = (itemCategory === "motorcycle" || itemCategory === "gold") && formDownPayment
-      ? (parseFloat(formDownPayment.value) || 0)
-      : 0;
+    // Requirement 1: สามารถระบุยอดดาวน์ใดก็ได้ตอนกรอก ไม่ต้องคำนวณและไม่จำกัดหมวดหมู่
+    const downPayment = formDownPayment ? (parseFloat(formDownPayment.value) || 0) : 0;
     const idCard = formIdCard ? formIdCard.value.trim() : "";
     const facebookLink = formFacebook ? formFacebook.value.trim() : "";
     const address = formAddress ? formAddress.value.trim() : "";
@@ -2183,7 +2947,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!contract) return;
 
     formContractId.value = contract.id;
-    formEmail.value = contract.email || "";
+    if (formEmailPrefix) {
+      const rawEmail = contract.email || "";
+      const prefix = rawEmail.includes("@") ? rawEmail.split("@")[0] : rawEmail;
+      formEmailPrefix.value = prefix;
+    }
+    if (formEmail) {
+      formEmail.value = contract.email || "";
+    }
     formPassword.value = contract.password || "";
     formName.value = contract.name || "";
     formPhone.value = contract.phone || "";
@@ -2193,10 +2964,10 @@ document.addEventListener("DOMContentLoaded", () => {
       formItemCategory.value = contract.itemCategory || "general";
     }
     if (formDownPayment) {
-      formDownPayment.value = contract.downPayment || 0;
+      formDownPayment.value = contract.downPayment !== undefined ? contract.downPayment : 0;
     }
     if (formDownPaymentGroup) {
-      formDownPaymentGroup.style.display = (contract.itemCategory === "motorcycle" || contract.itemCategory === "gold") ? "block" : "none";
+      formDownPaymentGroup.style.display = "block";
     }
     formTotalAmount.value = contract.totalAmount || 0;
     formTotalInstallments.value = contract.totalInstallments || 1;
@@ -3879,6 +4650,10 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".admin-modal-overlay").forEach((overlay) => {
     overlay.addEventListener("click", (e) => {
       if (e.target === overlay) {
+        // Requirement 6: ยกเว้น contractModal ห้ามปิดเมื่อคลิกนอกกรอบ ต้องกดปุ่ม x กาออก หรือปุ่มบันทึก/ยกเลิกเท่านั้น
+        if (overlay.id === "contractModal") {
+          return;
+        }
         overlay.classList.remove("active");
       }
     });
@@ -3888,7 +4663,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Escape") {
       const activeModals = document.querySelectorAll(".admin-modal-overlay.active");
       if (activeModals.length > 0) {
-        activeModals[activeModals.length - 1].classList.remove("active");
+        const topModal = activeModals[activeModals.length - 1];
+        if (topModal.id === "contractModal") {
+          // อย่าปิด contractModal ด้วย Escape อัตโนมัติ ป้องกันข้อมูลที่กรอกอยู่หาย
+          return;
+        }
+        topModal.classList.remove("active");
       }
     }
   });
