@@ -889,6 +889,57 @@ class EasyFinanceDatabase {
     return contract;
   }
 
+  // ยกเลิกการชำระเงินของงวด และเปลี่ยนสถานะกลับเป็น "รอชำระ" (pending) เผื่อแอดมินกดมาร์คผิด
+  async unmarkInstallmentPaid(contractId, installmentNo) {
+    const contract = this.getContractById(contractId);
+    if (!contract) return null;
+
+    const installment = (contract.installments || []).find(
+      (inst) => Number(inst.installmentNo) === Number(installmentNo)
+    );
+
+    if (!installment) return null;
+
+    // เปลี่ยนสถานะกลับเป็นรอชำระ (pending) และล้างข้อมูลบันทึกการชำระ
+    installment.status = "pending";
+    installment.paidAt = null;
+    installment.slipUrl = null;
+    installment.transactionRef = null;
+    installment.verifiedBy = null;
+
+    // หากเคยมีค่าปรับที่คิดพร้อมงวดนี้ ให้คืนค่าปรับกลับมา
+    if (installment.paidLateFine) {
+      const fine = Number(installment.paidLateFine) || 0;
+      contract.totalLateFinesCollected = Math.max(0, (Number(contract.totalLateFinesCollected) || 0) - fine);
+      contract.lateFine = (Number(contract.lateFine) || 0) + fine;
+      contract.hasLateFine = true;
+      delete installment.paidLateFine;
+    }
+
+    // คำนวณยอดคงเหลือของแต่ละงวดใหม่
+    let runningBalance = Number(contract.totalAmount) || 0;
+    (contract.installments || []).forEach((inst) => {
+      if (inst.status === "paid") {
+        runningBalance -= (Number(inst.amount) || 0);
+      }
+      inst.remainingBalanceAfter = Math.max(0, runningBalance);
+    });
+
+    // ปรับสถานะสัญญา: หากเคยเป็น completed จะกลับมาเป็น active
+    const allPaid = (contract.installments || []).length > 0 && contract.installments.every((inst) => inst.status === "paid");
+    if (allPaid) {
+      contract.status = "completed";
+    } else {
+      if (contract.status === "completed") {
+        contract.closedContractsCount = Math.max(0, (Number(contract.closedContractsCount) || 1) - 1);
+      }
+      contract.status = "active";
+    }
+
+    await this.saveContract(contract);
+    return contract;
+  }
+
   // อัปเดตข้อมูลเพิ่มเติมของลูกค้า (บันทึกเพิ่มเติม, ลิงก์เฟสบุ๊ก, ที่อยู่, เลขบัตร)
   async updateCustomerProfile(phoneOrId, profileData) {
     let contracts = this.getContracts();

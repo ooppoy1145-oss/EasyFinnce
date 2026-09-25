@@ -3140,6 +3140,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  // Global Quick Unmark as Paid (ยกเลิกการชำระ เปลี่ยนกลับเป็นรอชำระ)
+  window.quickUnmarkPaid = async function (contractId, installmentNo) {
+    if (confirm(`ต้องการยกเลิกการชำระเงินของ "งวดที่ ${installmentNo}" สัญญา ${contractId} (เปลี่ยนสถานะกลับเป็น "รอชำระ") ใช่หรือไม่?`)) {
+      await window.easyFinanceDB.unmarkInstallmentPaid(contractId, installmentNo);
+      showAdminToast(`ยกเลิกชำระงวดที่ ${installmentNo} แล้ว (สถานะกลับเป็นรอชำระ)`, "info");
+      renderStatsCounters();
+      renderSubTabs();
+      renderActiveTabTable();
+    }
+  };
+
   // --- 6. CONTRACT DETAILS DRAWER / MODAL ---
 
   window.openContractDetails = function (contractId) {
@@ -3197,10 +3208,17 @@ document.addEventListener("DOMContentLoaded", () => {
         </td>
         <td>
           ${!isPaid
-          ? `<button class="btn-table-action btn-mark-paid" onclick="markPaidFromDetail(${inst.installmentNo})">
+          ? `<button class="btn-table-action btn-mark-paid" onclick="markPaidFromDetail(${inst.installmentNo})" title="คลิกเพื่อมาร์คชำระเงินงวดนี้" style="color: #34d399; border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.08); padding: 5px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
                   <i class="fa-solid fa-check"></i> มาร์คชำระ
                  </button>`
-          : '<span style="color: var(--primary-light); font-size: 0.8rem;"><i class="fa-solid fa-circle-check"></i> สมบูรณ์</span>'
+          : `<div style="display: inline-flex; align-items: center; gap: 8px;">
+               <span style="color: #34d399; font-size: 0.82rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
+                 <i class="fa-solid fa-circle-check"></i> สมบูรณ์
+               </span>
+               <button class="btn-table-action btn-unmark-paid" onclick="unmarkPaidFromDetail(${inst.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนสถานะกลับเป็นรอชำระ" style="padding: 4px 9px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                 <i class="fa-solid fa-rotate-left"></i> ยกเลิก
+               </button>
+             </div>`
         }
         </td>
       `;
@@ -3215,7 +3233,17 @@ document.addEventListener("DOMContentLoaded", () => {
     await window.easyFinanceDB.markInstallmentPaid(currentViewingContractId, installmentNo, {
       verifiedBy: "admin_manual"
     });
-    showAdminToast(`บันทึกรับชำระงวดที่ ${installmentNo} สำเร็จ`, "success");
+    showAdminToast(`บันทึกรับชำระงวดที่ ${installmentNo} สำเร็จ (สถานะ: ชำระแล้ว)`, "success");
+    openContractDetails(currentViewingContractId);
+    renderStatsCounters();
+    renderSubTabs();
+    renderActiveTabTable();
+  };
+
+  window.unmarkPaidFromDetail = async function (installmentNo) {
+    if (!currentViewingContractId) return;
+    await window.easyFinanceDB.unmarkInstallmentPaid(currentViewingContractId, installmentNo);
+    showAdminToast(`ยกเลิกชำระงวดที่ ${installmentNo} เรียบร้อย (สถานะกลับเป็นรอชำระ)`, "info");
     openContractDetails(currentViewingContractId);
     renderStatsCounters();
     renderSubTabs();

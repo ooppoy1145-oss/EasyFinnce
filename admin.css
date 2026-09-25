@@ -887,6 +887,18 @@ table.admin-table tr:hover td {
   color: #fff;
 }
 
+.btn-table-action.btn-unmark-paid {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+.btn-table-action.btn-unmark-paid:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #fff;
+}
+
 /* ==========================================================================
    ADMIN MODALS (QR Settings, Add/Edit Contract, Details Drawer)
    ========================================================================== */
