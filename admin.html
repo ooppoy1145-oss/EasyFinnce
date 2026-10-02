@@ -1103,6 +1103,13 @@
               <span>ยืนยันบันทึกค่าปรับ (ส่งไปหน้าลูกค้าทันที)</span>
             </button>
 
+            <!-- ปุ่มบันทึกรับเงินค่าปรับ (ลูกค้าโอนค่าปรับแล้ว นับเข้ายอดรับแล้วประจำวัน) -->
+            <button type="button" id="btnPayPenaltyAction" class="btn-table-action" onclick="payPenaltyAndConfirm()"
+              style="justify-content: center; padding: 10px; color: #34d399; border-color: rgba(52, 211, 153, 0.35); background: rgba(52, 211, 153, 0.08); font-weight: 600;">
+              <i class="fa-solid fa-circle-check"></i>
+              <span>บันทึกรับชำระค่าปรับนี้ (นับเข้ายอดรับแล้วประจำวัน)</span>
+            </button>
+
             <!-- 4. ปุ่มคีย์ออก / ล้างค่าปรับ (ให้ค่าปรับหน้าลูกค้าหายไป) -->
             <button type="button" id="btnClearPenaltyAction" class="btn-table-action" onclick="clearAndConfirmPenalty()"
               style="justify-content: center; padding: 10px; color: #f87171; border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.08); font-weight: 600;">

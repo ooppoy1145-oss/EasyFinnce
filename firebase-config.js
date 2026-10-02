@@ -971,6 +971,34 @@ class EasyFinanceDatabase {
     return null;
   }
 
+  // บันทึกรับชำระค่าปรับโดยตรง (กรณีลูกค้าโอนเฉพาะค่าปรับแยกต่างหาก)
+  async payContractLateFine(contractId, paidAmount = null, paidDate = null) {
+    let contracts = this.getContracts();
+    const c = contracts.find((x) => x.id === contractId);
+    if (!c) return null;
+
+    const curFine = Math.max(0, Number(c.lateFine) || 0);
+    const amountToPay = paidAmount !== null ? Math.max(0, parseFloat(paidAmount) || 0) : curFine;
+    if (amountToPay <= 0) return c;
+
+    const dateStr = paidDate || new Date().toISOString().slice(0, 10);
+    c.finePaymentHistory = c.finePaymentHistory || [];
+    c.finePaymentHistory.push({
+      amount: amountToPay,
+      paidAt: `${dateStr} 12:00:00`,
+      note: "ชำระค่าปรับ"
+    });
+
+    c.totalLateFinesCollected = (Number(c.totalLateFinesCollected) || 0) + amountToPay;
+    c.lateFine = Math.max(0, curFine - amountToPay);
+    c.hasLateFine = c.lateFine > 0;
+    if (!c.hasLateFine) c.lateFineReason = "";
+    c.updatedAt = new Date().toISOString();
+
+    await this.saveContract(c);
+    return c;
+  }
+
   // --- PAYMENT SETTINGS METHODS ---
 
   getPaymentSettings() {

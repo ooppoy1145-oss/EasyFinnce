@@ -755,58 +755,108 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- HELPER: DAILY STATUS BY SPECIFIC DATE (Requirement 2: เลือกวันที่แล้วดูว่าใครจ่าย/ไม่จ่าย) ---
   function getDailyStatusForDate(contract, dateStr) {
     const installments = contract.installments || [];
-    if (installments.length === 0) return { status: "pending", label: "ไม่มีงวด", installment: null, amount: 0 };
+    if (installments.length === 0) return { status: "pending", label: "ไม่มีงวด", installment: null, installments: [], amount: 0, installmentAmount: 0, lateFineAmount: 0 };
 
-    // 0. หากปิดสัญญาแล้ว ให้เป็นสถานะ completed ทันที (ไม่นำไปแสดงในหน้า จ่ายแล้ว หรือ ค้างจ่าย ของแต่ละวัน)
+    // 1. ค้นหา "ทุกงวด" ที่มีการจ่ายเงินในวันที่ dateStr นี้ (รองรับการติ้กชำระหลายงวดพร้อมกันในวันเดียว เช่น ลูกค้าโอนมาปิดสัญญา)
+    const paidListOnDate = installments.filter(
+      (i) => i.status === "paid" && i.paidAt && i.paidAt.includes(dateStr)
+    );
+
+    // ตรวจสอบค่าปรับที่บันทึกชำระในวันนี้ (จาก installment.paidLateFine หรือ finePaymentHistory)
+    const fineFromInst = paidListOnDate.reduce((sum, i) => sum + (Number(i.paidLateFine) || 0), 0);
+    const fineFromHistory = (contract.finePaymentHistory || [])
+      .filter((f) => f.paidAt && f.paidAt.includes(dateStr))
+      .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
+    const totalFineOnDate = fineFromInst + fineFromHistory;
+
+    if (paidListOnDate.length > 0 || totalFineOnDate > 0) {
+      const isCompleted = isContractCompleted(contract);
+      // รวมยอดค่างวดของทุกงวดที่ติ้กชำระในวันนี้ (Requirement 2: นับต่อติ้กที่เราติ้ก)
+      const totalInstAmt = paidListOnDate.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+      // ยอดรับรวมของวันนี้ = ค่างวดทั้งหมดที่จ่ายในวันนี้ + ค่าปรับที่รับชำระในวันนี้ (Requirement 1: นับค่าปรับเข้าไปด้วยต่อวัน)
+      const totalPaidToday = totalInstAmt + totalFineOnDate;
+
+      // จัดการ Label แสดงผลให้เข้าใจง่าย
+      let label = "";
+      if (isCompleted) {
+        label = paidListOnDate.length > 1
+          ? `จ่ายแล้ว ${paidListOnDate.length} งวด (ปิดสัญญา)`
+          : `จ่ายแล้ว (ปิดสัญญา)`;
+      } else if (paidListOnDate.length > 1) {
+        const instNos = paidListOnDate.map((i) => i.installmentNo).join(", ");
+        label = `จ่ายแล้ว ${paidListOnDate.length} งวด (งวด ${instNos})`;
+      } else if (paidListOnDate.length === 1) {
+        label = `จ่ายแล้ว (งวด ${paidListOnDate[0].installmentNo})`;
+      } else {
+        label = `ชำระค่าปรับแล้ว`;
+      }
+
+      if (totalFineOnDate > 0) {
+        label += ` +ปรับ ฿${totalFineOnDate.toLocaleString()}`;
+      }
+
+      return {
+        status: "paid",
+        installment: paidListOnDate.length > 0 ? paidListOnDate[paidListOnDate.length - 1] : null,
+        installments: paidListOnDate,
+        amount: totalPaidToday, // นับรวมทุกงวดที่ติ้ก + ค่าปรับ
+        installmentAmount: totalInstAmt,
+        lateFineAmount: totalFineOnDate,
+        label: label,
+        isClosingPayment: isCompleted
+      };
+    }
+
+    // 2. หากปิดสัญญาแล้ว และไม่ได้จ่ายในวันที่ dateStr นี้:
+    // จะถือเป็นสถานะ completed ทันที (ไม่นำไปแสดงในหน้า จ่ายแล้ว หรือ ค้างจ่าย ของวันอื่นอีก)
     if (isContractCompleted(contract)) {
       return {
         status: "completed",
         installment: null,
+        installments: [],
         amount: 0,
+        installmentAmount: 0,
+        lateFineAmount: 0,
         label: "ปิดสัญญาแล้ว"
       };
     }
 
-    // 1. มีงวดที่จ่ายในวันที่ dateStr นี้หรือไม่
-    const paidOnDate = installments.find(
-      (i) => i.status === "paid" && i.paidAt && i.paidAt.includes(dateStr)
-    );
-    if (paidOnDate) {
-      return {
-        status: "paid",
-        installment: paidOnDate,
-        amount: Number(paidOnDate.amount) || 0,
-        label: `จ่ายแล้ว (งวด ${paidOnDate.installmentNo})`
-      };
-    }
-
-    // 2. มีงวดที่กำหนดชำระตรงกับ dateStr นี้หรือไม่
+    // 3. มีงวดที่กำหนดชำระตรงกับ dateStr นี้หรือไม่
     const dueOnDate = installments.find((i) => i.dueDate === dateStr);
     if (dueOnDate) {
       if (dueOnDate.status === "paid") {
         return {
           status: "paid",
           installment: dueOnDate,
+          installments: [dueOnDate],
           amount: Number(dueOnDate.amount) || 0,
+          installmentAmount: Number(dueOnDate.amount) || 0,
+          lateFineAmount: 0,
           label: `จ่ายแล้ว (งวด ${dueOnDate.installmentNo})`
         };
       } else {
         return {
           status: "pending",
           installment: dueOnDate,
+          installments: [],
           amount: Number(dueOnDate.amount) || 0,
+          installmentAmount: Number(dueOnDate.amount) || 0,
+          lateFineAmount: 0,
           label: `ค้างจ่าย (งวด ${dueOnDate.installmentNo})`
         };
       }
     }
 
-    // 3. สัญญาที่ยังผ่อนอยู่ แต่วันที่เลือกยังไม่มียอดจ่าย
+    // 4. สัญญาที่ยังผ่อนอยู่ แต่วันที่เลือกยังไม่มียอดจ่าย
     const nextPending = installments.find((i) => i.status !== "paid");
     const instAmt = Number(nextPending ? nextPending.amount : (installments[0]?.amount || 0));
     return {
       status: "pending",
       installment: nextPending,
+      installments: [],
       amount: instAmt,
+      installmentAmount: instAmt,
+      lateFineAmount: 0,
       label: nextPending ? `ค้างจ่าย (งวด ${nextPending.installmentNo})` : "ยังไม่จ่าย"
     };
   }
@@ -814,34 +864,61 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- HELPER: WEEKLY STATUS BY DATE RANGE (เลือกช่วงตั้งแต่วันที่ ... ถึงวันที่ ...) ---
   function getWeeklyStatusForRange(contract, startDate, endDate) {
     const installments = contract.installments || [];
-    if (installments.length === 0) return { status: "pending", label: "ไม่มีงวด", installment: null, amount: 0 };
+    if (installments.length === 0) return { status: "pending", label: "ไม่มีงวด", installment: null, installments: [], amount: 0, lateFineAmount: 0 };
 
-    if (isContractCompleted(contract)) {
-      return {
-        status: "completed",
-        installment: null,
-        amount: 0,
-        label: "ปิดสัญญาแล้ว"
-      };
-    }
-
-    // 1. มีงวดที่จ่ายในช่วง startDate ถึง endDate หรือไม่
-    const paidInRange = installments.find((inst) => {
+    // 1. ค้นหาทุกงวดที่จ่ายในช่วง startDate ถึง endDate
+    const paidInRange = installments.filter((inst) => {
       if (inst.status !== "paid" || !inst.paidAt) return false;
       const pDate = inst.paidAt.slice(0, 10);
       return pDate >= startDate && pDate <= endDate;
     });
 
-    if (paidInRange) {
+    const fineInRange = paidInRange.reduce((sum, i) => sum + (Number(i.paidLateFine) || 0), 0);
+    const fineFromHistory = (contract.finePaymentHistory || [])
+      .filter((f) => {
+        if (!f.paidAt) return false;
+        const pDate = f.paidAt.slice(0, 10);
+        return pDate >= startDate && pDate <= endDate;
+      })
+      .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
+    const totalFine = fineInRange + fineFromHistory;
+
+    if (paidInRange.length > 0 || totalFine > 0) {
+      const isCompleted = isContractCompleted(contract);
+      const totalInstAmt = paidInRange.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+      const totalPaid = totalInstAmt + totalFine;
+
+      let label = isCompleted
+        ? (paidInRange.length > 1 ? `จ่ายแล้ว ${paidInRange.length} งวด (ปิดสัญญา)` : `จ่ายแล้ว (ปิดสัญญา)`)
+        : paidInRange.length > 1
+          ? `จ่ายแล้ว ${paidInRange.length} งวด`
+          : `จ่ายแล้ว (งวด ${paidInRange[0].installmentNo})`;
+      if (totalFine > 0) label += ` +ปรับ ฿${totalFine.toLocaleString()}`;
+
       return {
         status: "paid",
-        installment: paidInRange,
-        amount: Number(paidInRange.amount) || 0,
-        label: `จ่ายแล้ว (งวด ${paidInRange.installmentNo})`
+        installment: paidInRange.length > 0 ? paidInRange[paidInRange.length - 1] : null,
+        installments: paidInRange,
+        amount: totalPaid,
+        installmentAmount: totalInstAmt,
+        lateFineAmount: totalFine,
+        label: label,
+        isClosingPayment: isCompleted
       };
     }
 
-    // 2. มีงวดที่กำหนดชำระอยู่ในช่วง startDate ถึง endDate หรือไม่
+    // 2. หากปิดสัญญาแล้ว และไม่ได้จ่ายในช่วงนี้
+    if (isContractCompleted(contract)) {
+      return {
+        status: "completed",
+        installment: null,
+        installments: [],
+        amount: 0,
+        label: "ปิดสัญญาแล้ว"
+      };
+    }
+
+    // 3. มีงวดที่กำหนดชำระอยู่ในช่วง startDate ถึง endDate หรือไม่
     const dueInRange = installments.find((inst) => {
       if (!inst.dueDate) return false;
       const dDate = inst.dueDate.slice(0, 10);
@@ -853,6 +930,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return {
           status: "paid",
           installment: dueInRange,
+          installments: [dueInRange],
           amount: Number(dueInRange.amount) || 0,
           label: `จ่ายแล้ว (งวด ${dueInRange.installmentNo})`
         };
@@ -860,18 +938,20 @@ document.addEventListener("DOMContentLoaded", () => {
         return {
           status: "pending",
           installment: dueInRange,
+          installments: [],
           amount: Number(dueInRange.amount) || 0,
           label: `ค้างจ่าย (งวด ${dueInRange.installmentNo})`
         };
       }
     }
 
-    // 3. สัญญาที่ยังผ่อนอยู่ แต่งวดในช่วงนี้ยังไม่มียอดจ่าย
+    // 4. สัญญาที่ยังผ่อนอยู่ แต่งวดในช่วงนี้ยังไม่มียอดจ่าย
     const nextPending = installments.find((i) => i.status !== "paid");
     const instAmt = Number(nextPending ? nextPending.amount : (installments[0]?.amount || 0));
     return {
       status: "pending",
       installment: nextPending,
+      installments: [],
       amount: instAmt,
       label: nextPending ? `ค้างจ่าย (งวด ${nextPending.installmentNo})` : "ยังไม่จ่าย"
     };
@@ -880,33 +960,56 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- HELPER: MONTHLY STATUS BY MONTH (เลือกเดือน เช่น 2026-09) ---
   function getMonthlyStatusForMonth(contract, monthStr) {
     const installments = contract.installments || [];
-    if (installments.length === 0) return { status: "pending", label: "ไม่มีงวด", installment: null, amount: 0 };
+    if (installments.length === 0) return { status: "pending", label: "ไม่มีงวด", installment: null, installments: [], amount: 0, lateFineAmount: 0 };
 
+    // 1. ค้นหาทุกงวดที่จ่ายในเดือน monthStr นี้
+    const paidInMonth = installments.filter((inst) => {
+      if (inst.status !== "paid" || !inst.paidAt) return false;
+      return inst.paidAt.includes(monthStr);
+    });
+
+    const fineInMonth = paidInMonth.reduce((sum, i) => sum + (Number(i.paidLateFine) || 0), 0);
+    const fineFromHistory = (contract.finePaymentHistory || [])
+      .filter((f) => f.paidAt && f.paidAt.includes(monthStr))
+      .reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
+    const totalFine = fineInMonth + fineFromHistory;
+
+    if (paidInMonth.length > 0 || totalFine > 0) {
+      const isCompleted = isContractCompleted(contract);
+      const totalInstAmt = paidInMonth.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+      const totalPaid = totalInstAmt + totalFine;
+
+      let label = isCompleted
+        ? (paidInMonth.length > 1 ? `จ่ายแล้ว ${paidInMonth.length} งวด (ปิดสัญญา)` : `จ่ายแล้ว (ปิดสัญญา)`)
+        : paidInMonth.length > 1
+          ? `จ่ายแล้ว ${paidInMonth.length} งวด`
+          : `จ่ายแล้ว (งวด ${paidInMonth[0].installmentNo})`;
+      if (totalFine > 0) label += ` +ปรับ ฿${totalFine.toLocaleString()}`;
+
+      return {
+        status: "paid",
+        installment: paidInMonth.length > 0 ? paidInMonth[paidInMonth.length - 1] : null,
+        installments: paidInMonth,
+        amount: totalPaid,
+        installmentAmount: totalInstAmt,
+        lateFineAmount: totalFine,
+        label: label,
+        isClosingPayment: isCompleted
+      };
+    }
+
+    // 2. หากปิดสัญญาแล้ว และไม่ได้จ่ายในเดือนนี้
     if (isContractCompleted(contract)) {
       return {
         status: "completed",
         installment: null,
+        installments: [],
         amount: 0,
         label: "ปิดสัญญาแล้ว"
       };
     }
 
-    // 1. มีงวดที่จ่ายในเดือน monthStr นี้หรือไม่
-    const paidInMonth = installments.find((inst) => {
-      if (inst.status !== "paid" || !inst.paidAt) return false;
-      return inst.paidAt.includes(monthStr);
-    });
-
-    if (paidInMonth) {
-      return {
-        status: "paid",
-        installment: paidInMonth,
-        amount: Number(paidInMonth.amount) || 0,
-        label: `จ่ายแล้ว (งวด ${paidInMonth.installmentNo})`
-      };
-    }
-
-    // 2. มีงวดที่กำหนดชำระอยู่ในเดือน monthStr หรือไม่
+    // 3. มีงวดที่กำหนดชำระอยู่ในเดือน monthStr หรือไม่
     const dueInMonth = installments.find((inst) => {
       if (!inst.dueDate) return false;
       return inst.dueDate.includes(monthStr);
@@ -917,6 +1020,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return {
           status: "paid",
           installment: dueInMonth,
+          installments: [dueInMonth],
           amount: Number(dueInMonth.amount) || 0,
           label: `จ่ายแล้ว (งวด ${dueInMonth.installmentNo})`
         };
@@ -924,18 +1028,20 @@ document.addEventListener("DOMContentLoaded", () => {
         return {
           status: "pending",
           installment: dueInMonth,
+          installments: [],
           amount: Number(dueInMonth.amount) || 0,
           label: `ค้างจ่าย (งวด ${dueInMonth.installmentNo})`
         };
       }
     }
 
-    // 3. สัญญาที่ยังผ่อนอยู่ แต่เดือนนี้ยังไม่จ่าย
+    // 4. สัญญาที่ยังผ่อนอยู่ แต่เดือนนี้ยังไม่จ่าย
     const nextPending = installments.find((i) => i.status !== "paid");
     const instAmt = Number(nextPending ? nextPending.amount : (installments[0]?.amount || 0));
     return {
       status: "pending",
       installment: nextPending,
+      installments: [],
       amount: instAmt,
       label: nextPending ? `ค้างจ่าย (งวด ${nextPending.installmentNo})` : "ยังไม่จ่าย"
     };
@@ -1023,7 +1129,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const installments = c.installments || [];
       const paidAmt = installments
         .filter((inst) => inst.status === "paid")
-        .reduce((sum, inst) => sum + (Number(inst.amount) || 0), 0);
+        .reduce((sum, inst) => sum + (Number(inst.amount) || 0) + (Number(inst.paidLateFine) || 0), 0);
       totalCollected += paidAmt;
       totalOutstanding += Math.max(0, totalAmount - paidAmt);
     });
@@ -1068,13 +1174,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const installments = c.installments || [];
       const paidAmt = installments
         .filter((inst) => inst.status === "paid")
-        .reduce((sum, inst) => sum + (Number(inst.amount) || 0), 0);
+        .reduce((sum, inst) => sum + (Number(inst.amount) || 0) + (Number(inst.paidLateFine) || 0), 0);
       totalCollected += paidAmt;
       totalOutstanding += Math.max(0, totalAmount - paidAmt);
     });
 
     const paidCustomersCount = list.filter((c) => {
-      if (isContractCompleted(c)) return false;
       if (freq === "daily" || freq === "weekly" || freq === "monthly") {
         return getDailyStatusForDate(c, selectedDailyDate).status === "paid";
       }
@@ -1082,7 +1187,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }).length;
 
     const pendingCustomersCount = list.filter((c) => {
-      if (isContractCompleted(c)) return false;
       if (freq === "daily" || freq === "weekly" || freq === "monthly") {
         return getDailyStatusForDate(c, selectedDailyDate).status === "pending";
       }
@@ -1766,17 +1870,22 @@ document.addEventListener("DOMContentLoaded", () => {
       const allDailyContracts = allContracts.filter((c) => c.paymentFrequency === "daily" && !isMotorcycleContract(c));
       let paidCount = 0;
       let pendingCount = 0;
+      let allCount = 0;
       allDailyContracts.forEach((c) => {
-        if (isContractCompleted(c)) return;
         const st = getDailyStatusForDate(c, selectedDailyDate).status;
-        if (st === "paid") paidCount++;
-        else if (st === "pending") pendingCount++;
+        if (st === "paid") {
+          paidCount++;
+          allCount++;
+        } else if (st === "pending") {
+          pendingCount++;
+          allCount++;
+        }
       });
       adminSubTabNav.innerHTML = `
         <button class="tab-btn ${currentSubFilter === "all" ? "active" : ""}" onclick="setSubFilter('all')">
           <i class="fa-solid fa-users"></i>
           <span>ลูกค้าทั้งหมดของรายวัน</span>
-          <span class="tab-count-badge">${allDailyContracts.length}</span>
+          <span class="tab-count-badge">${allCount}</span>
         </button>
         <button class="tab-btn ${currentSubFilter === "paid" ? "active" : ""}" onclick="setSubFilter('paid')">
           <i class="fa-solid fa-circle-check" style="color: #34d399;"></i>
@@ -1793,17 +1902,22 @@ document.addEventListener("DOMContentLoaded", () => {
       const allWeeklyContracts = allContracts.filter((c) => c.paymentFrequency === "weekly" && !isMotorcycleContract(c));
       let paidCount = 0;
       let pendingCount = 0;
+      let allCount = 0;
       allWeeklyContracts.forEach((c) => {
-        if (isContractCompleted(c)) return;
         const st = getDailyStatusForDate(c, selectedDailyDate).status;
-        if (st === "paid") paidCount++;
-        else if (st === "pending") pendingCount++;
+        if (st === "paid") {
+          paidCount++;
+          allCount++;
+        } else if (st === "pending") {
+          pendingCount++;
+          allCount++;
+        }
       });
       adminSubTabNav.innerHTML = `
         <button class="tab-btn ${currentSubFilter === "all" ? "active" : ""}" onclick="setSubFilter('all')">
           <i class="fa-solid fa-users"></i>
           <span>ลูกค้าทั้งหมดของรายอาทิตย์</span>
-          <span class="tab-count-badge">${allWeeklyContracts.length}</span>
+          <span class="tab-count-badge">${allCount}</span>
         </button>
         <button class="tab-btn ${currentSubFilter === "paid" ? "active" : ""}" onclick="setSubFilter('paid')">
           <i class="fa-solid fa-circle-check" style="color: #60a5fa;"></i>
@@ -1820,17 +1934,22 @@ document.addEventListener("DOMContentLoaded", () => {
       const allMonthlyContracts = allContracts.filter((c) => c.paymentFrequency === "monthly" && !isMotorcycleContract(c));
       let paidCount = 0;
       let pendingCount = 0;
+      let allCount = 0;
       allMonthlyContracts.forEach((c) => {
-        if (isContractCompleted(c)) return;
         const st = getDailyStatusForDate(c, selectedDailyDate).status;
-        if (st === "paid") paidCount++;
-        else if (st === "pending") pendingCount++;
+        if (st === "paid") {
+          paidCount++;
+          allCount++;
+        } else if (st === "pending") {
+          pendingCount++;
+          allCount++;
+        }
       });
       adminSubTabNav.innerHTML = `
         <button class="tab-btn ${currentSubFilter === "all" ? "active" : ""}" onclick="setSubFilter('all')">
           <i class="fa-solid fa-users"></i>
           <span>ลูกค้าทั้งหมดของรายเดือน</span>
-          <span class="tab-count-badge">${allMonthlyContracts.length}</span>
+          <span class="tab-count-badge">${allCount}</span>
         </button>
         <button class="tab-btn ${currentSubFilter === "paid" ? "active" : ""}" onclick="setSubFilter('paid')">
           <i class="fa-solid fa-circle-check" style="color: #c084fc;"></i>
@@ -1908,17 +2027,22 @@ document.addEventListener("DOMContentLoaded", () => {
       const allMotorcycleContracts = allContracts.filter(isMotorcycleContract);
       let paidCount = 0;
       let pendingCount = 0;
+      let allCount = 0;
       allMotorcycleContracts.forEach((c) => {
-        if (isContractCompleted(c)) return;
         const st = getDailyStatusForDate(c, selectedDailyDate).status;
-        if (st === "paid") paidCount++;
-        else if (st === "pending") pendingCount++;
+        if (st === "paid") {
+          paidCount++;
+          allCount++;
+        } else if (st === "pending") {
+          pendingCount++;
+          allCount++;
+        }
       });
       adminSubTabNav.innerHTML = `
         <button class="tab-btn ${currentSubFilter === "all" ? "active" : ""}" onclick="setSubFilter('all')">
           <i class="fa-solid fa-motorcycle" style="color: #38bdf8;"></i>
           <span>สัญญามอเตอร์ไซค์ทั้งหมด</span>
-          <span class="tab-count-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">${allMotorcycleContracts.length}</span>
+          <span class="tab-count-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">${allCount}</span>
         </button>
         <button class="tab-btn ${currentSubFilter === "paid" ? "active" : ""}" onclick="setSubFilter('paid')">
           <i class="fa-solid fa-circle-check" style="color: #34d399;"></i>
@@ -2026,7 +2150,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // 3. Filter by Sub-filter (Requirement 2 & 3: กรองตรงตาม Badge)
-    if (currentSubFilter !== "all") {
+    if (currentTab === "daily" || currentTab === "weekly" || currentTab === "monthly" || currentTab === "motorcycle") {
+      filtered = filtered.filter((c) => {
+        const st = getDailyStatusForDate(c, selectedDailyDate).status;
+        // หากเป็นสัญญาที่ปิดสัญญาแล้ว และไม่ได้จ่ายในวันนี้ (st === "completed") ไม่ต้องแสดงในหน้าของวันนั้น
+        if (st === "completed") return false;
+        if (currentSubFilter === "all") return true;
+        return st === currentSubFilter;
+      });
+    } else if (currentSubFilter !== "all") {
       filtered = filtered.filter((c) => {
         if (currentTab === "all") {
           // สัญญาทั้งหมด: กำลังผ่อนชำระ vs ปิดสัญญาแล้ว
@@ -2038,14 +2170,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return isCompleted; // ปิดสัญญาแล้ว
           }
           return true;
-        } else if (currentTab === "daily" || currentTab === "weekly" || currentTab === "monthly" || currentTab === "motorcycle") {
-          // หากเป็นสัญญาที่ปิดสัญญาแล้ว: จะไม่อยู่ในแท็บ "จ่ายแล้ว" หรือ "ค้างจ่าย" (ให้แสดงแค่ใน "ลูกค้าทั้งหมด")
-          if (isContractCompleted(c)) {
-            return false;
-          }
-          // ค้นเป็นต่อวันได้เลย: กรองสถานะจ่ายแล้ว/ค้างจ่าย ตามวันที่เลือก
-          const st = getDailyStatusForDate(c, selectedDailyDate).status;
-          return st === currentSubFilter;
         } else {
           const freq = c.paymentFrequency || "monthly";
           return getCustomerPaymentStatus(c, freq) === currentSubFilter;
@@ -2095,7 +2219,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let pendingCount = 0;
 
     allDailyContracts.forEach((c) => {
-      if (isContractCompleted(c)) return; // ปิดสัญญาแล้ว ไม่นับในยอดของวันและไม่นับในรับแล้ว/รอเก็บ
+      // getDailyStatusForDate ตรวจสอบว่าจ่ายใน selectedDailyDate หรือไม่ หากจ่ายงวดปิดสัญญาวันนี้จะนับเป็น paid
       const dailyStatus = getDailyStatusForDate(c, selectedDailyDate);
       const amt = Number(dailyStatus.amount) || 0;
       if (dailyStatus.status === "paid") {
@@ -2178,32 +2302,36 @@ document.addEventListener("DOMContentLoaded", () => {
           <div style="font-size: 0.72rem; color: var(--text-dim);">${c.dueSchedule || "ทุกวัน"}</div>
         </td>
         <td>
-          ${isCompleted
-            ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
-            : `<strong style="color: var(--primary-light);">฿${Number(pendingInst ? pendingInst.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
+          ${isPaid
+            ? `<strong style="color: var(--primary-light);">฿${Number(dailyStatus.amount || (installments[0]?.amount || 0)).toLocaleString()}</strong>`
+            : isCompleted
+              ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
+              : `<strong style="color: var(--primary-light);">฿${Number(pendingInst ? pendingInst.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
           }
         </td>
         <td>
-          ${isCompleted
-            ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
-            : isPaid
-              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${dailyStatus.label}</span>`
+          ${isPaid
+            ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${dailyStatus.label}</span>`
+            : isCompleted
+              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
               : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${dailyStatus.label}</span>`
           }
         </td>
         <td>฿${remainingBalance.toLocaleString()}</td>
         <td>
           <div class="table-actions">
-            ${isCompleted
-              ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
-              : !isPaid && dailyStatus.installment
-                ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${dailyStatus.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
-                    <i class="fa-solid fa-check"></i> บันทึกรับชำระ
-                   </button>`
-                : `<div style="display: inline-flex; align-items: center; gap: 4px;">
-                    <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>
-                    ${dailyStatus.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${dailyStatus.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
-                   </div>`
+            ${isPaid
+              ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
+                  <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว${dailyStatus.isClosingPayment ? " (ปิดสัญญา)" : ""}</span>
+                  ${dailyStatus.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${dailyStatus.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
+                 </div>`
+              : isCompleted
+                ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
+                : dailyStatus.installment
+                  ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${dailyStatus.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
+                      <i class="fa-solid fa-check"></i> บันทึกรับชำระ
+                     </button>`
+                  : ""
             }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
@@ -2253,7 +2381,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let pendingCount = 0;
 
     allWeeklyContracts.forEach((c) => {
-      if (isContractCompleted(c)) return; // ปิดสัญญาแล้ว ไม่นับในยอดของวันและไม่นับในรับแล้ว/รอเก็บ
+      // getDailyStatusForDate ตรวจสอบว่าจ่ายใน selectedDailyDate หรือไม่ หากจ่ายงวดปิดสัญญาวันนี้จะนับเป็น paid
       const statusObj = getDailyStatusForDate(c, selectedDailyDate);
       const amt = Number(statusObj.amount) || 0;
       if (statusObj.status === "paid") {
@@ -2333,32 +2461,36 @@ document.addEventListener("DOMContentLoaded", () => {
         </td>
         <td><span style="color: #38bdf8; font-weight: 500;">${c.dueSchedule || "ทุกสัปดาห์"}</span></td>
         <td>
-          ${isCompleted
-            ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
-            : `<strong style="color: var(--primary-light);">฿${Number(statusObj.installment ? statusObj.installment.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
+          ${isPaid
+            ? `<strong style="color: var(--primary-light);">฿${Number(statusObj.amount || (installments[0]?.amount || 0)).toLocaleString()}</strong>`
+            : isCompleted
+              ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
+              : `<strong style="color: var(--primary-light);">฿${Number(statusObj.installment ? statusObj.installment.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
           }
         </td>
         <td>
-          ${isCompleted
-            ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
-            : isPaid
-              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${statusObj.label}</span>`
+          ${isPaid
+            ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${statusObj.label}</span>`
+            : isCompleted
+              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
               : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${statusObj.label}</span>`
           }
         </td>
         <td>฿${remainingBalance.toLocaleString()}</td>
         <td>
           <div class="table-actions">
-            ${isCompleted
-              ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
-              : !isPaid && statusObj.installment
-                ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
-                    <i class="fa-solid fa-check"></i> บันทึกรับชำระ
-                   </button>`
-                : `<div style="display: inline-flex; align-items: center; gap: 4px;">
-                    <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>
-                    ${statusObj.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${statusObj.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
-                   </div>`
+            ${isPaid
+              ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
+                  <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว${statusObj.isClosingPayment ? " (ปิดสัญญา)" : ""}</span>
+                  ${statusObj.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${statusObj.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
+                 </div>`
+              : isCompleted
+                ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
+                : statusObj.installment
+                  ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
+                      <i class="fa-solid fa-check"></i> บันทึกรับชำระ
+                     </button>`
+                  : ""
             }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
@@ -2408,7 +2540,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let pendingCount = 0;
 
     allMonthlyContracts.forEach((c) => {
-      if (isContractCompleted(c)) return; // ปิดสัญญาแล้ว ไม่นับในยอดของวันและไม่นับในรับแล้ว/รอเก็บ
+      // getDailyStatusForDate ตรวจสอบว่าจ่ายใน selectedDailyDate หรือไม่ หากจ่ายงวดปิดสัญญาวันนี้จะนับเป็น paid
       const statusObj = getDailyStatusForDate(c, selectedDailyDate);
       const amt = Number(statusObj.amount) || 0;
       if (statusObj.status === "paid") {
@@ -2488,32 +2620,36 @@ document.addEventListener("DOMContentLoaded", () => {
         </td>
         <td><span style="color: #c084fc; font-weight: 500;">${c.dueSchedule || "ทุกวันที่ 1"}</span></td>
         <td>
-          ${isCompleted
-            ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
-            : `<strong style="color: var(--primary-light);">฿${Number(statusObj.installment ? statusObj.installment.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
+          ${isPaid
+            ? `<strong style="color: var(--primary-light);">฿${Number(statusObj.amount || (installments[0]?.amount || 0)).toLocaleString()}</strong>`
+            : isCompleted
+              ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
+              : `<strong style="color: var(--primary-light);">฿${Number(statusObj.installment ? statusObj.installment.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
           }
         </td>
         <td>
-          ${isCompleted
-            ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
-            : isPaid
-              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${statusObj.label}</span>`
+          ${isPaid
+            ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${statusObj.label}</span>`
+            : isCompleted
+              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
               : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${statusObj.label}</span>`
           }
         </td>
         <td>฿${remainingBalance.toLocaleString()}</td>
         <td>
           <div class="table-actions">
-            ${isCompleted
-              ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
-              : !isPaid && statusObj.installment
-                ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
-                    <i class="fa-solid fa-check"></i> บันทึกรับชำระ
-                   </button>`
-                : `<div style="display: inline-flex; align-items: center; gap: 4px;">
-                    <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>
-                    ${statusObj.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${statusObj.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
-                   </div>`
+            ${isPaid
+              ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
+                  <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว${statusObj.isClosingPayment ? " (ปิดสัญญา)" : ""}</span>
+                  ${statusObj.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${statusObj.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
+                 </div>`
+              : isCompleted
+                ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
+                : statusObj.installment
+                  ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
+                      <i class="fa-solid fa-check"></i> บันทึกรับชำระ
+                     </button>`
+                  : ""
             }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
@@ -2656,7 +2792,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let pendingCount = 0;
 
     allMotorcycleContracts.forEach((c) => {
-      if (isContractCompleted(c)) return; // ปิดสัญญาแล้ว ไม่นับในยอดของวันและไม่นับในรับแล้ว/รอเก็บ
+      // getDailyStatusForDate ตรวจสอบว่าจ่ายใน selectedDailyDate หรือไม่ หากจ่ายงวดปิดสัญญาวันนี้จะนับเป็น paid
       const dailyStatus = getDailyStatusForDate(c, selectedDailyDate);
       const amt = Number(dailyStatus.amount) || 0;
       if (dailyStatus.status === "paid") {
@@ -2700,7 +2836,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (contractsList.length === 0) {
-      const filterLabel = currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${dateDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${dateDisplay})` : "ทั้งหมด";
       tableBody.innerHTML = `
         <tr>
           <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 40px;">
@@ -2708,7 +2843,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <i class="fa-solid fa-motorcycle"></i>
             </div>
             <div style="font-weight: 600; color: #fff; font-size: 1rem; margin-bottom: 6px;">
-              ไม่พบรายการสัญญารถมอเตอร์ไซค์ (${filterLabel})
+              ไม่พบรายการสัญญารถมอเตอร์ไซค์ (${currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${dateDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${dateDisplay})` : "ทั้งหมด"})
             </div>
             <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
               สามารถกดปุ่ม "+ เพิ่มสัญญาใหม่" เพื่อบันทึกสัญญาผ่อนรถมอเตอร์ไซค์แยกหมวดได้ทันที
@@ -2780,17 +2915,19 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         </td>
         <td>
-          ${isCompleted
-            ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
-            : `<strong style="color: var(--primary-light); font-size: 0.95rem;">฿${instAmt.toLocaleString()}</strong>`
+          ${isPaid
+            ? `<strong style="color: var(--primary-light); font-size: 0.95rem;">฿${Number(dailyStatus.amount || instAmt).toLocaleString()}</strong>`
+            : isCompleted
+              ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
+              : `<strong style="color: var(--primary-light); font-size: 0.95rem;">฿${instAmt.toLocaleString()}</strong>`
           }
           <div style="font-size: 0.72rem; color: var(--text-dim);">${paidInstCount} / ${totalCount} งวด</div>
         </td>
         <td>
-          ${isCompleted
-            ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
-            : isPaid
-              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${dailyStatus.label}</span>`
+          ${isPaid
+            ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${dailyStatus.label}</span>`
+            : isCompleted
+              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
               : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${dailyStatus.label}</span>`
           }
           ${Number(c.lateFine) > 0 ? `<div style="margin-top: 4px;"><span class="badge-fine"><i class="fa-solid fa-triangle-exclamation"></i> ปรับ ฿${Number(c.lateFine).toLocaleString()}</span></div>` : ""}
@@ -2800,16 +2937,18 @@ document.addEventListener("DOMContentLoaded", () => {
         </td>
         <td>
           <div class="table-actions">
-            ${isCompleted
-              ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
-              : !isPaid && dailyStatus.installment
-                ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${dailyStatus.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
-                    <i class="fa-solid fa-check"></i> บันทึกรับชำระ
-                  </button>`
-                : `<div style="display: inline-flex; align-items: center; gap: 4px;">
-                    <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>
-                    ${dailyStatus.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${dailyStatus.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
-                   </div>`
+            ${isPaid
+              ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
+                  <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว${dailyStatus.isClosingPayment ? " (ปิดสัญญา)" : ""}</span>
+                  ${dailyStatus.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${dailyStatus.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
+                 </div>`
+              : isCompleted
+                ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
+                : dailyStatus.installment
+                  ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${dailyStatus.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
+                      <i class="fa-solid fa-check"></i> บันทึกรับชำระ
+                    </button>`
+                  : ""
             }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ
@@ -3315,9 +3454,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.markPaidFromDetail = async function (installmentNo) {
     if (!currentViewingContractId) return;
-    await window.easyFinanceDB.markInstallmentPaid(currentViewingContractId, installmentNo, {
+    const slipData = {
       verifiedBy: "admin_manual"
-    });
+    };
+    if (selectedDailyDate) {
+      slipData.paidAt = `${selectedDailyDate} 12:00:00`;
+    }
+    await window.easyFinanceDB.markInstallmentPaid(currentViewingContractId, installmentNo, slipData);
     showAdminToast(`บันทึกรับชำระงวดที่ ${installmentNo} สำเร็จ (สถานะ: ชำระแล้ว)`, "success");
     openContractDetails(currentViewingContractId);
     renderStatsCounters();
@@ -4702,6 +4845,32 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  window.payPenaltyAndConfirm = async function () {
+    const contractId = penaltyContractId ? penaltyContractId.value : "";
+    if (!contractId) return;
+
+    const fineAmount = parseFloat(penaltyAmountInput ? penaltyAmountInput.value : 0) || 0;
+    if (fineAmount <= 0) {
+      showAdminToast("กรุณาระบุยอดเงินค่าปรับที่ต้องการบันทึกรับชำระ", "warning");
+      return;
+    }
+
+    if (confirm(`ยืนยันการบันทึกรับเงินค่าปรับจำนวน ฿${fineAmount.toLocaleString()} ของสัญญา ${contractId} (นับเข้ายอดรับแล้วประจำวันที่ ${formatDateThai(selectedDailyDate)}) ใช่หรือไม่?`)) {
+      await window.easyFinanceDB.payContractLateFine(contractId, fineAmount, selectedDailyDate);
+      showAdminToast(`บันทึกรับชำระค่าปรับ ฿${fineAmount.toLocaleString()} เรียบร้อยแล้ว (นับรวมในยอดรับแล้วของวันนี้)`, "success");
+      closePenaltyModal();
+      renderStatsCounters();
+      renderSubTabs();
+      renderActiveTabTable();
+      if (customerDatabaseModal && customerDatabaseModal.classList.contains("active")) {
+        renderCustomerDatabaseList();
+      }
+      if (customerDossierModal && customerDossierModal.classList.contains("active") && currentViewingCustomerKey) {
+        openCustomerDossier(currentViewingCustomerKey);
+      }
+    }
+  };
 
   window.clearAndConfirmPenalty = async function () {
     const contractId = penaltyContractId ? penaltyContractId.value : "";
