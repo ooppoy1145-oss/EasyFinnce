@@ -568,27 +568,11 @@ class EasyFinanceDatabase {
 
       if (remoteContracts.length > 0) {
         // เมื่อมีข้อมูลบน Cloud ให้ยึด Cloud เป็นความจริงหลัก (Single Source of Truth 100%)
-        // เพื่อให้ทุกเครื่อง (PC, มือถือ, เครื่องอื่น) เห็นข้อมูลตรงกันทันที ไม่เด้งข้อมูลเก่ากลับมา
-        const currentLocal = this.getContracts();
-        const finalContracts = remoteContracts.map((rem) => {
-          const loc = currentLocal.find((l) => l.id === rem.id);
-          if (loc && loc.installments) {
-            const mergedInst = (rem.installments || []).map((rInst) => {
-              const lInst = loc.installments.find((li) => li.installmentNo === rInst.installmentNo);
-              // ถ้างวดใน local เพิ่งจ่ายสำเร็จแต่ remote ยังไม่อัปเดต ให้คงสถานะ paid ไว้ชั่วคราว
-              if (lInst && lInst.status === "paid" && rInst.status !== "paid") {
-                return lInst;
-              }
-              return rInst;
-            });
-            return { ...rem, installments: mergedInst };
-          }
-          return rem;
-        });
-
+        // เพื่อให้ทุกเครื่อง (PC, มือถือ, ลิงก์ LINE) เห็นข้อมูลตรงกันทันที 100%
+        // ทั้งตอนแอดมินติ้กรับชำระ และตอนแอดมินกดยกเลิกงวด ยอดและสถานะจะอัปเดตกลับมาตรงตาม Cloud ทันที
         localStorage.setItem(
           this.storageKeyPrefix + "contracts",
-          JSON.stringify(finalContracts)
+          JSON.stringify(remoteContracts)
         );
         this.notifyListeners(false);
       } else {
@@ -867,13 +851,11 @@ class EasyFinanceDatabase {
       contract.hasLateFine = false;
     }
 
-    // คำนวณยอดคงเหลือของแต่ละงวดใหม่ให้ถูกต้องเสมอ
-    let runningBalance = Number(contract.totalAmount) || 0;
+    // คำนวณยอดคงเหลือตามแผนของแต่ละงวดให้ถูกต้องเสมอ
+    let scheduledBalance = Number(contract.totalAmount) || 0;
     (contract.installments || []).forEach((inst) => {
-      if (inst.status === "paid") {
-        runningBalance -= (Number(inst.amount) || 0);
-      }
-      inst.remainingBalanceAfter = Math.max(0, runningBalance);
+      scheduledBalance -= (Number(inst.amount) || 0);
+      inst.remainingBalanceAfter = Math.max(0, scheduledBalance);
     });
 
     // ตรวจสอบว่าจ่ายครบทุกงวดหรือยัง
@@ -916,13 +898,11 @@ class EasyFinanceDatabase {
       delete installment.paidLateFine;
     }
 
-    // คำนวณยอดคงเหลือของแต่ละงวดใหม่
-    let runningBalance = Number(contract.totalAmount) || 0;
+    // คำนวณยอดคงเหลือตามแผนของแต่ละงวดใหม่ให้ถูกต้องเสมอ
+    let scheduledBalance = Number(contract.totalAmount) || 0;
     (contract.installments || []).forEach((inst) => {
-      if (inst.status === "paid") {
-        runningBalance -= (Number(inst.amount) || 0);
-      }
-      inst.remainingBalanceAfter = Math.max(0, runningBalance);
+      scheduledBalance -= (Number(inst.amount) || 0);
+      inst.remainingBalanceAfter = Math.max(0, scheduledBalance);
     });
 
     // ปรับสถานะสัญญา: หากเคยเป็น completed จะกลับมาเป็น active

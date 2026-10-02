@@ -2200,7 +2200,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${dailyStatus.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
                     <i class="fa-solid fa-check"></i> บันทึกรับชำระ
                    </button>`
-                : '<span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
+                : `<div style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>
+                    ${dailyStatus.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${dailyStatus.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
+                   </div>`
             }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
@@ -2352,7 +2355,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
                     <i class="fa-solid fa-check"></i> บันทึกรับชำระ
                    </button>`
-                : '<span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
+                : `<div style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>
+                    ${statusObj.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${statusObj.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
+                   </div>`
             }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
@@ -2504,7 +2510,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
                     <i class="fa-solid fa-check"></i> บันทึกรับชำระ
                    </button>`
-                : '<span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
+                : `<div style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>
+                    ${statusObj.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${statusObj.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
+                   </div>`
             }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
@@ -2797,7 +2806,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${dailyStatus.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
                     <i class="fa-solid fa-check"></i> บันทึกรับชำระ
                   </button>`
-                : '<span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
+                : `<div style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>
+                    ${dailyStatus.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${dailyStatus.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
+                   </div>`
             }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ
@@ -3076,13 +3088,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // คำนวณยอดคงเหลือ remainingBalanceAfter ของทุกงวดตามยอดต้นใหม่ totalAmount เสมอ
-    let runningBalance = totalAmount;
+    // คำนวณยอดคงเหลือตามแผนของแต่ละงวดตามยอดต้นใหม่ totalAmount เสมอ
+    let scheduledBalance = totalAmount;
     installments.forEach((inst) => {
-      if (inst.status === "paid") {
-        runningBalance -= (Number(inst.amount) || 0);
-      }
-      inst.remainingBalanceAfter = Math.max(0, runningBalance);
+      scheduledBalance -= (Number(inst.amount) || 0);
+      inst.remainingBalanceAfter = Math.max(0, scheduledBalance);
     });
 
     const contractData = {
@@ -3214,6 +3224,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  // คัดลอกลิงก์หน้าบ้านลูกค้าสำหรับส่งทาง LINE
+  window.copyClientLineLink = function (contractId) {
+    const origin = window.location.origin;
+    const pathname = window.location.pathname.replace(/admin\.html.*$/, "").replace(/\/$/, "");
+    const url = `${origin}${pathname}/index.html?id=${encodeURIComponent(contractId)}`;
+    copyToClipboard(url);
+    showAdminToast(`คัดลอกลิงก์หน้าบ้านสัญญา ${contractId} สำหรับส่งทาง LINE สำเร็จแล้ว`, "success");
+  };
+
   // --- 6. CONTRACT DETAILS DRAWER / MODAL ---
 
   window.openContractDetails = function (contractId) {
@@ -3234,7 +3253,10 @@ document.addEventListener("DOMContentLoaded", () => {
         <div><strong>กำหนดชำระ:</strong> ${contract.dueSchedule} (${contract.duration})</div>
         <div><strong>วันที่เริ่มชำระ:</strong> ${formatDateThai(contract.firstPaymentDate || (contract.installments && contract.installments[0]?.dueDate))}</div>
       </div>
-      <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--admin-border); display: flex; gap: 8px; justify-content: flex-end;">
+      <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--admin-border); display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap;">
+        <button type="button" class="btn-table-action" onclick="copyClientLineLink('${contract.id}')" style="padding: 6px 14px; font-size: 0.8rem; background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3);">
+          <i class="fa-solid fa-share-nodes"></i> คัดลอกลิงก์ส่ง LINE ให้ลูกค้า
+        </button>
         <button type="button" class="btn-table-action" onclick="contractDetailModal.classList.remove('active'); editContract('${contract.id}');" style="padding: 6px 14px; font-size: 0.8rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
           <i class="fa-solid fa-pen-to-square"></i> แก้ไขสัญญานี้
         </button>

@@ -90,14 +90,29 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedSlipFile = null;
   let selectedSlipBase64 = null;
 
-  // --- 1. INITIALIZATION & SESSION ---
-
   function checkSession() {
+    // 1. ตรวจสอบจาก URL Parameters ก่อน (กรณีลูกค้าเปิดผ่านลิงก์ LINE เช่น ?id=... หรือ ?contractId=... หรือ ?phone=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlParamVal = urlParams.get("id") || urlParams.get("contractId") || urlParams.get("contract") || urlParams.get("phone") || urlParams.get("email") || urlParams.get("c");
+
+    let contract = null;
+    if (urlParamVal) {
+      contract = window.easyFinanceDB.getContractById(urlParamVal) || window.easyFinanceDB.getContractByEmail(urlParamVal);
+      if (contract) {
+        currentContractId = contract.id;
+        localStorage.setItem("easyfinance_current_session", contract.id);
+        renderDashboard(contract);
+        showDashboard();
+        return;
+      }
+    }
+
+    // 2. ตรวจสอบจาก Session ในเครื่อง
     const sessionContractId = localStorage.getItem("easyfinance_current_session") ||
       sessionStorage.getItem("easyfinance_current_session");
 
     if (sessionContractId) {
-      const contract = window.easyFinanceDB.getContractById(sessionContractId);
+      contract = window.easyFinanceDB.getContractById(sessionContractId);
       if (contract) {
         currentContractId = contract.id;
         renderDashboard(contract);
@@ -704,15 +719,54 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("scheduleSection").scrollIntoView({ behavior: "smooth" });
   });
 
-  // --- 8. REALTIME CLOUD LISTENER ---
+  // --- 8. REALTIME CLOUD LISTENER (ซิงค์ยอดและสถานะเรียลไทม์ 100% ทั้งตอนมาร์คจ่ายและกดยกเลิกงวด) ---
+  function syncDashboardFromCloud() {
+    // 1. ค้นหาจาก currentContractId หรือ Session
+    const activeId = currentContractId ||
+      localStorage.getItem("easyfinance_current_session") ||
+      sessionStorage.getItem("easyfinance_current_session");
 
-  window.easyFinanceDB.subscribe(() => {
-    if (currentContractId) {
-      const updated = window.easyFinanceDB.getContractById(currentContractId);
+    if (activeId) {
+      const updated = window.easyFinanceDB.getContractById(activeId);
       if (updated) {
+        currentContractId = updated.id;
         renderDashboard(updated);
+        // หากก่อนหน้านี้ยังแสดงหน้า login อยู่ (เช่น ตอนเพิ่งเปิดลิงก์เข้ามาแล้ว Cloud เพิ่งโหลดเสร็จ) ให้เปิดหน้า Dashboard ทันที
+        if (dashboardSection.classList.contains("hidden")) {
+          showDashboard();
+        }
+        return;
       }
     }
+
+    // 2. หากยังไม่พบ activeId ให้ลองตรวจหาจาก URL Parameters (กรณีเปิดลิงก์ผ่าน LINE แล้ว Cloud เพิ่งโหลดเสร็จ)
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlParamVal = urlParams.get("id") || urlParams.get("contractId") || urlParams.get("contract") || urlParams.get("phone") || urlParams.get("email") || urlParams.get("c");
+    if (urlParamVal) {
+      const c = window.easyFinanceDB.getContractById(urlParamVal) || window.easyFinanceDB.getContractByEmail(urlParamVal);
+      if (c) {
+        currentContractId = c.id;
+        localStorage.setItem("easyfinance_current_session", c.id);
+        renderDashboard(c);
+        showDashboard();
+      }
+    }
+  }
+
+  // ผูกตัวรับฟังการเปลี่ยนแปลงจาก Firebase / Cloud Database แบบ Real-time ทันที
+  if (window.easyFinanceDB && typeof window.easyFinanceDB.subscribe === "function") {
+    window.easyFinanceDB.subscribe(syncDashboardFromCloud);
+  }
+
+  // เมื่อลูกค้าสลับแอปกลับมาที่หน้าเว็บ (เช่น สลับกลับมาจาก LINE หรือแอปธนาคาร) ให้อัปเดตข้อมูลล่าสุดทันที
+  window.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      syncDashboardFromCloud();
+    }
+  });
+
+  window.addEventListener("focus", () => {
+    syncDashboardFromCloud();
   });
 
   // --- 9. HELPERS ---
@@ -768,18 +822,6 @@ document.addEventListener("DOMContentLoaded", () => {
       showToast("ไม่สามารถคัดลอกได้", "error");
     });
   };
-
-  // Real-time Database Subscription: ซิงค์หน้าจอทันทีเมื่อแอดมินแก้ไขข้อมูล / อนุมัติ / บันทึกค่าปรับ / คีย์ค่าปรับออก
-  if (window.easyFinanceDB && typeof window.easyFinanceDB.subscribe === "function") {
-    window.easyFinanceDB.subscribe(() => {
-      if (currentContractId) {
-        const updatedContract = window.easyFinanceDB.getContractById(currentContractId);
-        if (updatedContract) {
-          renderDashboard(updatedContract);
-        }
-      }
-    });
-  }
 
   // Run on start
   checkSession();
