@@ -39,6 +39,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const statTotalMotorcycle = document.getElementById("statTotalMotorcycle");
   const statMotorcycleSub = document.getElementById("statMotorcycleSub");
   const statIconMotorcycle = document.getElementById("statIconMotorcycle");
+  const cardStatInterestCut = document.getElementById("cardStatInterestCut");
+  const statLabelInterestCut = document.getElementById("statLabelInterestCut");
+  const statTotalInterestCut = document.getElementById("statTotalInterestCut");
+  const statInterestCutSub = document.getElementById("statInterestCutSub");
+  const interestCutReportModal = document.getElementById("interestCutReportModal");
+  const addManualInstallmentModal = document.getElementById("addManualInstallmentModal");
+  const editInstallmentModal = document.getElementById("editInstallmentModal");
 
   // DOM Elements - Table & Search
   const adminSearchInput = document.getElementById("adminSearchInput");
@@ -752,14 +759,19 @@ document.addEventListener("DOMContentLoaded", () => {
     return installments.length > 0 && installments.every((i) => i.status === "paid");
   }
 
-  // --- HELPER: DAILY STATUS BY SPECIFIC DATE (Requirement 2: เลือกวันที่แล้วดูว่าใครจ่าย/ไม่จ่าย) ---
+  // --- HELPER: DAILY STATUS BY SPECIFIC DATE (Requirement 1 & 2: ตรวจสอบสถานะตามวันที่ชำระ paidAt) ---
   function getDailyStatusForDate(contract, dateStr) {
     const installments = contract.installments || [];
     if (installments.length === 0) return { status: "pending", label: "ไม่มีงวด", installment: null, installments: [], amount: 0, installmentAmount: 0, lateFineAmount: 0 };
 
-    // 1. ค้นหา "ทุกงวด" ที่มีการจ่ายเงินในวันที่ dateStr นี้ (รองรับการติ้กชำระหลายงวดพร้อมกันในวันเดียว เช่น ลูกค้าโอนมาปิดสัญญา)
+    // 1. ค้นหา "ทุกงวด" ที่มีการจ่ายเงินในวันที่ dateStr นี้ (ตามวันที่ชำระ paidAt)
     const paidListOnDate = installments.filter(
       (i) => i.status === "paid" && i.paidAt && i.paidAt.includes(dateStr)
+    );
+
+    // ตรวจสอบค่างวดที่บันทึกตัดดอกในวันที่ dateStr นี้ (Requirement 3)
+    const cutListOnDate = installments.filter(
+      (i) => i.status === "interest_only" && i.paidAt && i.paidAt.includes(dateStr)
     );
 
     // ตรวจสอบค่าปรับที่บันทึกชำระในวันนี้ (จาก installment.paidLateFine หรือ finePaymentHistory)
@@ -771,9 +783,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (paidListOnDate.length > 0 || totalFineOnDate > 0) {
       const isCompleted = isContractCompleted(contract);
-      // รวมยอดค่างวดของทุกงวดที่ติ้กชำระในวันนี้ (Requirement 2: นับต่อติ้กที่เราติ้ก)
+      // รวมยอดค่างวดของทุกงวดที่ติ้กชำระในวันนี้ (ตามวันที่ชำระจริง)
       const totalInstAmt = paidListOnDate.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
-      // ยอดรับรวมของวันนี้ = ค่างวดทั้งหมดที่จ่ายในวันนี้ + ค่าปรับที่รับชำระในวันนี้ (Requirement 1: นับค่าปรับเข้าไปด้วยต่อวัน)
       const totalPaidToday = totalInstAmt + totalFineOnDate;
 
       // จัดการ Label แสดงผลให้เข้าใจง่าย
@@ -799,11 +810,27 @@ document.addEventListener("DOMContentLoaded", () => {
         status: "paid",
         installment: paidListOnDate.length > 0 ? paidListOnDate[paidListOnDate.length - 1] : null,
         installments: paidListOnDate,
-        amount: totalPaidToday, // นับรวมทุกงวดที่ติ้ก + ค่าปรับ
+        amount: totalPaidToday, // นับรวมทุกงวดที่จ่ายในวันนี้ + ค่าปรับ
         installmentAmount: totalInstAmt,
         lateFineAmount: totalFineOnDate,
         label: label,
         isClosingPayment: isCompleted
+      };
+    }
+
+    // หากมีการบันทึกตัดดอกในวันนี้
+    if (cutListOnDate.length > 0) {
+      const totalCutToday = cutListOnDate.reduce((sum, i) => sum + (Number(i.interestAmount) || 0), 0);
+      const instNos = cutListOnDate.map((i) => i.installmentNo).join(", ");
+      return {
+        status: "interest_only",
+        installment: cutListOnDate[cutListOnDate.length - 1],
+        installments: cutListOnDate,
+        amount: totalCutToday,
+        installmentAmount: 0,
+        lateFineAmount: 0,
+        label: `ตัดดอก (งวด ${instNos})`,
+        isClosingPayment: false
       };
     }
 
@@ -824,7 +851,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 3. มีงวดที่กำหนดชำระตรงกับ dateStr นี้หรือไม่
     const dueOnDate = installments.find((i) => i.dueDate === dateStr);
     if (dueOnDate) {
-      if (dueOnDate.status === "paid") {
+      if (dueOnDate.status === "paid" && dueOnDate.paidAt && dueOnDate.paidAt.includes(dateStr)) {
         return {
           status: "paid",
           installment: dueOnDate,
@@ -834,7 +861,17 @@ document.addEventListener("DOMContentLoaded", () => {
           lateFineAmount: 0,
           label: `จ่ายแล้ว (งวด ${dueOnDate.installmentNo})`
         };
-      } else {
+      } else if (dueOnDate.status === "interest_only") {
+        return {
+          status: "interest_only",
+          installment: dueOnDate,
+          installments: [dueOnDate],
+          amount: Number(dueOnDate.interestAmount) || 0,
+          installmentAmount: 0,
+          lateFineAmount: 0,
+          label: `ตัดดอก (งวด ${dueOnDate.installmentNo})`
+        };
+      } else if (dueOnDate.status !== "paid") {
         return {
           status: "pending",
           installment: dueOnDate,
@@ -848,7 +885,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // 4. สัญญาที่ยังผ่อนอยู่ แต่วันที่เลือกยังไม่มียอดจ่าย
-    const nextPending = installments.find((i) => i.status !== "paid");
+    const nextPending = installments.find((i) => i.status !== "paid" && i.status !== "interest_only") || installments.find((i) => i.status !== "paid");
     const instAmt = Number(nextPending ? nextPending.amount : (installments[0]?.amount || 0));
     return {
       status: "pending",
@@ -857,7 +894,7 @@ document.addEventListener("DOMContentLoaded", () => {
       amount: instAmt,
       installmentAmount: instAmt,
       lateFineAmount: 0,
-      label: nextPending ? `ค้างจ่าย (งวด ${nextPending.installmentNo})` : "ยังไม่จ่าย"
+      label: nextPending ? `รอชำระ (งวด ${nextPending.installmentNo})` : "ยังไม่จ่าย"
     };
   }
 
@@ -1357,7 +1394,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Helper to sync single date input value and toggle active class on quick buttons
-  // Helper to sync single date input value and toggle active class on quick buttons
   function updatePeriodDateInputs() {
     syncPeriodDates();
     if (adminDateFilter) adminDateFilter.value = selectedDailyDate;
@@ -1365,6 +1401,28 @@ document.addEventListener("DOMContentLoaded", () => {
     const todayStr = getLocalDateStr();
     if (btnDateToday) {
       btnDateToday.classList.toggle("active", selectedDailyDate === todayStr);
+    }
+  }
+
+  // อัปเดตแถบความคืบหน้าการจัดเก็บประจำช่วงเวลา (Requirement 2)
+  function updateDateFilterProgress(paidCount, pendingCount) {
+    const progressBar = document.getElementById("dateFilterProgressBar");
+    const progressPct = document.getElementById("dateFilterProgressPct");
+    const total = paidCount + pendingCount;
+    const pct = total > 0 ? Math.round((paidCount / total) * 100) : 0;
+    if (progressBar) {
+      progressBar.style.width = `${pct}%`;
+      if (pct === 100) {
+        progressBar.style.background = "linear-gradient(90deg, #10b981 0%, #34d399 100%)";
+        progressBar.style.boxShadow = "0 0 12px rgba(52, 211, 153, 0.8)";
+      } else {
+        progressBar.style.background = "linear-gradient(90deg, #10b981 0%, #34d399 100%)";
+        progressBar.style.boxShadow = "0 0 8px rgba(52, 211, 153, 0.4)";
+      }
+    }
+    if (progressPct) {
+      progressPct.textContent = `${pct}%`;
+      progressPct.style.color = pct === 100 ? "#34d399" : (pct > 0 ? "#6ee7b7" : "var(--text-dim)");
     }
   }
 
@@ -1428,6 +1486,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (currentTab === "bad_debt") {
       if (cardStatLateFines) cardStatLateFines.style.display = "none";
+      if (cardStatInterestCut) cardStatInterestCut.style.display = "none";
       const allBadDebts = window.easyFinanceDB.getBadDebts ? window.easyFinanceDB.getBadDebts() : [];
       let totalBadAmount = 0;
       let badDebtCount = 0;
@@ -1455,6 +1514,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (cardStatLateFines) cardStatLateFines.style.display = "";
     if (cardStatMotorcycle) cardStatMotorcycle.style.display = "";
+    if (cardStatInterestCut) cardStatInterestCut.style.display = "";
 
     const contracts = window.easyFinanceDB.getContracts();
     let totalFinanced = 0;
@@ -1468,12 +1528,15 @@ document.addEventListener("DOMContentLoaded", () => {
     let totalMotorcycleOutstanding = 0;
     let motorcycleContractsCount = 0;
 
+    let totalInterestCutCollected = 0;
+    let totalInterestCutCount = 0;
+
     contracts.forEach((c) => {
       const downPayment = Number(c.downPayment) || 0;
       const totalAmount = Number(c.totalAmount) || 0;
       const installments = c.installments || [];
       const contractPaidAmount = installments
-        .filter((inst) => inst.status === "paid")
+        .filter((inst) => inst.status === "paid" && !inst.isPrincipalInterestCut)
         .reduce((sum, inst) => sum + (Number(inst.amount) || 0), 0);
       const contractOutstanding = Math.max(0, totalAmount - contractPaidAmount);
 
@@ -1498,6 +1561,25 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       totalLateFinesCollected += Math.max(contractCollectedFine, instCollectedFine);
       totalLateFinesPending += Number(c.lateFine) || 0;
+
+      // Requirement 3.3: คำนวณยอดตัดดอกแยกต่างหาก ไม่รวมกับยอดปล่อยสินเชื่อรวม-ยอดเก็บเงินได้แล้ว-ยอดคงค้างรอเก็บ
+      if (Array.isArray(c.interestCutHistory)) {
+        c.interestCutHistory.forEach((h) => {
+          totalInterestCutCollected += Number(h.amount) || 0;
+          totalInterestCutCount++;
+        });
+      }
+      installments.forEach((inst) => {
+        if (inst.status === "interest_only") {
+          const inHist = (c.interestCutHistory || []).some(
+            (h) => Number(h.installmentNo) === Number(inst.installmentNo)
+          );
+          if (!inHist) {
+            totalInterestCutCollected += Number(inst.interestAmount) || 0;
+            totalInterestCutCount++;
+          }
+        }
+      });
     });
 
     const isManager = isManagerLoggedIn();
@@ -1576,6 +1658,15 @@ document.addEventListener("DOMContentLoaded", () => {
         statMotorcycleSub.textContent = `เก็บได้ ฿${totalMotorcycleCollected.toLocaleString()} (${motorcycleContractsCount} สัญญา)`;
       }
 
+      // ช่องยอดรวมตัดดอก (Requirement 3.3: แสดงยอดตัดดอกรวมแยกต่างหาก)
+      if (statTotalInterestCut) {
+        statTotalInterestCut.textContent = `฿${totalInterestCutCollected.toLocaleString()}`;
+        statTotalInterestCut.classList.remove("masked-stat-text");
+      }
+      if (statInterestCutSub) {
+        statInterestCutSub.textContent = `ตัดดอก ${totalInterestCutCount} รายการ (คลิกดูสรุปต่อวัน)`;
+      }
+
       if (quickPillDaily) {
         quickPillDaily.textContent = `฿${(dailyStats.totalFinanced || 0).toLocaleString()}`;
         quickPillDaily.classList.remove("masked-stat-text");
@@ -1600,6 +1691,20 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if (statLateFinesSub) {
         statLateFinesSub.textContent = "เฉพาะสิทธิ์หัวหน้าเท่านั้น";
+      }
+      if (statTotalMotorcycle) {
+        statTotalMotorcycle.textContent = "฿******";
+        statTotalMotorcycle.classList.add("masked-stat-text");
+      }
+      if (statMotorcycleSub) {
+        statMotorcycleSub.textContent = "เฉพาะสิทธิ์หัวหน้าเท่านั้น";
+      }
+      if (statTotalInterestCut) {
+        statTotalInterestCut.textContent = "฿******";
+        statTotalInterestCut.classList.add("masked-stat-text");
+      }
+      if (statInterestCutSub) {
+        statInterestCutSub.textContent = "เฉพาะสิทธิ์หัวหน้าเท่านั้น";
       }
 
       // ช่องยอดรวมมอไซต์ปิดเป็น * สำหรับพนักงาน
@@ -2245,6 +2350,7 @@ document.addEventListener("DOMContentLoaded", () => {
         : `<i class="fa-solid fa-circle-check"></i> รับแล้ว ฿******`;
     }
     if (dailyPendingAmountVal) {
+      dailyPendingAmountVal.style.display = "";
       dailyPendingAmountVal.innerHTML = isManager
         ? `<i class="fa-solid fa-clock"></i> รอเก็บ ฿${dailyPendingAmount.toLocaleString()}`
         : `<i class="fa-solid fa-clock"></i> รอเก็บ ฿******`;
@@ -2263,6 +2369,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <span class="date-stat-chip chip-pending"><i class="fa-solid fa-clock"></i> ค้างจ่าย ${pendingCount} ราย</span>
       `;
     }
+    updateDateFilterProgress(paidCount, pendingCount);
 
     if (contractsList.length === 0) {
       const filterLabel = currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${dateDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${dateDisplay})` : "ทั้งหมด";
@@ -2277,7 +2384,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const pendingInst = installments.find((i) => i.status !== "paid");
       const contractTotal = Number(c.totalAmount) || 0;
       const totalPaidAmt = installments
-        .filter((i) => i.status === "paid")
+        .filter((i) => i.status === "paid" && !i.isPrincipalInterestCut)
         .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
       const remainingBalance = Math.max(0, contractTotal - totalPaidAmt);
 
@@ -2372,32 +2479,27 @@ document.addEventListener("DOMContentLoaded", () => {
       <th>จัดการ</th>
     `;
 
-    // คำนวณสรุปยอดรายอาทิตย์ประจำวันที่เลือก
+    // คำนวณสรุปยอดรายอาทิตย์ประจำวันที่เลือก (Requirement 1: ดึงยอดจ่ายแล้วตามวันที่ชำระ paidAt ส่วนกำหนดชำระคงเดิมไม่ต้องดึงคำนวณยอดไปแสดง)
     const allWeeklyContracts = window.easyFinanceDB.getContracts().filter((c) => c.paymentFrequency === "weekly" && !isMotorcycleContract(c));
-    let weeklyTotalAmount = 0;
     let weeklyPaidAmount = 0;
-    let weeklyPendingAmount = 0;
     let paidCount = 0;
     let pendingCount = 0;
 
     allWeeklyContracts.forEach((c) => {
-      // getDailyStatusForDate ตรวจสอบว่าจ่ายใน selectedDailyDate หรือไม่ หากจ่ายงวดปิดสัญญาวันนี้จะนับเป็น paid
       const statusObj = getDailyStatusForDate(c, selectedDailyDate);
-      const amt = Number(statusObj.amount) || 0;
       if (statusObj.status === "paid") {
         paidCount++;
-        weeklyPaidAmount += amt;
-        weeklyTotalAmount += amt;
-      } else if (statusObj.status === "pending") {
-        pendingCount++;
-        weeklyPendingAmount += amt;
-        weeklyTotalAmount += amt;
+        weeklyPaidAmount += Number(statusObj.amount) || 0;
+      } else {
+        if (!isContractCompleted(c)) {
+          pendingCount++;
+        }
       }
     });
 
     const isManagerWeekly = isManagerLoggedIn();
     if (dailyTotalAmountVal) {
-      dailyTotalAmountVal.textContent = isManagerWeekly ? ("฿" + weeklyTotalAmount.toLocaleString()) : "฿******";
+      dailyTotalAmountVal.textContent = isManagerWeekly ? ("฿" + weeklyPaidAmount.toLocaleString()) : "฿******";
       dailyTotalAmountVal.classList.toggle("masked-stat-text", !isManagerWeekly);
     }
     if (dailyPaidAmountVal) {
@@ -2406,9 +2508,7 @@ document.addEventListener("DOMContentLoaded", () => {
         : `<i class="fa-solid fa-circle-check"></i> รับแล้ว ฿******`;
     }
     if (dailyPendingAmountVal) {
-      dailyPendingAmountVal.innerHTML = isManagerWeekly
-        ? `<i class="fa-solid fa-clock"></i> รอเก็บ ฿${weeklyPendingAmount.toLocaleString()}`
-        : `<i class="fa-solid fa-clock"></i> รอเก็บ ฿******`;
+      dailyPendingAmountVal.style.display = "none";
     }
     if (dateDailyTotalBadge) {
       dateDailyTotalBadge.classList.remove("pop-animate");
@@ -2419,10 +2519,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (dateFilterSummary) {
       dateFilterSummary.innerHTML = `
         <span>สรุปประจำวันที่ <strong>${dateDisplay}</strong>:</span>
-        <span class="date-stat-chip chip-paid"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว ${paidCount} ราย</span>
-        <span class="date-stat-chip chip-pending"><i class="fa-solid fa-clock"></i> ค้างจ่าย ${pendingCount} ราย</span>
+        <span class="date-stat-chip chip-paid"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว ${paidCount} ราย (฿${weeklyPaidAmount.toLocaleString()})</span>
+        <span class="date-stat-chip chip-pending"><i class="fa-solid fa-clock"></i> รอชำระ ${pendingCount} ราย</span>
       `;
     }
+    updateDateFilterProgress(paidCount, pendingCount);
 
     if (contractsList.length === 0) {
       const filterLabel = currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${dateDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${dateDisplay})` : "ทั้งหมด";
@@ -2436,14 +2537,18 @@ document.addEventListener("DOMContentLoaded", () => {
       const installments = c.installments || [];
       const contractTotal = Number(c.totalAmount) || 0;
       const totalPaidAmt = installments
-        .filter((i) => i.status === "paid")
+        .filter((i) => i.status === "paid" && !i.isPrincipalInterestCut)
         .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
       const remainingBalance = Math.max(0, contractTotal - totalPaidAmt);
 
       const statusObj = getDailyStatusForDate(c, selectedDailyDate);
       const isPaid = statusObj.status === "paid";
+      const isInterestCut = statusObj.status === "interest_only";
 
       const tr = document.createElement("tr");
+      if (isInterestCut) {
+        tr.className = "tr-interest-cut";
+      }
       tr.innerHTML = `
         <td>
           <div class="customer-cell">
@@ -2463,17 +2568,21 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>
           ${isPaid
             ? `<strong style="color: var(--primary-light);">฿${Number(statusObj.amount || (installments[0]?.amount || 0)).toLocaleString()}</strong>`
-            : isCompleted
-              ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
-              : `<strong style="color: var(--primary-light);">฿${Number(statusObj.installment ? statusObj.installment.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
+            : isInterestCut
+              ? `<strong style="color: #38bdf8;">฿${Number(statusObj.amount).toLocaleString()} <span style="font-size: 0.7rem;">(ตัดดอก)</span></strong>`
+              : isCompleted
+                ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
+                : `<strong style="color: var(--primary-light);">฿${Number(statusObj.installment ? statusObj.installment.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
           }
         </td>
         <td>
           ${isPaid
             ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${statusObj.label}</span>`
-            : isCompleted
-              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
-              : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${statusObj.label}</span>`
+            : isInterestCut
+              ? `<span class="status-badge badge-interest"><i class="fa-solid fa-percent"></i> ${statusObj.label}</span>`
+              : isCompleted
+                ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
+                : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${statusObj.label}</span>`
           }
         </td>
         <td>฿${remainingBalance.toLocaleString()}</td>
@@ -2484,13 +2593,18 @@ document.addEventListener("DOMContentLoaded", () => {
                   <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว${statusObj.isClosingPayment ? " (ปิดสัญญา)" : ""}</span>
                   ${statusObj.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${statusObj.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
                  </div>`
-              : isCompleted
-                ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
-                : statusObj.installment
-                  ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
-                      <i class="fa-solid fa-check"></i> บันทึกรับชำระ
-                     </button>`
-                  : ""
+              : isInterestCut
+                ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span style="font-size: 0.75rem; color: #38bdf8; font-weight: 600;"><i class="fa-solid fa-percent"></i> ตัดดอกแล้ว</span>
+                    ${statusObj.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="unmarkInterestCutFromDetail(${statusObj.installment.installmentNo})" title="ยกเลิกตัดดอก" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
+                   </div>`
+                : isCompleted
+                  ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
+                  : statusObj.installment
+                    ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
+                        <i class="fa-solid fa-check"></i> บันทึกรับชำระ
+                       </button>`
+                    : ""
             }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
@@ -2531,32 +2645,27 @@ document.addEventListener("DOMContentLoaded", () => {
       <th>จัดการ</th>
     `;
 
-    // คำนวณสรุปยอดรายเดือนประจำวันที่เลือก
+    // คำนวณสรุปยอดรายเดือนประจำวันที่เลือก (Requirement 1: ดึงยอดจ่ายแล้วตามวันที่ชำระ paidAt ส่วนกำหนดชำระคงเดิมไม่ต้องดึงคำนวณยอดไปแสดง)
     const allMonthlyContracts = window.easyFinanceDB.getContracts().filter((c) => c.paymentFrequency === "monthly" && !isMotorcycleContract(c));
-    let monthlyTotalAmount = 0;
     let monthlyPaidAmount = 0;
-    let monthlyPendingAmount = 0;
     let paidCount = 0;
     let pendingCount = 0;
 
     allMonthlyContracts.forEach((c) => {
-      // getDailyStatusForDate ตรวจสอบว่าจ่ายใน selectedDailyDate หรือไม่ หากจ่ายงวดปิดสัญญาวันนี้จะนับเป็น paid
       const statusObj = getDailyStatusForDate(c, selectedDailyDate);
-      const amt = Number(statusObj.amount) || 0;
       if (statusObj.status === "paid") {
         paidCount++;
-        monthlyPaidAmount += amt;
-        monthlyTotalAmount += amt;
-      } else if (statusObj.status === "pending") {
-        pendingCount++;
-        monthlyPendingAmount += amt;
-        monthlyTotalAmount += amt;
+        monthlyPaidAmount += Number(statusObj.amount) || 0;
+      } else {
+        if (!isContractCompleted(c)) {
+          pendingCount++;
+        }
       }
     });
 
     const isManagerMonthly = isManagerLoggedIn();
     if (dailyTotalAmountVal) {
-      dailyTotalAmountVal.textContent = isManagerMonthly ? ("฿" + monthlyTotalAmount.toLocaleString()) : "฿******";
+      dailyTotalAmountVal.textContent = isManagerMonthly ? ("฿" + monthlyPaidAmount.toLocaleString()) : "฿******";
       dailyTotalAmountVal.classList.toggle("masked-stat-text", !isManagerMonthly);
     }
     if (dailyPaidAmountVal) {
@@ -2565,9 +2674,7 @@ document.addEventListener("DOMContentLoaded", () => {
         : `<i class="fa-solid fa-circle-check"></i> รับแล้ว ฿******`;
     }
     if (dailyPendingAmountVal) {
-      dailyPendingAmountVal.innerHTML = isManagerMonthly
-        ? `<i class="fa-solid fa-clock"></i> รอเก็บ ฿${monthlyPendingAmount.toLocaleString()}`
-        : `<i class="fa-solid fa-clock"></i> รอเก็บ ฿******`;
+      dailyPendingAmountVal.style.display = "none";
     }
     if (dateDailyTotalBadge) {
       dateDailyTotalBadge.classList.remove("pop-animate");
@@ -2578,10 +2685,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (dateFilterSummary) {
       dateFilterSummary.innerHTML = `
         <span>สรุปประจำวันที่ <strong>${dateDisplay}</strong>:</span>
-        <span class="date-stat-chip chip-paid"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว ${paidCount} ราย</span>
-        <span class="date-stat-chip chip-pending"><i class="fa-solid fa-clock"></i> ค้างจ่าย ${pendingCount} ราย</span>
+        <span class="date-stat-chip chip-paid"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว ${paidCount} ราย (฿${monthlyPaidAmount.toLocaleString()})</span>
+        <span class="date-stat-chip chip-pending"><i class="fa-solid fa-clock"></i> รอชำระ ${pendingCount} ราย</span>
       `;
     }
+    updateDateFilterProgress(paidCount, pendingCount);
 
     if (contractsList.length === 0) {
       const filterLabel = currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${dateDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${dateDisplay})` : "ทั้งหมด";
@@ -2595,14 +2703,18 @@ document.addEventListener("DOMContentLoaded", () => {
       const installments = c.installments || [];
       const contractTotal = Number(c.totalAmount) || 0;
       const totalPaidAmt = installments
-        .filter((i) => i.status === "paid")
+        .filter((i) => i.status === "paid" && !i.isPrincipalInterestCut)
         .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
       const remainingBalance = Math.max(0, contractTotal - totalPaidAmt);
 
       const statusObj = getDailyStatusForDate(c, selectedDailyDate);
       const isPaid = statusObj.status === "paid";
+      const isInterestCut = statusObj.status === "interest_only";
 
       const tr = document.createElement("tr");
+      if (isInterestCut) {
+        tr.className = "tr-interest-cut";
+      }
       tr.innerHTML = `
         <td>
           <div class="customer-cell">
@@ -2622,17 +2734,21 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>
           ${isPaid
             ? `<strong style="color: var(--primary-light);">฿${Number(statusObj.amount || (installments[0]?.amount || 0)).toLocaleString()}</strong>`
-            : isCompleted
-              ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
-              : `<strong style="color: var(--primary-light);">฿${Number(statusObj.installment ? statusObj.installment.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
+            : isInterestCut
+              ? `<strong style="color: #38bdf8;">฿${Number(statusObj.amount).toLocaleString()} <span style="font-size: 0.7rem;">(ตัดดอก)</span></strong>`
+              : isCompleted
+                ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
+                : `<strong style="color: var(--primary-light);">฿${Number(statusObj.installment ? statusObj.installment.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
           }
         </td>
         <td>
           ${isPaid
             ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${statusObj.label}</span>`
-            : isCompleted
-              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
-              : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${statusObj.label}</span>`
+            : isInterestCut
+              ? `<span class="status-badge badge-interest"><i class="fa-solid fa-percent"></i> ${statusObj.label}</span>`
+              : isCompleted
+                ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
+                : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${statusObj.label}</span>`
           }
         </td>
         <td>฿${remainingBalance.toLocaleString()}</td>
@@ -2643,13 +2759,18 @@ document.addEventListener("DOMContentLoaded", () => {
                   <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว${statusObj.isClosingPayment ? " (ปิดสัญญา)" : ""}</span>
                   ${statusObj.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${statusObj.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
                  </div>`
-              : isCompleted
-                ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
-                : statusObj.installment
-                  ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
-                      <i class="fa-solid fa-check"></i> บันทึกรับชำระ
-                     </button>`
-                  : ""
+              : isInterestCut
+                ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
+                    <span style="font-size: 0.75rem; color: #38bdf8; font-weight: 600;"><i class="fa-solid fa-percent"></i> ตัดดอกแล้ว</span>
+                    ${statusObj.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="unmarkInterestCutFromDetail(${statusObj.installment.installmentNo})" title="ยกเลิกตัดดอก" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
+                   </div>`
+                : isCompleted
+                  ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
+                  : statusObj.installment
+                    ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
+                        <i class="fa-solid fa-check"></i> บันทึกรับชำระ
+                       </button>`
+                    : ""
             }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
@@ -2834,6 +2955,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <span class="date-stat-chip chip-pending"><i class="fa-solid fa-clock"></i> ค้างจ่าย ${pendingCount} ราย</span>
       `;
     }
+    updateDateFilterProgress(paidCount, pendingCount);
 
     if (contractsList.length === 0) {
       tableBody.innerHTML = `
@@ -3392,7 +3514,18 @@ document.addEventListener("DOMContentLoaded", () => {
         <div><strong>กำหนดชำระ:</strong> ${contract.dueSchedule} (${contract.duration})</div>
         <div><strong>วันที่เริ่มชำระ:</strong> ${formatDateThai(contract.firstPaymentDate || (contract.installments && contract.installments[0]?.dueDate))}</div>
       </div>
-      <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--admin-border); display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap;">
+      <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--admin-border); display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+        <!-- ช่องยอดตัดดอกข้างปุ่ม คัดลอกลิงก์ส่ง LINE ให้ลูกค้า (Requirement 3) -->
+        <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 6px; padding: 4px 8px;">
+          <label for="detailInterestCutInput" style="font-size: 0.78rem; color: #38bdf8; font-weight: 600; white-space: nowrap;">
+            <i class="fa-solid fa-percent"></i> ยอดตัดดอก (บาท):
+          </label>
+          <input type="number" id="detailInterestCutInput" value="${contract.interestCutAmount !== undefined && contract.interestCutAmount !== null ? contract.interestCutAmount : ""}" placeholder="ระบุยอดตัดดอก" min="0" step="any" style="width: 105px; background: #0f172a; color: #fff; border: 1px solid rgba(56, 189, 248, 0.5); border-radius: 4px; padding: 3px 6px; font-size: 0.82rem; font-weight: 600;" onchange="saveContractInterestCutAmount('${contract.id}', this.value)" />
+          <button type="button" class="btn-table-action" onclick="saveContractInterestCutAmount('${contract.id}', document.getElementById('detailInterestCutInput').value)" style="padding: 3px 8px; font-size: 0.75rem; background: #0284c7; color: #fff; border: none; border-radius: 4px; cursor: pointer;">
+            บันทึก
+          </button>
+        </div>
+
         <button type="button" class="btn-table-action" onclick="copyClientLineLink('${contract.id}')" style="padding: 6px 14px; font-size: 0.8rem; background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3);">
           <i class="fa-solid fa-share-nodes"></i> คัดลอกลิงก์ส่ง LINE ให้ลูกค้า
         </button>
@@ -3409,41 +3542,111 @@ document.addEventListener("DOMContentLoaded", () => {
     detailInstallmentsBody.innerHTML = "";
     (contract.installments || []).forEach((inst) => {
       const isPaid = inst.status === "paid";
+      const isInterestCut = inst.status === "interest_only" || inst.status === "cut_interest";
+      const isPIC = Boolean(inst.isPrincipalInterestCut);
       const tr = document.createElement("tr");
+      if (isInterestCut || isPIC) {
+        tr.className = "tr-interest-cut";
+      }
 
       tr.innerHTML = `
-        <td><strong style="color: #fff;">งวดที่ ${inst.installmentNo}</strong></td>
-        <td>${inst.dueDate}</td>
-        <td><strong style="color: var(--primary-light);">฿${Number(inst.amount).toLocaleString()}</strong></td>
         <td>
-          ${isPaid
-          ? '<span class="status-badge badge-paid"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
-          : '<span class="status-badge badge-pending">รอชำระ</span>'
-        }
+          <strong style="color: #fff;">งวดที่ ${inst.installmentNo}</strong>
+          ${isPIC ? '<span style="font-size: 0.72rem; color: #38bdf8; display: block; font-weight: 500;"><i class="fa-solid fa-scale-balanced"></i> ตัดต้น/ดอก</span>' : ""}
+        </td>
+        <td>${inst.dueDate}</td>
+        <td>
+          ${
+            isPIC
+              ? `<div>
+                   <strong style="color: #38bdf8;">ตัดต้น: ฿${Number(inst.principalCutAmount !== undefined ? inst.principalCutAmount : inst.amount).toLocaleString()}</strong>
+                   ${Number(inst.interestAmount) > 0 ? `<div style="font-size: 0.74rem; color: #c084fc; font-weight: 600; margin-top: 2px;">ตัดดอก: ฿${Number(inst.interestAmount).toLocaleString()}</div>` : ""}
+                 </div>`
+              : `<div style="display: inline-flex; align-items: center; gap: 6px;">
+                   <strong style="color: var(--primary-light);">฿${Number(inst.amount).toLocaleString()}</strong>
+                   <button type="button" class="btn-table-action" onclick="openEditInstallmentModal('${contract.id}', ${inst.installmentNo}, ${inst.amount}, '${inst.dueDate || ""}')" title="แก้ไขยอดชำระหรือกำหนดชำระของงวดนี้" style="padding: 2px 6px; font-size: 0.72rem; color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.1); border-radius: 4px; cursor: pointer;">
+                     <i class="fa-solid fa-pen-to-square"></i>
+                   </button>
+                 </div>`
+          }
+        </td>
+        <td>
+          ${
+            isPIC
+              ? (isPaid
+                  ? '<span class="status-badge badge-paid" style="background: rgba(56, 189, 248, 0.18); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4);"><i class="fa-solid fa-circle-check"></i> ชำระแล้ว (ตัดต้น/ดอก)</span>'
+                  : '<span class="status-badge badge-pending" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);"><i class="fa-solid fa-clock"></i> รอชำระ (ตัดต้น/ดอก)</span>'
+                )
+              : (isPaid
+                  ? '<span class="status-badge badge-paid"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
+                  : isInterestCut
+                    ? `<span class="status-badge badge-interest" title="ตัดเฉพาะดอกเบี้ย ยอด ฿${Number(inst.interestAmount || 0).toLocaleString()}"><i class="fa-solid fa-percent"></i> ตัดดอก (฿${Number(inst.interestAmount || 0).toLocaleString()})</span>`
+                    : '<span class="status-badge badge-pending">รอชำระ</span>'
+                )
+          }
         </td>
         <td><span style="font-size: 0.75rem; color: var(--text-dim);">${inst.paidAt || "-"}</span></td>
         <td>
-          ${inst.slipUrl
-          ? `<button class="btn-table-action" onclick="viewSlip('${inst.slipUrl}', 'งวดที่ ${inst.installmentNo} - Ref: ${inst.transactionRef || "-"}')">
-                  <i class="fa-solid fa-image"></i> ดูสลิป
-                 </button>`
-          : (isPaid ? `<span style="font-size: 0.72rem; color: var(--text-dim);">${inst.transactionRef || "บันทึกโดยแอดมิน"}</span>` : "-")
-        }
+          ${
+            inst.slipUrl
+              ? `<button class="btn-table-action" onclick="viewSlip('${inst.slipUrl}', 'งวดที่ ${inst.installmentNo} - Ref: ${inst.transactionRef || "-"}')">
+                    <i class="fa-solid fa-image"></i> ดูสลิป
+                   </button>`
+              : (isPaid ? `<span style="font-size: 0.72rem; color: var(--text-dim);">${inst.transactionRef || (isPIC ? "ตัดต้น/ดอกเรียบร้อย" : "บันทึกโดยแอดมิน")}</span>` : (isInterestCut ? `<span style="font-size: 0.72rem; color: #38bdf8;">ตัดดอก ฿${Number(inst.interestAmount || 0).toLocaleString()}</span>` : "-"))
+          }
         </td>
         <td>
-          ${!isPaid
-          ? `<button class="btn-table-action btn-mark-paid" onclick="markPaidFromDetail(${inst.installmentNo})" title="คลิกเพื่อมาร์คชำระเงินงวดนี้" style="color: #34d399; border-color: rgba(52, 211, 153, 0.4); background: rgba(52, 211, 153, 0.08); padding: 5px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
-                  <i class="fa-solid fa-check"></i> มาร์คชำระ
-                 </button>`
-          : `<div style="display: inline-flex; align-items: center; gap: 8px;">
-               <span style="color: #34d399; font-size: 0.82rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
-                 <i class="fa-solid fa-circle-check"></i> สมบูรณ์
-               </span>
-               <button class="btn-table-action btn-unmark-paid" onclick="unmarkPaidFromDetail(${inst.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนสถานะกลับเป็นรอชำระ" style="padding: 4px 9px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
-                 <i class="fa-solid fa-rotate-left"></i> ยกเลิก
-               </button>
-             </div>`
-        }
+          ${
+            isPIC
+              ? (isPaid
+                  ? `<div style="display: inline-flex; align-items: center; gap: 8px;">
+                       <span style="color: #38bdf8; font-size: 0.82rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
+                         <i class="fa-solid fa-circle-check"></i> ตัดแล้ว
+                       </span>
+                       <button class="btn-table-action btn-unmark-paid" onclick="unmarkPaidFromDetail(${inst.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนสถานะกลับเป็นรอชำระ (คืนยอดรวมสัญญาและยอดตัดดอก)" style="padding: 4px 9px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                         <i class="fa-solid fa-rotate-left"></i> ยกเลิก
+                       </button>
+                     </div>`
+                  : `<button type="button" class="btn-table-action btn-mark-paid" onclick="markPaidFromDetail(${inst.installmentNo})" title="คลิกเพื่อมาร์คชำระ (ลดเงินต้น ฿${Number(inst.principalCutAmount !== undefined ? inst.principalCutAmount : inst.amount).toLocaleString()} และบันทึกตัดดอก)" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.45); background: rgba(56, 189, 248, 0.12); padding: 5px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
+                       <i class="fa-solid fa-check"></i> มาร์คชำระ
+                     </button>`
+                )
+              : (isPaid
+                  ? `<div style="display: inline-flex; align-items: center; gap: 8px;">
+                       <span style="color: #34d399; font-size: 0.82rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
+                         <i class="fa-solid fa-circle-check"></i> สมบูรณ์
+                       </span>
+                       <button class="btn-table-action btn-unmark-paid" onclick="unmarkPaidFromDetail(${inst.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนสถานะกลับเป็นรอชำระ" style="padding: 4px 9px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                         <i class="fa-solid fa-rotate-left"></i> ยกเลิก
+                       </button>
+                     </div>`
+                  : isInterestCut
+                    ? `<div style="display: inline-flex; align-items: center; gap: 8px;">
+                         <span style="color: #38bdf8; font-size: 0.82rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
+                           <i class="fa-solid fa-percent"></i> ตัดดอกแล้ว
+                         </span>
+                         <button class="btn-table-action" onclick="unmarkInterestCutFromDetail(${inst.installmentNo})" title="กดยกเลิกตัดดอก เพื่อเปลี่ยนสถานะกลับเป็นรอชำระ" style="padding: 4px 9px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; color: #f87171; border-color: rgba(248, 113, 113, 0.35); background: rgba(248, 113, 113, 0.1);">
+                           <i class="fa-solid fa-rotate-left"></i> ยกเลิก
+                         </button>
+                       </div>`
+                    : `<!-- Dropdown จัดการ (Requirement 3.1: ลูกศรชี้ลงในปุ่ม มี 2 ตัวเลือก มาร์คชำระ / ตัดดอก) -->
+                       <div class="action-dropdown" id="actionDropdown_${inst.installmentNo}">
+                         <button type="button" class="btn-table-action" onclick="toggleActionDropdown(event, ${inst.installmentNo})" title="คลิกเพื่อเลือกการจัดการ (มาร์คชำระ หรือ ตัดดอก)" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); font-weight: 600; padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                           <span>จัดการ</span> <i class="fa-solid fa-chevron-down" style="font-size: 0.72rem;"></i>
+                         </button>
+                         <div class="action-dropdown-menu" id="dropdownMenu_${inst.installmentNo}">
+                           <button type="button" class="action-dropdown-item item-paid" onclick="markPaidFromDetail(${inst.installmentNo})">
+                             <i class="fa-solid fa-circle-check" style="color: #22c55e;"></i>
+                             <span>มาร์คชำระ (เต็มงวด ฿${Number(inst.amount).toLocaleString()})</span>
+                           </button>
+                           <button type="button" class="action-dropdown-item item-interest" onclick="markInterestCutFromDetail(${inst.installmentNo})">
+                             <i class="fa-solid fa-percent" style="color: #38bdf8;"></i>
+                             <span>ตัดดอก ${contract.interestCutAmount ? `(฿${Number(contract.interestCutAmount).toLocaleString()})` : "(ระบุยอด)"}</span>
+                           </button>
+                         </div>
+                       </div>`
+                )
+          }
         </td>
       `;
       detailInstallmentsBody.appendChild(tr);
@@ -3452,6 +3655,28 @@ document.addEventListener("DOMContentLoaded", () => {
     contractDetailModal.classList.add("active");
   };
 
+  // Toggle Action Dropdown menu
+  window.toggleActionDropdown = function (event, instNo) {
+    if (event) event.stopPropagation();
+    const targetDropdown = document.getElementById(`actionDropdown_${instNo}`);
+    if (!targetDropdown) return;
+    const wasActive = targetDropdown.classList.contains("active");
+    document.querySelectorAll(".action-dropdown.active").forEach((d) => {
+      d.classList.remove("active");
+    });
+    if (!wasActive) {
+      targetDropdown.classList.add("active");
+    }
+  };
+
+  // Close all action dropdowns on document click
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".action-dropdown.active").forEach((d) => {
+      d.classList.remove("active");
+    });
+  });
+
+  // บันทึกรับชำระงวดจากหน้าดูตารางสัญญา
   window.markPaidFromDetail = async function (installmentNo) {
     if (!currentViewingContractId) return;
     const slipData = {
@@ -3468,6 +3693,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderActiveTabTable();
   };
 
+  // ยกเลิกการชำระงวดจากหน้าดูตารางสัญญา
   window.unmarkPaidFromDetail = async function (installmentNo) {
     if (!currentViewingContractId) return;
     await window.easyFinanceDB.unmarkInstallmentPaid(currentViewingContractId, installmentNo);
@@ -3477,6 +3703,598 @@ document.addEventListener("DOMContentLoaded", () => {
     renderSubTabs();
     renderActiveTabTable();
   };
+
+  // บันทึก "ตัดดอก" จากหน้าดูตารางสัญญา (Requirement 3.1 & 3.2)
+  window.markInterestCutFromDetail = async function (installmentNo) {
+    if (!currentViewingContractId) return;
+    const contract = window.easyFinanceDB.getContractById(currentViewingContractId);
+    if (!contract) return;
+
+    const inputEl = document.getElementById("detailInterestCutInput");
+    let cutAmount = (inputEl && inputEl.value !== "") ? parseFloat(inputEl.value) : (contract.interestCutAmount || 0);
+
+    if (!cutAmount || cutAmount <= 0) {
+      const promptVal = prompt("ระบุยอดเงินที่ลูกค้าตัดดอก (บาท):", contract.interestCutAmount || "");
+      if (promptVal === null) return;
+      cutAmount = parseFloat(promptVal) || 0;
+      if (cutAmount <= 0) {
+        alert("กรุณาระบุยอดตัดดอกที่มากกว่า 0");
+        return;
+      }
+    }
+
+    const customDate = selectedDailyDate || null;
+    const dateNote = customDate ? ` (วันที่ ${formatDateThai(customDate)})` : "";
+
+    if (confirm(`ยืนยันการ "ตัดดอก" งวดที่ ${installmentNo} สัญญา ${contract.name} เป็นยอด ฿${cutAmount.toLocaleString()}${dateNote}?\n(เงินต้นจะไม่ถูกหัก สัญญายังคงอยู่)`)) {
+      await window.easyFinanceDB.markInstallmentInterestCut(currentViewingContractId, installmentNo, cutAmount, customDate);
+      if (!contract.interestCutAmount) {
+        await window.easyFinanceDB.setContractInterestCutAmount(currentViewingContractId, cutAmount);
+      }
+      showAdminToast(`บันทึกตัดดอกงวดที่ ${installmentNo} ยอด ฿${cutAmount.toLocaleString()} สำเร็จ!`, "success");
+      openContractDetails(currentViewingContractId);
+      renderStatsCounters();
+      renderSubTabs();
+      renderActiveTabTable();
+    }
+  };
+
+  // ยกเลิก "ตัดดอก" จากหน้าดูตารางสัญญา
+  window.unmarkInterestCutFromDetail = async function (installmentNo) {
+    if (!currentViewingContractId) return;
+    if (confirm(`ต้องการยกเลิกการตัดดอกของ "งวดที่ ${installmentNo}" (เปลี่ยนสถานะกลับเป็น "รอชำระ") ใช่หรือไม่?`)) {
+      await window.easyFinanceDB.unmarkInstallmentInterestCut(currentViewingContractId, installmentNo);
+      showAdminToast(`ยกเลิกตัดดอกงวดที่ ${installmentNo} เรียบร้อย (สถานะกลับเป็นรอชำระ)`, "info");
+      openContractDetails(currentViewingContractId);
+      renderStatsCounters();
+      renderSubTabs();
+      renderActiveTabTable();
+    }
+  };
+
+  // บันทึกยอดตัดดอกเริ่มต้นของสัญญา
+  window.saveContractInterestCutAmount = async function (contractId, amount) {
+    const num = Math.max(0, Number(amount) || 0);
+    await window.easyFinanceDB.setContractInterestCutAmount(contractId, num);
+    showAdminToast(`บันทึกยอดตัดดอกของสัญญาเป็น ฿${num.toLocaleString()} เรียบร้อยแล้ว`, "success");
+    if (currentViewingContractId === contractId) {
+      openContractDetails(contractId);
+    }
+  };
+
+  // --- MANUAL & EDIT INSTALLMENT HANDLERS (Requirement 2) ---
+
+  // --- PRINCIPAL & INTEREST CUT HANDLERS (Requirement: งวดตัดต้น / ตัดดอก) ---
+
+  window.openPrincipalInterestCutModal = function (contractId = null) {
+    const targetId = contractId || currentViewingContractId;
+    if (!targetId) {
+      showAdminToast("กรุณาเลือกสัญญาที่ต้องการบันทึกตัดต้น/ตัดดอก", "error");
+      return;
+    }
+    const contract = window.easyFinanceDB.getContractById(targetId);
+    if (!contract) return;
+
+    const bannerText = document.getElementById("picContractBannerText");
+    if (bannerText) {
+      bannerText.innerHTML = `สัญญา: <strong style="color: #fff;">${contract.id}</strong> - ${contract.name} (${contract.itemFinanced || "ทั่วไป"})`;
+    }
+
+    document.getElementById("picContractId").value = targetId;
+    document.getElementById("picDueDate").value = getLocalDateStr();
+    document.getElementById("picPrincipalAmount").value = "";
+    document.getElementById("picInterestAmount").value = contract.interestCutAmount || "";
+
+    const modal = document.getElementById("principalInterestCutModal");
+    if (modal) modal.classList.add("active");
+  };
+
+  window.closePrincipalInterestCutModal = function () {
+    const modal = document.getElementById("principalInterestCutModal");
+    if (modal) modal.classList.remove("active");
+  };
+
+  window.submitPrincipalInterestCut = async function (e) {
+    if (e) e.preventDefault();
+    const contractId = document.getElementById("picContractId").value;
+    const dueDate = document.getElementById("picDueDate").value || getLocalDateStr();
+    const principalCutAmount = parseFloat(document.getElementById("picPrincipalAmount").value) || 0;
+    const interestCutAmount = parseFloat(document.getElementById("picInterestAmount").value) || 0;
+
+    if (!contractId || (principalCutAmount <= 0 && interestCutAmount <= 0)) {
+      alert("กรุณากรอกยอดต้นที่ต้องการตัด หรือยอดดอกที่ต้องการตัด (ต้องมากกว่า 0)");
+      return;
+    }
+
+    await window.easyFinanceDB.addPrincipalInterestCutInstallment(contractId, {
+      dueDate: dueDate,
+      principalCutAmount: principalCutAmount,
+      interestCutAmount: interestCutAmount
+    });
+
+    closePrincipalInterestCutModal();
+    showAdminToast(`เพิ่มงวดตัดต้น ฿${principalCutAmount.toLocaleString()} / ตัดดอก ฿${interestCutAmount.toLocaleString()} สำเร็จ!`, "success");
+
+    if (currentViewingContractId === contractId) {
+      openContractDetails(contractId);
+    }
+    renderStatsCounters();
+    renderSubTabs();
+    renderActiveTabTable();
+  };
+
+  // เปิด Modal เพิ่มงวดแมนนวล
+  window.openAddManualInstallmentModal = function (contractId = null) {
+    const targetId = contractId || currentViewingContractId;
+    if (!targetId) {
+      showAdminToast("กรุณาเลือกสัญญาที่ต้องการเพิ่มงวด", "error");
+      return;
+    }
+    const contract = window.easyFinanceDB.getContractById(targetId);
+    if (!contract) return;
+
+    const bannerText = document.getElementById("manualContractBannerText");
+    if (bannerText) {
+      bannerText.innerHTML = `สัญญา: <strong style="color: #fff;">${contract.id}</strong> - ${contract.name} (${contract.itemFinanced || "ทั่วไป"})`;
+    }
+
+    const nextInstNo = (contract.installments && contract.installments.length > 0)
+      ? Math.max(...contract.installments.map((i) => Number(i.installmentNo) || 0)) + 1
+      : 1;
+
+    document.getElementById("manualContractId").value = targetId;
+    document.getElementById("manualInstallmentNo").value = nextInstNo;
+
+    let defaultDueDate = getLocalDateStr();
+    if (contract.installments && contract.installments.length > 0) {
+      const lastInst = contract.installments[contract.installments.length - 1];
+      if (lastInst && lastInst.dueDate) {
+        try {
+          const d = new Date(lastInst.dueDate);
+          if (!isNaN(d.getTime())) {
+            if (contract.paymentFrequency === "daily") d.setDate(d.getDate() + 1);
+            else if (contract.paymentFrequency === "weekly") d.setDate(d.getDate() + 7);
+            else d.setMonth(d.getMonth() + 1);
+            defaultDueDate = d.toISOString().slice(0, 10);
+          }
+        } catch (e) {}
+      }
+    }
+    document.getElementById("manualDueDate").value = defaultDueDate;
+
+    const firstAmt = (contract.installments && contract.installments[0]?.amount) || 0;
+    document.getElementById("manualAmount").value = firstAmt || "";
+
+    const modal = document.getElementById("addManualInstallmentModal");
+    if (modal) modal.classList.add("active");
+  };
+
+  window.closeAddManualInstallmentModal = function () {
+    const modal = document.getElementById("addManualInstallmentModal");
+    if (modal) modal.classList.remove("active");
+  };
+
+  window.submitAddManualInstallment = async function (e) {
+    if (e) e.preventDefault();
+    const contractId = document.getElementById("manualContractId").value;
+    const instNo = parseInt(document.getElementById("manualInstallmentNo").value, 10);
+    const dueDate = document.getElementById("manualDueDate").value;
+    const amount = parseFloat(document.getElementById("manualAmount").value) || 0;
+
+    if (!contractId || !instNo || !dueDate || amount <= 0) {
+      alert("กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง (ยอดค่างวดต้องมากกว่า 0)");
+      return;
+    }
+
+    await window.easyFinanceDB.addManualInstallment(contractId, {
+      installmentNo: instNo,
+      dueDate: dueDate,
+      amount: amount
+    });
+
+    closeAddManualInstallmentModal();
+    showAdminToast(`คีย์เพิ่มงวดที่ ${instNo} ยอด ฿${amount.toLocaleString()} สำเร็จ!`, "success");
+
+    if (currentViewingContractId === contractId) {
+      openContractDetails(contractId);
+    }
+    renderStatsCounters();
+    renderSubTabs();
+    renderActiveTabTable();
+  };
+
+  // เปิด Modal แก้ไขงวดชำระ
+  window.openEditInstallmentModal = function (contractId, installmentNo, amount, dueDate) {
+    const contract = window.easyFinanceDB.getContractById(contractId);
+    const bannerText = document.getElementById("editContractBannerText");
+    if (bannerText) {
+      bannerText.innerHTML = contract
+        ? `สัญญา: <strong style="color: #fff;">${contract.id}</strong> - ${contract.name} (งวดที่ ${installmentNo})`
+        : `สัญญา: <strong style="color: #fff;">${contractId}</strong> (งวดที่ ${installmentNo})`;
+    }
+
+    document.getElementById("editContractId").value = contractId;
+    document.getElementById("editInstallmentNo").value = installmentNo;
+    document.getElementById("editDueDate").value = dueDate ? dueDate.slice(0, 10) : getLocalDateStr();
+    document.getElementById("editAmount").value = amount;
+    const titleEl = document.getElementById("editInstallmentModalTitle");
+    if (titleEl) titleEl.textContent = `แก้ไขงวดที่ ${installmentNo} (สัญญา ${contractId})`;
+
+    const modal = document.getElementById("editInstallmentModal");
+    if (modal) modal.classList.add("active");
+  };
+
+  window.closeEditInstallmentModal = function () {
+    const modal = document.getElementById("editInstallmentModal");
+    if (modal) modal.classList.remove("active");
+  };
+
+  window.submitEditInstallment = async function (e) {
+    if (e) e.preventDefault();
+    const contractId = document.getElementById("editContractId").value;
+    const installmentNo = parseInt(document.getElementById("editInstallmentNo").value, 10);
+    const dueDate = document.getElementById("editDueDate").value;
+    const amount = parseFloat(document.getElementById("editAmount").value) || 0;
+
+    if (!contractId || !installmentNo || !dueDate || amount < 0) {
+      alert("กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง");
+      return;
+    }
+
+    await window.easyFinanceDB.updateInstallment(contractId, installmentNo, {
+      amount: amount,
+      dueDate: dueDate
+    });
+
+    closeEditInstallmentModal();
+    showAdminToast(`แก้ไขงวดที่ ${installmentNo} ยอดใหม่ ฿${amount.toLocaleString()} สำเร็จ!`, "success");
+
+    if (currentViewingContractId === contractId) {
+      openContractDetails(contractId);
+    }
+    renderStatsCounters();
+    renderSubTabs();
+    renderActiveTabTable();
+  };
+
+  // --- DAILY INTEREST CUT REPORT HANDLERS (Requirement 3.3 & 3.3.1) ---
+
+  window.openInterestCutReportModal = function () {
+    const datePicker = document.getElementById("interestCutDatePicker");
+    if (datePicker) {
+      datePicker.value = selectedDailyDate || getLocalDateStr();
+    }
+    renderInterestCutReport(datePicker ? datePicker.value : getLocalDateStr());
+    const modal = document.getElementById("interestCutReportModal");
+    if (modal) modal.classList.add("active");
+  };
+
+  window.closeInterestCutReportModal = function () {
+    const modal = document.getElementById("interestCutReportModal");
+    if (modal) modal.classList.remove("active");
+  };
+
+  window.onInterestCutDateChange = function (dateVal) {
+    renderInterestCutReport(dateVal);
+  };
+
+  window.setInterestCutDateToday = function () {
+    const today = getLocalDateStr();
+    const datePicker = document.getElementById("interestCutDatePicker");
+    if (datePicker) datePicker.value = today;
+    renderInterestCutReport(today);
+  };
+
+  window.showAllInterestCuts = function () {
+    const datePicker = document.getElementById("interestCutDatePicker");
+    if (datePicker) datePicker.value = "";
+    renderInterestCutReport(null);
+  };
+
+  window.cancelInterestCutFromReport = async function (contractId, installmentNo) {
+    if (confirm(`ยืนยันการยกเลิกตัดดอก งวดที่ ${installmentNo} สัญญา ${contractId}?`)) {
+      await window.easyFinanceDB.unmarkInstallmentInterestCut(contractId, installmentNo);
+      showAdminToast(`ยกเลิกตัดดอกงวดที่ ${installmentNo} แล้ว`, "info");
+      const datePicker = document.getElementById("interestCutDatePicker");
+      renderInterestCutReport(datePicker && datePicker.value ? datePicker.value : null);
+      if (currentViewingContractId === contractId) {
+        openContractDetails(contractId);
+      }
+      renderStatsCounters();
+      renderSubTabs();
+      renderActiveTabTable();
+    }
+  };
+
+  window.renderInterestCutReport = function (filterDateStr = null) {
+    const allHistory = window.easyFinanceDB.getAllInterestCutHistory ? window.easyFinanceDB.getAllInterestCutHistory() : [];
+    const tableBody = document.getElementById("interestCutTableBody");
+    const breakdownBody = document.getElementById("interestCutDailyBreakdownBody");
+    const countBadge = document.getElementById("interestCutCountBadge");
+    const titleEl = document.getElementById("interestCutListTitle");
+    const badgesContainer = document.getElementById("interestCutSummaryBadges");
+
+    const filteredList = filterDateStr
+      ? allHistory.filter((h) => (h.dateStr && h.dateStr === filterDateStr) || (h.paidAt && h.paidAt.includes(filterDateStr)))
+      : allHistory;
+
+    const totalAmountFiltered = filteredList.reduce((sum, h) => sum + (Number(h.amount) || 0), 0);
+    const totalAmountAll = allHistory.reduce((sum, h) => sum + (Number(h.amount) || 0), 0);
+
+    if (titleEl) {
+      titleEl.textContent = filterDateStr
+        ? `รายการลูกค้าที่ตัดดอกประจำวันที่ ${formatDateThai(filterDateStr)}`
+        : "รายการลูกค้าที่ตัดดอกทั้งหมด (ทุกวัน)";
+    }
+    if (countBadge) {
+      countBadge.textContent = `${filteredList.length} รายการ (฿${totalAmountFiltered.toLocaleString()})`;
+    }
+
+    if (badgesContainer) {
+      badgesContainer.innerHTML = `
+        <div style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-calendar-day"></i>
+          <span>ยอดตัดดอกวันที่เลือก: <strong>฿${totalAmountFiltered.toLocaleString()}</strong> (${filteredList.length} ราย)</span>
+        </div>
+        <div style="background: rgba(147, 51, 234, 0.15); border: 1px solid rgba(147, 51, 234, 0.4); border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; color: #c084fc; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-vault"></i>
+          <span>ยอดตัดดอกรวมทั้งหมด: <strong>฿${totalAmountAll.toLocaleString()}</strong> (${allHistory.length} ราย)</span>
+        </div>
+      `;
+    }
+
+    if (tableBody) {
+      tableBody.innerHTML = "";
+      if (filteredList.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 20px;">ไม่พบรายการตัดดอก${filterDateStr ? ` ในวันที่ ${formatDateThai(filterDateStr)}` : ""}</td></tr>`;
+      } else {
+        filteredList.forEach((item) => {
+          const tr = document.createElement("tr");
+          tr.className = "tr-interest-cut";
+          tr.innerHTML = `
+            <td>${item.paidAt || item.dateStr || "-"}</td>
+            <td>
+              <strong style="color: #fff;">${item.contractName}</strong>
+              <span style="font-size: 0.72rem; color: var(--text-dim); display: block;">รหัส: ${item.contractId} (${item.phone || "-"})</span>
+            </td>
+            <td>${item.itemFinanced || "-"}</td>
+            <td><span class="status-badge badge-interest">งวดที่ ${item.installmentNo}</span></td>
+            <td><strong style="color: #38bdf8; font-size: 0.95rem;">฿${Number(item.amount || 0).toLocaleString()}</strong></td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <button type="button" class="btn-table-action" onclick="openContractDetails('${item.contractId}')" style="padding: 4px 8px; font-size: 0.75rem; color: #38bdf8; background: rgba(56, 189, 248, 0.15);">
+                  <i class="fa-solid fa-eye"></i> ดูสัญญา
+                </button>
+                <button type="button" class="btn-table-action" onclick="cancelInterestCutFromReport('${item.contractId}', ${item.installmentNo})" style="padding: 4px 8px; font-size: 0.75rem; color: #f87171; background: rgba(248, 113, 113, 0.15);">
+                  <i class="fa-solid fa-rotate-left"></i> ยกเลิก
+                </button>
+              </div>
+            </td>
+          `;
+          tableBody.appendChild(tr);
+        });
+      }
+    }
+
+    if (breakdownBody) {
+      breakdownBody.innerHTML = "";
+      const grouped = {};
+      allHistory.forEach((h) => {
+        const d = h.dateStr || (h.paidAt ? h.paidAt.slice(0, 10) : "ไม่ระบุ");
+        if (!grouped[d]) {
+          grouped[d] = {
+            dateStr: d,
+            count: 0,
+            totalAmount: 0,
+            clients: []
+          };
+        }
+        grouped[d].count += 1;
+        grouped[d].totalAmount += Number(h.amount) || 0;
+        if (!grouped[d].clients.includes(h.contractName)) {
+          grouped[d].clients.push(h.contractName);
+        }
+      });
+
+      const dates = Object.keys(grouped).sort().reverse();
+      if (dates.length === 0) {
+        breakdownBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: 18px;">ยังไม่มีประวัติการตัดดอกในระบบ</td></tr>`;
+      } else {
+        dates.forEach((d) => {
+          const row = grouped[d];
+          const isSelected = filterDateStr === d;
+          const tr = document.createElement("tr");
+          if (isSelected) {
+            tr.style.background = "rgba(56, 189, 248, 0.15)";
+          }
+          tr.innerHTML = `
+            <td><strong>${formatDateThai(d)}</strong> <span style="font-size: 0.72rem; color: var(--text-dim);">(${d})</span></td>
+            <td><span class="status-badge badge-interest">${row.count} ราย</span></td>
+            <td><strong style="color: #38bdf8; font-size: 0.95rem;">฿${row.totalAmount.toLocaleString()}</strong></td>
+            <td style="font-size: 0.8rem; color: #cbd5e1;">${row.clients.join(", ")}</td>
+            <td>
+              <button type="button" class="btn-table-action" onclick="document.getElementById('interestCutDatePicker').value='${d}'; onInterestCutDateChange('${d}');" style="padding: 4px 10px; font-size: 0.75rem; background: rgba(56, 189, 248, 0.2); color: #38bdf8;">
+                <i class="fa-solid fa-filter"></i> เลือกดูวันนี้
+              </button>
+            </td>
+          `;
+          breakdownBody.appendChild(tr);
+        });
+      }
+    }
+  };
+
+  if (cardStatInterestCut) {
+    cardStatInterestCut.addEventListener("click", () => {
+      openInterestCutReportModal();
+    });
+  }
+
+  // --- DAILY LATE FINE REPORT HANDLERS (Requirement 1) ---
+
+  window.openLateFineReportModal = function () {
+    const datePicker = document.getElementById("lateFineDatePicker");
+    if (datePicker) {
+      datePicker.value = selectedDailyDate || getLocalDateStr();
+    }
+    renderLateFineReport(datePicker ? datePicker.value : getLocalDateStr());
+    const modal = document.getElementById("lateFineReportModal");
+    if (modal) modal.classList.add("active");
+  };
+
+  window.closeLateFineReportModal = function () {
+    const modal = document.getElementById("lateFineReportModal");
+    if (modal) modal.classList.remove("active");
+  };
+
+  window.onLateFineDateChange = function (dateVal) {
+    renderLateFineReport(dateVal);
+  };
+
+  window.setLateFineDateToday = function () {
+    const today = getLocalDateStr();
+    const datePicker = document.getElementById("lateFineDatePicker");
+    if (datePicker) datePicker.value = today;
+    renderLateFineReport(today);
+  };
+
+  window.showAllLateFines = function () {
+    const datePicker = document.getElementById("lateFineDatePicker");
+    if (datePicker) datePicker.value = "";
+    renderLateFineReport(null);
+  };
+
+  window.renderLateFineReport = function (filterDateStr = null) {
+    const allHistory = window.easyFinanceDB.getAllLateFineHistory ? window.easyFinanceDB.getAllLateFineHistory() : [];
+    const tableBody = document.getElementById("lateFineTableBody");
+    const breakdownBody = document.getElementById("lateFineDailyBreakdownBody");
+    const countBadge = document.getElementById("lateFineCountBadge");
+    const titleEl = document.getElementById("lateFineListTitle");
+    const badgesContainer = document.getElementById("lateFineSummaryBadges");
+
+    const filteredList = filterDateStr
+      ? allHistory.filter((h) => (h.dateStr && h.dateStr === filterDateStr) || (h.paidAt && h.paidAt.includes(filterDateStr)))
+      : allHistory;
+
+    const totalAmountFiltered = filteredList.reduce((sum, h) => sum + (Number(h.amount) || 0), 0);
+    const totalAmountAll = allHistory.reduce((sum, h) => sum + (Number(h.amount) || 0), 0);
+    const pendingItems = allHistory.filter((h) => h.status === "pending");
+    const pendingAmount = pendingItems.reduce((sum, h) => sum + (Number(h.amount) || 0), 0);
+
+    if (titleEl) {
+      titleEl.textContent = filterDateStr
+        ? `รายการลูกค้าที่ถูกปรับ/รับชำระค่าปรับประจำวันที่ ${formatDateThai(filterDateStr)}`
+        : "รายการลูกค้าที่ถูกปรับทั้งหมด (ทุกวัน)";
+    }
+    if (countBadge) {
+      countBadge.textContent = `${filteredList.length} รายการ (฿${totalAmountFiltered.toLocaleString()})`;
+    }
+
+    if (badgesContainer) {
+      badgesContainer.innerHTML = `
+        <div style="background: rgba(251, 146, 60, 0.15); border: 1px solid rgba(251, 146, 60, 0.4); border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; color: #fb923c; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-calendar-day"></i>
+          <span>ค่าปรับวันที่เลือก: <strong>฿${totalAmountFiltered.toLocaleString()}</strong> (${filteredList.length} ราย)</span>
+        </div>
+        <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; color: #f87171; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          <span>ค่าปรับค้างเก็บปัจจุบัน: <strong>฿${pendingAmount.toLocaleString()}</strong> (${pendingItems.length} ราย)</span>
+        </div>
+        <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; color: #34d399; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-vault"></i>
+          <span>ค่าปรับรวมทั้งหมด: <strong>฿${totalAmountAll.toLocaleString()}</strong> (${allHistory.length} ราย)</span>
+        </div>
+      `;
+    }
+
+    if (tableBody) {
+      tableBody.innerHTML = "";
+      if (filteredList.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 25px;">ไม่พบรายการค่าปรับ${filterDateStr ? ` ในวันที่ ${formatDateThai(filterDateStr)}` : ""}</td></tr>`;
+      } else {
+        filteredList.forEach((item) => {
+          const tr = document.createElement("tr");
+          const isPending = item.status === "pending";
+          tr.innerHTML = `
+            <td>${item.paidAt && item.paidAt !== "-" ? item.paidAt : (item.dateStr ? formatDateThai(item.dateStr) : "-")}</td>
+            <td>
+              <strong style="color: #fff;">${item.contractName}</strong>
+              <span style="font-size: 0.72rem; color: var(--text-dim); display: block;">รหัส: ${item.contractId} (${item.phone || "-"})</span>
+            </td>
+            <td>${item.itemFinanced || "-"}</td>
+            <td>
+              <span style="font-size: 0.82rem; color: #cbd5e1;">${item.reason || (item.installmentNo !== "-" ? `งวดที่ ${item.installmentNo}` : "ค่าปรับล่าช้า")}</span>
+            </td>
+            <td style="text-align: right;"><strong style="color: #fb923c; font-size: 0.95rem;">฿${Number(item.amount || 0).toLocaleString()}</strong></td>
+            <td style="text-align: center;">
+              <span class="status-badge ${isPending ? 'badge-overdue' : 'badge-paid'}">
+                <i class="fa-solid ${isPending ? 'fa-clock' : 'fa-circle-check'}"></i> ${isPending ? 'รอเก็บ' : 'ชำระแล้ว'}
+              </span>
+            </td>
+            <td style="text-align: center;">
+              <button type="button" class="btn-table-action" onclick="openContractDetails('${item.contractId}')" style="padding: 4px 10px; font-size: 0.75rem; color: #fb923c; background: rgba(251, 146, 60, 0.15); border: 1px solid rgba(251, 146, 60, 0.3);">
+                <i class="fa-solid fa-eye"></i> ดูสัญญา
+              </button>
+            </td>
+          `;
+          tableBody.appendChild(tr);
+        });
+      }
+    }
+
+    if (breakdownBody) {
+      breakdownBody.innerHTML = "";
+      const grouped = {};
+      allHistory.forEach((h) => {
+        const d = h.dateStr || (h.paidAt && h.paidAt !== "-" ? h.paidAt.slice(0, 10) : "ไม่ระบุ");
+        if (!grouped[d]) {
+          grouped[d] = {
+            dateStr: d,
+            count: 0,
+            totalAmount: 0,
+            clients: []
+          };
+        }
+        grouped[d].count += 1;
+        grouped[d].totalAmount += Number(h.amount) || 0;
+        if (!grouped[d].clients.includes(h.contractName)) {
+          grouped[d].clients.push(h.contractName);
+        }
+      });
+
+      const dates = Object.keys(grouped).sort().reverse();
+      if (dates.length === 0) {
+        breakdownBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: 18px;">ยังไม่มีประวัติค่าปรับในระบบ</td></tr>`;
+      } else {
+        dates.forEach((d) => {
+          const row = grouped[d];
+          const isSelected = filterDateStr === d;
+          const tr = document.createElement("tr");
+          if (isSelected) {
+            tr.style.background = "rgba(251, 146, 60, 0.12)";
+          }
+          tr.innerHTML = `
+            <td><strong>${formatDateThai(d)}</strong> <span style="font-size: 0.72rem; color: var(--text-dim);">(${d})</span></td>
+            <td style="text-align: center;"><span class="status-badge" style="background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.3);">${row.count} ราย</span></td>
+            <td style="text-align: right;"><strong style="color: #fb923c; font-size: 0.95rem;">฿${row.totalAmount.toLocaleString()}</strong></td>
+            <td style="font-size: 0.8rem; color: #cbd5e1;">${row.clients.join(", ")}</td>
+            <td style="text-align: center;">
+              <button type="button" class="btn-table-action" onclick="document.getElementById('lateFineDatePicker').value='${d}'; onLateFineDateChange('${d}');" style="padding: 4px 10px; font-size: 0.75rem; background: rgba(251, 146, 60, 0.2); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.35);">
+                <i class="fa-solid fa-filter"></i> เลือกดูวันนี้
+              </button>
+            </td>
+          `;
+          breakdownBody.appendChild(tr);
+        });
+      }
+    }
+  };
+
+  if (cardStatLateFines) {
+    cardStatLateFines.addEventListener("click", () => {
+      openLateFineReportModal();
+    });
+  }
 
   btnCloseDetailModal.addEventListener("click", () => {
     contractDetailModal.classList.remove("active");
@@ -5045,30 +5863,20 @@ document.addEventListener("DOMContentLoaded", () => {
   window.openDeleteSecurityModal = openDeleteSecurityModal;
   window.closeDeleteSecurityModal = closeDeleteSecurityModal;
 
-  // --- 8.7 GLOBAL MODAL CLICK-OUTSIDE & ESCAPE HANDLERS (ป้องกันเว็บค้างและคลิกไม่ติด 100%) ---
+  // --- 8.7 STRICT MODAL DISMISSAL POLICY (Requirement 4: ต้องกด X หรือ บันทึก/ยกเลิกก่อนเท่านั้นถึงจะหาย) ---
   document.querySelectorAll(".admin-modal-overlay").forEach((overlay) => {
     overlay.addEventListener("click", (e) => {
+      // ป้องกันการปิดโมดอลโดยไม่ได้ตั้งใจเมื่อคลิกนอกกรอบ (Backdrop) ทุกโมดอล ต้องกด X หรือ บันทึก/ยกเลิกเท่านั้น
       if (e.target === overlay) {
-        // Requirement 6: ยกเว้น contractModal ห้ามปิดเมื่อคลิกนอกกรอบ ต้องกดปุ่ม x กาออก หรือปุ่มบันทึก/ยกเลิกเท่านั้น
-        if (overlay.id === "contractModal") {
-          return;
-        }
-        overlay.classList.remove("active");
+        return;
       }
     });
   });
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      const activeModals = document.querySelectorAll(".admin-modal-overlay.active");
-      if (activeModals.length > 0) {
-        const topModal = activeModals[activeModals.length - 1];
-        if (topModal.id === "contractModal") {
-          // อย่าปิด contractModal ด้วย Escape อัตโนมัติ ป้องกันข้อมูลที่กรอกอยู่หาย
-          return;
-        }
-        topModal.classList.remove("active");
-      }
+      // ห้ามปิดโมดอลด้วยปุ่ม Escape ทุกโมดอล เพื่อป้องกันข้อมูลที่กรอกหรือดูอยู่หาย
+      return;
     }
   });
 
@@ -5088,6 +5896,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (customerDossierModal && customerDossierModal.classList.contains("active") && currentViewingCustomerKey) {
       const c = getAggregatedCustomerByKey(currentViewingCustomerKey);
       if (c) renderCustomerDossierContent(c);
+    }
+
+    const lateFineReportModal = document.getElementById("lateFineReportModal");
+    if (lateFineReportModal && lateFineReportModal.classList.contains("active")) {
+      const picker = document.getElementById("lateFineDatePicker");
+      renderLateFineReport(picker && picker.value ? picker.value : null);
+    }
+    const interestCutReportModal = document.getElementById("interestCutReportModal");
+    if (interestCutReportModal && interestCutReportModal.classList.contains("active")) {
+      const picker = document.getElementById("interestCutDatePicker");
+      renderInterestCutReport(picker && picker.value ? picker.value : null);
     }
 
     const allBadDebts = window.easyFinanceDB.getBadDebts ? window.easyFinanceDB.getBadDebts() : [];

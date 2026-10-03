@@ -850,6 +850,36 @@ table.admin-table tr:hover td {
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
+.badge-interest {
+  background: rgba(56, 189, 248, 0.18) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+}
+
+tr.tr-interest-cut {
+  background: rgba(56, 189, 248, 0.06) !important;
+  border-left: 3px solid #38bdf8 !important;
+}
+
+.action-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.action-dropdown-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  min-width: 145px;
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  overflow: hidden;
+}
+
 .table-actions {
   display: flex;
   align-items: center;
@@ -1466,20 +1496,37 @@ table.admin-table tr:hover td {
 }
 
 /* ==========================================================================
-   DATE FILTER BAR (Requirement 2: กรองเลือกวันที่สำหรับสรุปยอดรายวัน)
+   DATE FILTER BAR (Requirement 2: กรองเลือกวันที่สำหรับสรุปยอดรายวัน - สมส่วน สวยงาม)
    ========================================================================== */
 .date-filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.75) 0%, rgba(15, 23, 42, 0.55) 100%);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
+}
+
+.date-filter-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.date-filter-summary-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  background: rgba(15, 23, 42, 0.65);
-  border: 1px solid var(--admin-border);
-  border-radius: var(--radius-md);
-  padding: 10px 16px;
-  margin-bottom: 16px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
   flex-wrap: wrap;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .date-filter-left {
@@ -1581,6 +1628,51 @@ table.admin-table tr:hover td {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.date-filter-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.progress-label-text {
+  font-size: 0.76rem;
+  color: var(--text-dim);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.progress-bar-track {
+  width: 90px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+  border-radius: 10px;
+  transition: width 0.4s ease;
+  box-shadow: 0 0 8px rgba(52, 211, 153, 0.5);
+}
+
+.progress-pct-text {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #34d399;
+  min-width: 32px;
+  text-align: right;
 }
 
 .date-stat-chip {
@@ -2082,5 +2174,481 @@ table.admin-table tr:hover td {
   }
 }
 
+/* ====================================================================
+   INTEREST CUT BADGES & ACTION DROPDOWN (Requirement 3.1 & 3.2)
+   ==================================================================== */
+.badge-interest {
+  background: rgba(56, 189, 248, 0.18);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 
+tr.tr-interest-cut {
+  background: rgba(56, 189, 248, 0.08) !important;
+  border-left: 3px solid #38bdf8 !important;
+}
+
+tr.tr-interest-cut td {
+  border-color: rgba(56, 189, 248, 0.2) !important;
+}
+
+/* Dropdown on Installment Action (Requirement 3.1: ลูกศรชี้ลงในปุ่ม มี 2 ตัวเลือก มาร์คชำระ / ตัดดอก) */
+.action-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.action-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  min-width: 170px;
+  z-index: 1050;
+  overflow: hidden;
+}
+
+.action-dropdown.active .action-dropdown-menu {
+  display: block;
+  animation: fadeInDrop 0.15s ease-out;
+}
+
+@keyframes fadeInDrop {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.action-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.action-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.action-dropdown-item.item-paid:hover {
+  background: rgba(34, 197, 94, 0.15);
+  color: #22c55e;
+}
+
+.action-dropdown-item.item-interest:hover {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+/* ==========================================================================
+   ELEVATED FORM MODALS & CURRENCY INPUTS (Requirements 1, 3, 5)
+   ========================================================================== */
+.modal-card-elevated {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-xl);
+}
+
+.modal-icon-badge {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.modal-icon-badge.badge-emerald {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}
+
+.modal-icon-badge.badge-blue {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.modal-contract-context-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.modal-contract-context-banner.banner-emerald {
+  background: rgba(16, 185, 129, 0.09);
+  color: #a7f3d0;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.modal-contract-context-banner.banner-blue {
+  background: rgba(56, 189, 248, 0.09);
+  color: #bae6fd;
+  border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.styled-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.styled-form-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.styled-form-input {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1.5px solid var(--admin-border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.2s ease;
+  color-scheme: dark;
+}
+
+.styled-form-input:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+  background: rgba(15, 23, 42, 1);
+}
+
+/* Beautiful Currency Input Wrapper */
+.input-currency-wrapper {
+  display: flex;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.25s ease;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.input-currency-wrapper .currency-prefix {
+  padding: 10px 14px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.04);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  user-select: none;
+}
+
+.input-currency-wrapper .styled-input-currency {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 10px 14px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  outline: none;
+}
+
+.input-currency-wrapper.theme-emerald {
+  border-color: rgba(16, 185, 129, 0.35);
+}
+.input-currency-wrapper.theme-emerald .currency-prefix {
+  color: #34d399;
+}
+.input-currency-wrapper.theme-emerald:focus-within {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25), 0 0 16px rgba(16, 185, 129, 0.15);
+}
+
+.input-currency-wrapper.theme-blue {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+.input-currency-wrapper.theme-blue .currency-prefix {
+  color: #38bdf8;
+}
+.input-currency-wrapper.theme-blue:focus-within {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25), 0 0 16px rgba(56, 189, 248, 0.15);
+}
+
+.input-currency-wrapper.theme-purple {
+  border-color: rgba(192, 132, 252, 0.35);
+}
+.input-currency-wrapper.theme-purple .currency-prefix {
+  color: #c084fc;
+}
+.input-currency-wrapper.theme-purple:focus-within {
+  border-color: #c084fc;
+  box-shadow: 0 0 0 3px rgba(192, 132, 252, 0.25), 0 0 16px rgba(192, 132, 252, 0.15);
+}
+
+.form-helper-hint {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+/* Styled Helper Card */
+.styled-helper-card {
+  background: rgba(56, 189, 248, 0.05);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+}
+
+.styled-helper-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.styled-helper-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.helper-bullet {
+  font-size: 0.75rem;
+  color: #cbd5e1;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  line-height: 1.4;
+}
+
+.styled-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.btn-styled-cancel {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-styled-cancel:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-styled-submit {
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 9px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-styled-submit.theme-emerald {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
+.btn-styled-submit.theme-emerald:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
+}
+
+.btn-styled-submit.theme-blue {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+}
+.btn-styled-submit.theme-blue:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.45);
+}
+
+/* Card hover glow for late fines stat card */
+#cardStatLateFines:hover {
+  transform: translateY(-2px);
+  border-color: rgba(251, 146, 60, 0.55);
+  box-shadow: 0 8px 24px rgba(249, 115, 22, 0.2);
+  transition: all 0.25s ease;
+}
+
+/* ==========================================================================
+   TABLE COLUMN PROPORTIONS & TYPOGRAPHY REFINEMENT (Requirement 5)
+   ========================================================================== */
+table.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.86rem;
+}
+
+table.admin-table th {
+  background: rgba(10, 16, 30, 0.7);
+  color: #94a3b8;
+  font-weight: 600;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--admin-border);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+table.admin-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: middle;
+}
+
+.customer-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 170px;
+}
+
+.customer-info .name {
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 190px;
+}
+
+.customer-info .sub {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+/* Prevent monetary values from wrapping awkwardly */
+table.admin-table td strong {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Action button clusters stay neat and centered */
+.action-btns-group,
+table.admin-table td .btn-group-tight {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   CONTRACT DETAILS INSTALLMENT TABLE: COLUMN SPACING (สถานะ & วันที่ชำระ ชิดกัน)
+   ========================================================================== */
+.detail-installments-table {
+  table-layout: auto;
+  width: 100%;
+}
+
+.detail-installments-table th.col-inst-no,
+.detail-installments-table td:nth-child(1) {
+  width: 85px;
+  white-space: nowrap;
+}
+
+.detail-installments-table th.col-inst-due,
+.detail-installments-table td:nth-child(2) {
+  width: 110px;
+  white-space: nowrap;
+}
+
+.detail-installments-table th.col-inst-amount,
+.detail-installments-table td:nth-child(3) {
+  width: 140px;
+  white-space: nowrap;
+}
+
+/* คอลัมน์สถานะ (ขยับเข้าใกล้ วันที่ชำระ โดยจำกัดความกว้างและลด padding ด้านขวา) */
+.detail-installments-table th.col-inst-status,
+.detail-installments-table td:nth-child(4),
+.contract-installment-table-container th:nth-child(4),
+.contract-installment-table-container td:nth-child(4) {
+  width: 120px;
+  max-width: 130px;
+  white-space: nowrap;
+  padding-right: 6px; /* ลดระยะห่างด้านขวา เพื่อดึงคอลัมน์ถัดไปเข้ามา */
+}
+
+/* คอลัมน์วันที่ชำระ (ขยับเข้ามาชิดคอลัมน์สถานะ โดยลด padding ด้านซ้าย) */
+.detail-installments-table th.col-inst-paid-date,
+.detail-installments-table td:nth-child(5),
+.contract-installment-table-container th:nth-child(5),
+.contract-installment-table-container td:nth-child(5) {
+  width: 110px;
+  max-width: 125px;
+  white-space: nowrap;
+  padding-left: 6px; /* ลดระยะห่างด้านซ้าย เพื่อขยับมาชิดสถานะ */
+}
+
+/* คอลัมน์สลิป / อ้างอิง รับพื้นที่ว่างส่วนเกินที่เหลือ */
+.detail-installments-table th.col-inst-slip,
+.detail-installments-table td:nth-child(6) {
+  min-width: 130px;
+}
+
+/* คอลัมน์จัดการ */
+.detail-installments-table th.col-inst-actions,
+.detail-installments-table td:nth-child(7) {
+  width: 170px;
+  white-space: nowrap;
+  text-align: center;
+}
 

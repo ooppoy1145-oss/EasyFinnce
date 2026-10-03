@@ -851,10 +851,48 @@ class EasyFinanceDatabase {
       contract.hasLateFine = false;
     }
 
+    // Requirement: หากเป็นงวด ตัดต้น / ตัดดอก
+    // เมื่อกดมาร์คชำระ ให้ยอดที่กรอกช่องตัดต้น ไปลด ยอดรวมสัญญา แทน ส่วนดอกให้ไปเพิ่มตามเดิมที่ ยอดรวมตัดดอก
+    if (installment.isPrincipalInterestCut) {
+      const principalCut = Math.max(0, Number(installment.principalCutAmount !== undefined ? installment.principalCutAmount : installment.amount) || 0);
+      if (principalCut > 0 && !installment.principalDeducted) {
+        installment.principalDeducted = principalCut;
+        contract.totalAmount = Math.max(0, (Number(contract.totalAmount) || 0) - principalCut);
+      }
+
+      const interestCut = Math.max(0, Number(installment.interestAmount) || 0);
+      if (interestCut > 0 && !installment.interestAddedToHistory) {
+        installment.interestAddedToHistory = true;
+        contract.totalInterestCutCollected = (Number(contract.totalInterestCutCollected) || 0) + interestCut;
+
+        if (!Array.isArray(contract.interestCutHistory)) {
+          contract.interestCutHistory = [];
+        }
+        contract.interestCutHistory = contract.interestCutHistory.filter(
+          (h) => !(Number(h.installmentNo) === Number(installmentNo) && h.isFromPrincipalInterestCut)
+        );
+        contract.interestCutHistory.push({
+          id: "INT-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+          contractId: contract.id,
+          contractName: contract.name,
+          phone: contract.phone || "",
+          itemFinanced: contract.itemFinanced || "",
+          installmentNo: Number(installmentNo),
+          amount: interestCut,
+          paidAt: installment.paidAt,
+          dateStr: installment.paidAt ? installment.paidAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
+          createdAt: new Date().toISOString(),
+          isFromPrincipalInterestCut: true
+        });
+      }
+    }
+
     // คำนวณยอดคงเหลือตามแผนของแต่ละงวดให้ถูกต้องเสมอ
     let scheduledBalance = Number(contract.totalAmount) || 0;
     (contract.installments || []).forEach((inst) => {
-      scheduledBalance -= (Number(inst.amount) || 0);
+      if (!inst.isPrincipalInterestCut) {
+        scheduledBalance -= (Number(inst.amount) || 0);
+      }
       inst.remainingBalanceAfter = Math.max(0, scheduledBalance);
     });
 
@@ -882,12 +920,42 @@ class EasyFinanceDatabase {
 
     if (!installment) return null;
 
+    // หากเป็นงวด ตัดต้น / ตัดดอก ให้คืนยอดรวมสัญญาและยอดรวมตัดดอก
+    if (installment.isPrincipalInterestCut) {
+      if (installment.principalDeducted) {
+        contract.totalAmount = (Number(contract.totalAmount) || 0) + Number(installment.principalDeducted);
+        delete installment.principalDeducted;
+      }
+      if (installment.interestAddedToHistory) {
+        const cutAmt = Number(installment.interestAmount) || 0;
+        contract.totalInterestCutCollected = Math.max(0, (Number(contract.totalInterestCutCollected) || 0) - cutAmt);
+        if (contract.interestCutHistory) {
+          contract.interestCutHistory = contract.interestCutHistory.filter(
+            (h) => !(Number(h.installmentNo) === Number(installmentNo) && h.isFromPrincipalInterestCut)
+          );
+        }
+        delete installment.interestAddedToHistory;
+      }
+    }
+
     // เปลี่ยนสถานะกลับเป็นรอชำระ (pending) และล้างข้อมูลบันทึกการชำระ
     installment.status = "pending";
     installment.paidAt = null;
     installment.slipUrl = null;
     installment.transactionRef = null;
     installment.verifiedBy = null;
+
+    // หากเคยมีการตัดดอกสำหรับงวดนี้ (งวดตัดดอกเดี่ยว)
+    if (installment.status === "interest_only" || (!installment.isPrincipalInterestCut && installment.interestAmount)) {
+      const cutAmt = Number(installment.interestAmount) || 0;
+      contract.totalInterestCutCollected = Math.max(0, (Number(contract.totalInterestCutCollected) || 0) - cutAmt);
+      if (contract.interestCutHistory) {
+        contract.interestCutHistory = contract.interestCutHistory.filter(
+          (h) => !(Number(h.installmentNo) === Number(installmentNo))
+        );
+      }
+      delete installment.interestAmount;
+    }
 
     // หากเคยมีค่าปรับที่คิดพร้อมงวดนี้ ให้คืนค่าปรับกลับมา
     if (installment.paidLateFine) {
@@ -901,7 +969,9 @@ class EasyFinanceDatabase {
     // คำนวณยอดคงเหลือตามแผนของแต่ละงวดใหม่ให้ถูกต้องเสมอ
     let scheduledBalance = Number(contract.totalAmount) || 0;
     (contract.installments || []).forEach((inst) => {
-      scheduledBalance -= (Number(inst.amount) || 0);
+      if (!inst.isPrincipalInterestCut) {
+        scheduledBalance -= (Number(inst.amount) || 0);
+      }
       inst.remainingBalanceAfter = Math.max(0, scheduledBalance);
     });
 
@@ -918,6 +988,391 @@ class EasyFinanceDatabase {
 
     await this.saveContract(contract);
     return contract;
+  }
+
+  // บันทึก "ตัดดอก" ของงวด (ยอดต้นยังไม่จ่าย ชำระเฉพาะดอกเบี้ย)
+  async markInstallmentInterestCut(contractId, installmentNo, interestAmount, customDate = null) {
+    const contract = this.getContractById(contractId);
+    if (!contract) return null;
+
+    const installment = (contract.installments || []).find(
+      (inst) => Number(inst.installmentNo) === Number(installmentNo)
+    );
+
+    if (!installment) return null;
+
+    const numAmount = Math.max(0, Number(interestAmount) || 0);
+    const now = new Date();
+    const formattedDate = customDate
+      ? `${customDate} 12:00:00`
+      : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} น.`;
+
+    const oldInterest = Number(installment.interestAmount) || 0;
+    installment.status = "interest_only";
+    installment.interestAmount = numAmount;
+    installment.paidAt = formattedDate;
+    installment.verifiedBy = "admin_interest";
+    installment.transactionRef = "INTEREST-" + Date.now();
+
+    // บันทึกประวัติตัดดอกแยกต่างหากในสัญญา
+    if (!Array.isArray(contract.interestCutHistory)) {
+      contract.interestCutHistory = [];
+    }
+
+    // ลบประวัติเดิมของงวดนี้ถ้ามีซ้ำ
+    contract.interestCutHistory = contract.interestCutHistory.filter(
+      (h) => !(Number(h.installmentNo) === Number(installmentNo))
+    );
+
+    contract.interestCutHistory.push({
+      id: "INT-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+      contractId: contract.id,
+      contractName: contract.name,
+      phone: contract.phone || "",
+      itemFinanced: contract.itemFinanced || "",
+      installmentNo: Number(installmentNo),
+      amount: numAmount,
+      paidAt: formattedDate,
+      dateStr: formattedDate.slice(0, 10),
+      createdAt: new Date().toISOString()
+    });
+
+    // ปรับยอดรวมตัดดอกสะสมของสัญญา
+    contract.totalInterestCutCollected = Math.max(
+      0,
+      (Number(contract.totalInterestCutCollected) || 0) - oldInterest + numAmount
+    );
+
+    // ยอดเงินต้นไม่ตัดออก สัญญาจึงยังเป็น active ไม่ปิดสัญญา
+    contract.status = "active";
+
+    await this.saveContract(contract);
+    return contract;
+  }
+
+  // ยกเลิกการตัดดอก และเปลี่ยนสถานะกลับเป็น "รอชำระ" (pending)
+  async unmarkInstallmentInterestCut(contractId, installmentNo) {
+    const contract = this.getContractById(contractId);
+    if (!contract) return null;
+
+    const installment = (contract.installments || []).find(
+      (inst) => Number(inst.installmentNo) === Number(installmentNo)
+    );
+
+    if (!installment) return null;
+
+    const cutAmt = Number(installment.interestAmount) || 0;
+    contract.totalInterestCutCollected = Math.max(
+      0,
+      (Number(contract.totalInterestCutCollected) || 0) - cutAmt
+    );
+
+    if (Array.isArray(contract.interestCutHistory)) {
+      contract.interestCutHistory = contract.interestCutHistory.filter(
+        (h) => !(Number(h.installmentNo) === Number(installmentNo))
+      );
+    }
+
+    installment.status = "pending";
+    installment.paidAt = null;
+    delete installment.interestAmount;
+    installment.verifiedBy = null;
+    installment.transactionRef = null;
+
+    contract.status = "active";
+
+    await this.saveContract(contract);
+    return contract;
+  }
+
+  // บันทึกค่ายอดตัดดอกเริ่มต้นของสัญญา (สำหรับเป็นค่า default)
+  async setContractInterestCutAmount(contractId, amount) {
+    const contract = this.getContractById(contractId);
+    if (!contract) return null;
+    contract.interestCutAmount = Math.max(0, Number(amount) || 0);
+    await this.saveContract(contract);
+    return contract;
+  }
+
+  // แก้ไขยอดชำระหรือกำหนดชำระของงวด (Requirement 2)
+  async updateInstallment(contractId, installmentNo, updatedData) {
+    const contract = this.getContractById(contractId);
+    if (!contract) return null;
+
+    const installment = (contract.installments || []).find(
+      (inst) => Number(inst.installmentNo) === Number(installmentNo)
+    );
+
+    if (!installment) return null;
+
+    if (updatedData.amount !== undefined && updatedData.amount !== null) {
+      const oldAmount = Number(installment.amount) || 0;
+      const newAmount = Math.max(0, Number(updatedData.amount) || 0);
+      installment.amount = newAmount;
+
+      // ปรับปรุงยอดรวมสัญญา (totalAmount) ตามยอดค่างวดที่แก้ไข
+      const diff = newAmount - oldAmount;
+      contract.totalAmount = Math.max(0, (Number(contract.totalAmount) || 0) + diff);
+    }
+
+    if (updatedData.dueDate) {
+      installment.dueDate = updatedData.dueDate;
+    }
+
+    // คำนวณยอดคงเหลือตามแผนของแต่ละงวดใหม่
+    let scheduledBalance = Number(contract.totalAmount) || 0;
+    (contract.installments || []).forEach((inst) => {
+      scheduledBalance -= (Number(inst.amount) || 0);
+      inst.remainingBalanceAfter = Math.max(0, scheduledBalance);
+    });
+
+    await this.saveContract(contract);
+    return contract;
+  }
+
+  // คีย์เพิ่มงวดแมนนวล (Requirement 2)
+  async addManualInstallment(contractId, installmentData) {
+    const contract = this.getContractById(contractId);
+    if (!contract) return null;
+
+    contract.installments = contract.installments || [];
+
+    const instNo = Number(installmentData.installmentNo) || (contract.installments.length + 1);
+    const amount = Math.max(0, Number(installmentData.amount) || 0);
+    const dueDate = installmentData.dueDate || new Date().toISOString().slice(0, 10);
+
+    const newInst = {
+      installmentNo: instNo,
+      dueDate: dueDate,
+      amount: amount,
+      status: "pending",
+      paidAt: null,
+      slipUrl: null,
+      transactionRef: null,
+      verifiedBy: null
+    };
+
+    // ตรวจสอบว่างวดเลขนี้มีอยู่แล้วหรือไม่ ถ้ามีให้แทนที่ ถ้าไม่มีให้เพิ่ม
+    const existingIndex = contract.installments.findIndex(
+      (i) => Number(i.installmentNo) === instNo
+    );
+
+    if (existingIndex >= 0) {
+      const oldAmt = Number(contract.installments[existingIndex].amount) || 0;
+      contract.installments[existingIndex] = { ...contract.installments[existingIndex], ...newInst };
+      contract.totalAmount = Math.max(0, (Number(contract.totalAmount) || 0) + (amount - oldAmt));
+    } else {
+      contract.installments.push(newInst);
+      contract.totalAmount = Math.max(0, (Number(contract.totalAmount) || 0) + amount);
+    }
+
+    // เรียงลำดับตาม installmentNo
+    contract.installments.sort((a, b) => Number(a.installmentNo) - Number(b.installmentNo));
+    contract.duration = `${contract.installments.length} งวด`;
+
+    // คำนวณยอดคงเหลือตามแผนของแต่ละงวดใหม่
+    let scheduledBalance = Number(contract.totalAmount) || 0;
+    contract.installments.forEach((inst) => {
+      scheduledBalance -= (Number(inst.amount) || 0);
+      inst.remainingBalanceAfter = Math.max(0, scheduledBalance);
+    });
+
+    // ตรวจสอบสถานะสัญญา
+    const allPaid = contract.installments.length > 0 && contract.installments.every((inst) => inst.status === "paid");
+    if (allPaid) {
+      contract.status = "completed";
+    } else {
+      contract.status = "active";
+    }
+
+    await this.saveContract(contract);
+    return contract;
+  }
+
+  // เพิ่มงวด ตัดต้น / ตัดดอก (Requirement: ไม่เอายอดไปเพิ่มกับยอดรวมสัญญา แต่หากกดมาร์คชำระ ยอดตัดต้นจะไปลดยอดรวมสัญญา และยอดตัดดอกไปเพิ่มที่ยอดรวมตัดดอก)
+  async addPrincipalInterestCutInstallment(contractId, installmentData) {
+    const contract = this.getContractById(contractId);
+    if (!contract) return null;
+
+    contract.installments = contract.installments || [];
+
+    const instNo = Number(installmentData.installmentNo) || (contract.installments.length + 1);
+    const principalCut = Math.max(0, Number(installmentData.principalCutAmount) || 0);
+    const interestCut = Math.max(0, Number(installmentData.interestCutAmount) || 0);
+    const dueDate = installmentData.dueDate || new Date().toISOString().slice(0, 10);
+
+    const newInst = {
+      installmentNo: instNo,
+      dueDate: dueDate,
+      amount: principalCut,
+      principalCutAmount: principalCut,
+      interestAmount: interestCut,
+      isPrincipalInterestCut: true,
+      status: "pending",
+      paidAt: null,
+      slipUrl: null,
+      transactionRef: null,
+      verifiedBy: null
+    };
+
+    // ตรวจสอบว่างวดเลขนี้มีอยู่แล้วหรือไม่
+    const existingIndex = contract.installments.findIndex(
+      (i) => Number(i.installmentNo) === instNo
+    );
+
+    if (existingIndex >= 0) {
+      contract.installments[existingIndex] = { ...contract.installments[existingIndex], ...newInst };
+    } else {
+      contract.installments.push(newInst);
+    }
+
+    // ข้อสำคัญตามความต้องการของผู้ใช้:
+    // "พอเพิ่มแล้วไม่ต้องเอายอดไปเพิ่มกับ ยอดรวมสัญญา เพราะหากกดมาร์คชำระ ให้ยอดที่กรอกช่องตัดต้น ไปลด ยอดรวมสัญญา แทน"
+    // ดังนั้นจึงไม่ต้องบวกเข้ากับ contract.totalAmount
+
+    contract.installments.sort((a, b) => Number(a.installmentNo) - Number(b.installmentNo));
+    contract.duration = `${contract.installments.length} งวด`;
+
+    // คำนวณยอดคงเหลือตามแผนของแต่ละงวดใหม่
+    let scheduledBalance = Number(contract.totalAmount) || 0;
+    contract.installments.forEach((inst) => {
+      if (!inst.isPrincipalInterestCut) {
+        scheduledBalance -= (Number(inst.amount) || 0);
+      }
+      inst.remainingBalanceAfter = Math.max(0, scheduledBalance);
+    });
+
+    await this.saveContract(contract);
+    return contract;
+  }
+
+  // ดึงประวัติตัดดอกทั้งหมดจากทุกสัญญา สำหรับรายงานสรุปรายวัน (Requirement 3.3.1)
+  getAllInterestCutHistory() {
+    const contracts = this.getContracts();
+    const list = [];
+
+    contracts.forEach((c) => {
+      if (Array.isArray(c.interestCutHistory)) {
+        c.interestCutHistory.forEach((h) => {
+          list.push({
+            ...h,
+            contractId: c.id,
+            contractName: c.name,
+            phone: c.phone || "",
+            itemFinanced: c.itemFinanced || "",
+            dateStr: h.dateStr || (h.paidAt ? h.paidAt.slice(0, 10) : "")
+          });
+        });
+      }
+
+      // ดึงจากงวดที่สถานะเป็น interest_only เพิ่มเติม (กรณีไม่มีใน interestCutHistory)
+      (c.installments || []).forEach((inst) => {
+        if (inst.status === "interest_only") {
+          const alreadyListed = list.some(
+            (item) => item.contractId === c.id && Number(item.installmentNo) === Number(inst.installmentNo)
+          );
+          if (!alreadyListed) {
+            const pDate = inst.paidAt || "";
+            list.push({
+              id: "INST-INT-" + c.id + "-" + inst.installmentNo,
+              contractId: c.id,
+              contractName: c.name,
+              phone: c.phone || "",
+              itemFinanced: c.itemFinanced || "",
+              installmentNo: Number(inst.installmentNo),
+              amount: Number(inst.interestAmount) || 0,
+              paidAt: pDate,
+              dateStr: pDate.slice(0, 10),
+              createdAt: pDate
+            });
+          }
+        }
+      });
+    });
+
+    // เรียงจากวันที่ล่าสุดลงไป
+    list.sort((a, b) => {
+      const da = a.paidAt || a.dateStr || "";
+      const db = b.paidAt || b.dateStr || "";
+      return db.localeCompare(da);
+    });
+
+    return list;
+  }
+
+  // ดึงประวัติค่าปรับทั้งหมดจากทุกสัญญา สำหรับรายงานสรุปค่าปรับรายวัน (Requirement 1)
+  getAllLateFineHistory() {
+    const contracts = this.getContracts();
+    const list = [];
+
+    contracts.forEach((c) => {
+      // 1. ดึงจาก finePaymentHistory (ชำระค่าปรับโดยตรง)
+      if (Array.isArray(c.finePaymentHistory)) {
+        c.finePaymentHistory.forEach((h, idx) => {
+          const pDate = h.paidAt || "";
+          list.push({
+            id: "FINE-HIST-" + c.id + "-" + (h.id || idx),
+            contractId: c.id,
+            contractName: c.name,
+            phone: c.phone || "",
+            itemFinanced: c.itemFinanced || "",
+            installmentNo: h.installmentNo || "-",
+            amount: Number(h.amount) || 0,
+            paidAt: pDate,
+            dateStr: h.dateStr || (pDate ? pDate.slice(0, 10) : ""),
+            reason: h.note || "ชำระค่าปรับโดยตรง",
+            status: "paid"
+          });
+        });
+      }
+
+      // 2. ดึงจากค่างวดที่มีการจ่ายค่าปรับควบ (paidLateFine)
+      (c.installments || []).forEach((inst) => {
+        if (inst.paidLateFine && Number(inst.paidLateFine) > 0) {
+          const pDate = inst.paidAt || "";
+          list.push({
+            id: "INST-FINE-" + c.id + "-" + inst.installmentNo,
+            contractId: c.id,
+            contractName: c.name,
+            phone: c.phone || "",
+            itemFinanced: c.itemFinanced || "",
+            installmentNo: Number(inst.installmentNo),
+            amount: Number(inst.paidLateFine),
+            paidAt: pDate,
+            dateStr: inst.paidDateStr || (pDate ? pDate.slice(0, 10) : ""),
+            reason: `ชำระพร้อมงวดที่ ${inst.installmentNo}`,
+            status: "paid"
+          });
+        }
+      });
+
+      // 3. ดึงค่าปรับที่ค้างชำระอยู่ ณ ปัจจุบัน (Pending Late Fines)
+      if (c.hasLateFine && Number(c.lateFine) > 0) {
+        const uDate = c.updatedAt ? c.updatedAt.slice(0, 10) : (c.startDate ? c.startDate.slice(0, 10) : "");
+        list.push({
+          id: "PENDING-FINE-" + c.id,
+          contractId: c.id,
+          contractName: c.name,
+          phone: c.phone || "",
+          itemFinanced: c.itemFinanced || "",
+          installmentNo: "-",
+          amount: Number(c.lateFine),
+          paidAt: "-",
+          dateStr: uDate,
+          reason: c.lateFineReason || "ค้างชำระเกินกำหนด",
+          status: "pending"
+        });
+      }
+    });
+
+    // เรียงจากวันที่ล่าสุดลงไป
+    list.sort((a, b) => {
+      const da = a.paidAt && a.paidAt !== "-" ? a.paidAt : (a.dateStr || "");
+      const db = b.paidAt && b.paidAt !== "-" ? b.paidAt : (b.dateStr || "");
+      return db.localeCompare(da);
+    });
+
+    return list;
   }
 
   // อัปเดตข้อมูลเพิ่มเติมของลูกค้า (บันทึกเพิ่มเติม, ลิงก์เฟสบุ๊ก, ที่อยู่, เลขบัตร)

@@ -681,6 +681,35 @@ body {
   background: var(--primary);
 }
 
+/* Interest Cut Highlight: Blue Tone & Badge (ตัดดอก - Requirement 3.2) */
+.installment-item.is-interest-cut {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(14, 116, 144, 0.25) 100%) !important;
+  border-color: rgba(56, 189, 248, 0.45) !important;
+  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.15) !important;
+}
+
+.installment-item.is-interest-cut::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #38bdf8 !important;
+}
+
+.installment-item.is-interest-cut .inst-no-badge {
+  background: #0284c7 !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4) !important;
+}
+
+.status-interest-tag {
+  background: rgba(56, 189, 248, 0.2) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+}
+
 .inst-left {
   display: flex;
   align-items: center;

@@ -319,32 +319,48 @@ document.addEventListener("DOMContentLoaded", () => {
 
     installments.forEach((inst) => {
       const isPaid = inst.status === "paid";
+      const isInterestCut = inst.status === "interest_only" || inst.status === "cut_interest";
+      const isPIC = Boolean(inst.isPrincipalInterestCut);
       const itemEl = document.createElement("div");
-      itemEl.className = `installment-item ${isPaid ? "is-paid" : ""}`;
+      itemEl.className = `installment-item ${isPaid ? "is-paid" : ""} ${(isInterestCut || isPIC) ? "is-interest-cut" : ""}`;
 
       itemEl.innerHTML = `
         <div class="inst-left">
           <div class="inst-no-badge">
-            ${isPaid ? '<i class="fa-solid fa-check"></i>' : inst.installmentNo}
+            ${isPaid ? '<i class="fa-solid fa-check"></i>' : (isInterestCut || isPIC) ? '<i class="fa-solid fa-percent"></i>' : inst.installmentNo}
           </div>
           <div>
-            <div class="inst-info-title">งวดที่ ${inst.installmentNo}</div>
+            <div class="inst-info-title">งวดที่ ${inst.installmentNo}${isPIC ? ' <span style="font-size: 0.72rem; color: #38bdf8;">(ตัดต้น/ดอก)</span>' : ''}</div>
             <div class="inst-info-date">กำหนด: ${formatThaiDate(inst.dueDate)}</div>
             ${
               isPaid
-                ? `<div class="inst-info-paid-date"><i class="fa-solid fa-circle-check"></i> ชำระเมื่อ: ${inst.paidAt || "สมบูรณ์"}</div>`
-                : ""
+                ? `<div class="inst-info-paid-date"><i class="fa-solid fa-circle-check"></i> ชำระเมื่อ: ${inst.paidAt || "สมบูรณ์"}${isPIC ? ` (ตัดต้น ฿${Number(inst.principalCutAmount || inst.amount).toLocaleString()}${Number(inst.interestAmount) > 0 ? ` + ดอก ฿${Number(inst.interestAmount).toLocaleString()}` : ""})` : ""}</div>`
+                : isInterestCut
+                  ? `<div class="inst-info-paid-date" style="color: #38bdf8;"><i class="fa-solid fa-percent"></i> ตัดดอกเมื่อ: ${inst.paidAt || "บันทึกแล้ว"} (฿${Number(inst.interestAmount || 0).toLocaleString()})</div>`
+                  : isPIC
+                    ? `<div class="inst-info-paid-date" style="color: #38bdf8;"><i class="fa-solid fa-scale-balanced"></i> ตัดต้น ฿${Number(inst.principalCutAmount || inst.amount).toLocaleString()}${Number(inst.interestAmount) > 0 ? ` + ดอก ฿${Number(inst.interestAmount).toLocaleString()}` : ""}</div>`
+                    : ""
             }
           </div>
         </div>
         <div class="inst-right">
-          <div class="inst-amount">฿${Number(inst.amount).toLocaleString()}</div>
+          <div class="inst-amount">
+            ${
+              isPIC
+                ? `<span>ตัดต้น ฿${Number(inst.principalCutAmount || inst.amount).toLocaleString()}</span>${Number(inst.interestAmount) > 0 ? `<br><span style="font-size: 0.72rem; color: #38bdf8;">ตัดดอก ฿${Number(inst.interestAmount).toLocaleString()}</span>` : ""}`
+                : `${isInterestCut ? `<span style="font-size: 0.72rem; color: #38bdf8;">ดอกเบี้ย ฿${Number(inst.interestAmount || 0).toLocaleString()}</span><br>` : ""}฿${Number(inst.amount).toLocaleString()}`
+            }
+          </div>
           <div class="inst-remaining">คงเหลือ: ฿${Number(inst.remainingBalanceAfter || 0).toLocaleString()}</div>
-          <div class="inst-status-tag ${isPaid ? "status-paid-tag" : "status-pending-tag"}" style="${!isPaid ? "background: rgba(16, 185, 129, 0.18); color: var(--primary-light); border: 1px solid var(--border-emerald); cursor: pointer;" : ""}">
+          <div class="inst-status-tag ${isPaid ? "status-paid-tag" : (isInterestCut || isPIC) ? "status-interest-tag" : "status-pending-tag"}" style="${!isPaid && !isInterestCut && !isPIC ? "background: rgba(16, 185, 129, 0.18); color: var(--primary-light); border: 1px solid var(--border-emerald); cursor: pointer;" : ""}">
             ${
               isPaid
                 ? '<i class="fa-solid fa-shield-check"></i> ชำระแล้ว (สมบูรณ์)'
-                : '<i class="fa-solid fa-qrcode"></i> ชำระงวดนี้'
+                : isInterestCut
+                  ? '<i class="fa-solid fa-percent"></i> ตัดดอก'
+                  : isPIC
+                    ? '<i class="fa-solid fa-scale-balanced"></i> ตัดต้น/ตัดดอก'
+                    : '<i class="fa-solid fa-qrcode"></i> ชำระงวดนี้'
             }
           </div>
         </div>
