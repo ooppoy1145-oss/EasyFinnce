@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 70" width="120" height="70" fill="currentColor">
+  <!-- Honda Wing Motorcycle Icon -->
+  <path d="M10 60 C35 58, 65 42, 98 12 C88 22, 65 34, 40 40 L38 46 C60 40, 85 28, 110 5 C95 24, 65 44, 15 54 Z" fill="url(#wingGradient)"/>
+  <path d="M18 63 C42 61, 72 47, 102 22 C92 30, 72 40, 48 45 L46 50 C68 45, 92 34, 114 15 C100 32, 70 51, 22 58 Z" fill="url(#wingGradient)"/>
+  <path d="M25 66 C50 64, 80 52, 106 32 C96 38, 78 46, 56 50 L54 54 C74 50, 96 40, 118 25 C104 40, 75 58, 28 62 Z" fill="url(#wingGradient)"/>
+  <defs>
+    <linearGradient id="wingGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="60%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#d4af37" />
+    </linearGradient>
+  </defs>
+</svg>
