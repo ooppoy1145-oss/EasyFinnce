@@ -288,6 +288,23 @@
               <i class="fa-solid fa-hand-holding-dollar"></i>
             </div>
           </div>
+
+          <!-- ช่องรวมเงินดาวน์ (แยกต่างหาก ไม่รวมกับช่องอื่น เหมือนกันกับ ยอดรวมตัดดอก) -->
+          <div class="stat-counter-card" id="cardStatDownPayment" style="cursor: pointer;"
+            onclick="openDownPaymentReportModal()" title="คลิกเพื่อดูสรุปเงินดาวน์รายวัน">
+            <div class="stat-info">
+              <div class="stat-label" id="statLabelDownPayment" style="color: #34d399;">
+                <i class="fa-solid fa-coins"></i> ช่องรวมเงินดาวน์
+              </div>
+              <div class="stat-val" id="statTotalDownPayment" style="color: #34d399;">฿0</div>
+              <div id="statDownPaymentSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
+                แยกเฉพาะเงินดาวน์ (คลิกดูสรุปต่อวัน)</div>
+            </div>
+            <div class="stat-icon-box" id="statIconDownPayment"
+              style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35);">
+              <i class="fa-solid fa-sack-dollar"></i>
+            </div>
+          </div>
         </div>
 
         <!-- Action Bar: Search, Dashboard Overview Button & Add Contract -->
@@ -541,16 +558,26 @@
           </div>
         </div>
 
-        <!-- 5. ช่องกรอกเงินดาวน์ (แสดงเมื่อเลือกหมวดผ่อนมอเตอร์ไซค์ หรือ ผ่อนทอง หมวดสินค้าทั่วไปจะไม่มีเงินดาวน์) -->
+        <!-- 5. ช่องกรอกเงินดาวน์ -->
         <div class="form-group-admin" id="formDownPaymentGroup"
-          style="display: none; background: rgba(56, 189, 248, 0.08); border: 1px dashed rgba(56, 189, 248, 0.35); padding: 12px; border-radius: var(--radius-md);">
-          <label class="form-label-admin" style="color: #38bdf8; font-weight: 600;">
-            <span id="lblDownPaymentTitle"><i class="fa-solid fa-coins"></i> เงินดาวน์ (บาท)</span>
-            <span style="font-size: 0.74rem; color: #94a3b8; font-weight: normal;">(ระบุยอดใดก็ได้
-              ใส่เศษ/ทศนิยมได้ตามจริง หรือใส่ 0 หากไม่มี)</span>
-          </label>
-          <input type="number" id="formDownPayment" class="input-admin" min="0" step="any"
-            placeholder="ระบุจำนวนเงินดาวน์ เช่น 5000 (ใส่ได้ทุกยอด)">
+          style="display: none; background: rgba(16, 185, 129, 0.08); border: 1px dashed rgba(16, 185, 129, 0.35); padding: 12px; border-radius: var(--radius-md);">
+          <div class="form-grid-2" style="margin-bottom: 0;">
+            <div>
+              <label class="form-label-admin" style="color: #34d399; font-weight: 600;">
+                <span id="lblDownPaymentTitle"><i class="fa-solid fa-coins"></i> เงินดาวน์ (บาท)</span>
+                <span style="font-size: 0.74rem; color: #94a3b8; font-weight: normal;">(ใส่ 0 หากไม่มี)</span>
+              </label>
+              <input type="number" id="formDownPayment" class="input-admin" min="0" step="any"
+                placeholder="ระบุจำนวนเงินดาวน์ เช่น 5000 (ใส่ได้ทุกยอด)">
+            </div>
+            <div>
+              <label class="form-label-admin" style="color: #34d399; font-weight: 600;">
+                <span><i class="fa-solid fa-calendar-day"></i> วันที่รับเงินดาวน์</span>
+                <span style="font-size: 0.74rem; color: #94a3b8; font-weight: normal;">(สำหรับดูสรุปต่อวัน)</span>
+              </label>
+              <input type="date" id="formDownPaymentDate" class="input-admin">
+            </div>
+          </div>
         </div>
 
         <div class="form-grid-2">
@@ -765,7 +792,7 @@
        MODAL 3.1: DAILY INTEREST-ONLY REPORT (สรุปยอดตัดดอกรายวัน - Requirement 3.3.1)
        ==================================================================== -->
   <div id="interestCutReportModal" class="admin-modal-overlay">
-    <div class="admin-modal-card" style="max-width: 850px;">
+    <div class="admin-modal-card admin-modal-card-report">
       <div class="admin-modal-header">
         <div class="admin-modal-title">
           <i class="fa-solid fa-hand-holding-dollar" style="color: #38bdf8;"></i>
@@ -809,7 +836,7 @@
         <span id="interestCutListTitle">รายการลูกค้าที่ตัดดอกประจำวัน</span>
         <span id="interestCutCountBadge" class="status-badge badge-interest">0 รายการ</span>
       </h4>
-      <div class="table-responsive" style="max-height: 280px; overflow-y: auto; margin-bottom: 20px;">
+      <div class="table-responsive report-table-scroll-wrap report-daily-scroll" style="margin-bottom: 22px;">
         <table class="admin-table">
           <thead>
             <tr>
@@ -832,7 +859,7 @@
         style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
         <i class="fa-solid fa-chart-line" style="color: #38bdf8;"></i> สรุปยอดตัดดอกแยกตามวัน (ภาพรวมทุกวัน)
       </h4>
-      <div class="table-responsive" style="max-height: 220px; overflow-y: auto;">
+      <div class="table-responsive report-table-scroll-wrap report-breakdown-scroll">
         <table class="admin-table">
           <thead>
             <tr>
@@ -852,10 +879,102 @@
   </div>
 
   <!-- ====================================================================
+       MODAL 3.15: DAILY DOWN PAYMENT REPORT (สรุปยอดรวมเงินดาวน์รายวัน)
+       ==================================================================== -->
+  <div id="downPaymentReportModal" class="admin-modal-overlay">
+    <div class="admin-modal-card admin-modal-card-report">
+      <div class="admin-modal-header" style="border-bottom: 1px solid rgba(16, 185, 129, 0.25);">
+        <div class="admin-modal-title">
+          <i class="fa-solid fa-coins" style="color: #34d399;"></i>
+          <span>สรุปยอดรวมเงินดาวน์รายวัน (รายงานเงินดาวน์)</span>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnCloseDownPaymentModal"
+          onclick="closeDownPaymentReportModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Controls & Date Filter -->
+      <div
+        style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <label style="font-size: 0.85rem; color: var(--text-dim); font-weight: 500;">
+              <i class="fa-solid fa-calendar-day" style="color: #34d399;"></i> เลือกวันที่:
+            </label>
+            <input type="date" id="downPaymentDatePicker"
+              style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(16, 185, 129, 0.35); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem;"
+              onchange="onDownPaymentDateChange(this.value)" />
+            <button type="button" class="btn-table-action" onclick="setDownPaymentDateToday()"
+              style="padding: 6px 12px; font-size: 0.8rem; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">
+              วันนี้
+            </button>
+            <button type="button" class="btn-table-action" onclick="showAllDownPayments()"
+              style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.08); color: #fff; border: 1px solid var(--admin-border);">
+              แสดงทั้งหมด
+            </button>
+          </div>
+          <div id="downPaymentSummaryBadges" style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <!-- Dynamic Badges -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Table 1: รายการเงินดาวน์ของวันที่เลือก -->
+      <h4
+        style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+        <span id="downPaymentListTitle">รายการลูกค้าที่ชำระเงินดาวน์ประจำวัน</span>
+        <span id="downPaymentCountBadge" class="status-badge"
+          style="background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">0
+          รายการ</span>
+      </h4>
+      <div class="table-responsive report-table-scroll-wrap report-daily-scroll" style="margin-bottom: 22px;">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>วันที่รับเงินดาวน์</th>
+              <th>ลูกค้า</th>
+              <th>สิ่งที่ผ่อน</th>
+              <th>หมวดหมู่</th>
+              <th style="text-align: right;">ยอดเงินดาวน์ (บาท)</th>
+              <th style="text-align: center;">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="downPaymentTableBody">
+            <!-- Dynamic Rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Table 2: สรุปแยกตามวัน (Daily Breakdown) -->
+      <h4
+        style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+        <i class="fa-solid fa-chart-line" style="color: #34d399;"></i> สรุปยอดเงินดาวน์แยกตามวัน (ภาพรวมทุกวัน)
+      </h4>
+      <div class="table-responsive report-table-scroll-wrap report-breakdown-scroll">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>วันที่</th>
+              <th style="text-align: center;">จำนวนรายการ (ราย)</th>
+              <th style="text-align: right;">ยอดเงินดาวน์รวมวันนั้น (บาท)</th>
+              <th>รายชื่อลูกค้า</th>
+              <th style="text-align: center;">เปิดดู</th>
+            </tr>
+          </thead>
+          <tbody id="downPaymentDailyBreakdownBody">
+            <!-- Dynamic Breakdown Rows -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
        MODAL 3.5: DAILY LATE FINE REPORT (สรุปยอดค่าปรับรายวัน - Requirement 1)
        ==================================================================== -->
   <div id="lateFineReportModal" class="admin-modal-overlay">
-    <div class="admin-modal-card" style="max-width: 880px;">
+    <div class="admin-modal-card admin-modal-card-report">
       <div class="admin-modal-header" style="border-bottom: 1px solid rgba(251, 146, 60, 0.25);">
         <div class="admin-modal-title">
           <i class="fa-solid fa-triangle-exclamation" style="color: #fb923c;"></i>
@@ -900,7 +1019,7 @@
           style="background: rgba(251, 146, 60, 0.18); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.4);">0
           รายการ</span>
       </h4>
-      <div class="table-responsive" style="max-height: 280px; overflow-y: auto; margin-bottom: 20px;">
+      <div class="table-responsive report-table-scroll-wrap report-daily-scroll" style="margin-bottom: 22px;">
         <table class="admin-table">
           <thead>
             <tr>
@@ -924,7 +1043,7 @@
         style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
         <i class="fa-solid fa-chart-line" style="color: #fb923c;"></i> สรุปยอดค่าปรับแยกตามวัน (ภาพรวมทุกวัน)
       </h4>
-      <div class="table-responsive" style="max-height: 220px; overflow-y: auto;">
+      <div class="table-responsive report-table-scroll-wrap report-breakdown-scroll">
         <table class="admin-table">
           <thead>
             <tr>

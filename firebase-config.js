@@ -48,6 +48,7 @@ const INITIAL_CONTRACTS = [
     itemCategory: "gold",
     itemFinanced: "ผ่อนทองคำแท่ง 1 บาท (96.5%)",
     downPayment: 5000,
+    downPaymentDate: "2026-01-01",
     lateFine: 200,
     lateFineReason: "ค้างชำระเกินกำหนด 3 วัน",
     totalAmount: 42000,
@@ -1369,6 +1370,65 @@ class EasyFinanceDatabase {
     list.sort((a, b) => {
       const da = a.paidAt && a.paidAt !== "-" ? a.paidAt : (a.dateStr || "");
       const db = b.paidAt && b.paidAt !== "-" ? b.paidAt : (b.dateStr || "");
+      return db.localeCompare(da);
+    });
+
+    return list;
+  }
+
+  // ดึงประวัติเงินดาวน์ทั้งหมดจากทุกสัญญา สำหรับรายงานสรุปเงินดาวน์รายวัน
+  getAllDownPaymentHistory() {
+    const contracts = this.getContracts();
+    const list = [];
+
+    contracts.forEach((c) => {
+      // 1. ดึงจาก downPaymentHistory หากมี
+      if (Array.isArray(c.downPaymentHistory)) {
+        c.downPaymentHistory.forEach((h, idx) => {
+          const pDate = h.paidAt || h.dateStr || "";
+          list.push({
+            id: "DP-HIST-" + c.id + "-" + (h.id || idx),
+            contractId: c.id,
+            contractName: c.name,
+            phone: c.phone || "",
+            itemCategory: c.itemCategory || (typeof c.itemFinanced === "string" && (c.itemFinanced.includes("มอไซ") || c.itemFinanced.toLowerCase().includes("motorcycle")) ? "motorcycle" : "general"),
+            itemFinanced: c.itemFinanced || "",
+            amount: Number(h.amount) || 0,
+            paidAt: pDate,
+            dateStr: h.dateStr || (pDate ? pDate.slice(0, 10) : ""),
+            note: h.note || "เงินดาวน์",
+            status: "paid"
+          });
+        });
+      }
+
+      // 2. ดึงจาก contract.downPayment หากมีค่า > 0
+      const downPayment = Number(c.downPayment) || 0;
+      if (downPayment > 0) {
+        const alreadyListed = list.some((item) => item.contractId === c.id);
+        if (!alreadyListed) {
+          const dDate = c.downPaymentDate || (c.firstPaymentDate ? c.firstPaymentDate.slice(0, 10) : (c.createdAt ? c.createdAt.slice(0, 10) : ""));
+          list.push({
+            id: "DP-" + c.id,
+            contractId: c.id,
+            contractName: c.name,
+            phone: c.phone || "",
+            itemCategory: c.itemCategory || (typeof c.itemFinanced === "string" && (c.itemFinanced.includes("มอไซ") || c.itemFinanced.toLowerCase().includes("motorcycle")) ? "motorcycle" : "general"),
+            itemFinanced: c.itemFinanced || "",
+            amount: downPayment,
+            paidAt: dDate,
+            dateStr: dDate,
+            note: "เงินดาวน์สัญญา",
+            status: "paid"
+          });
+        }
+      }
+    });
+
+    // เรียงจากวันที่ล่าสุดลงไป
+    list.sort((a, b) => {
+      const da = a.paidAt || a.dateStr || "";
+      const db = b.paidAt || b.dateStr || "";
       return db.localeCompare(da);
     });
 

@@ -44,6 +44,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const statTotalInterestCut = document.getElementById("statTotalInterestCut");
   const statInterestCutSub = document.getElementById("statInterestCutSub");
   const interestCutReportModal = document.getElementById("interestCutReportModal");
+  const cardStatDownPayment = document.getElementById("cardStatDownPayment");
+  const statLabelDownPayment = document.getElementById("statLabelDownPayment");
+  const statTotalDownPayment = document.getElementById("statTotalDownPayment");
+  const statDownPaymentSub = document.getElementById("statDownPaymentSub");
+  const downPaymentReportModal = document.getElementById("downPaymentReportModal");
   const addManualInstallmentModal = document.getElementById("addManualInstallmentModal");
   const editInstallmentModal = document.getElementById("editInstallmentModal");
 
@@ -103,6 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const formItemCategory = document.getElementById("formItemCategory");
   const formDownPaymentGroup = document.getElementById("formDownPaymentGroup");
   const formDownPayment = document.getElementById("formDownPayment");
+  const formDownPaymentDate = document.getElementById("formDownPaymentDate");
   const formItemFinanced = document.getElementById("formItemFinanced");
   const formTotalAmount = document.getElementById("formTotalAmount");
   const formTotalInstallments = document.getElementById("formTotalInstallments");
@@ -1160,8 +1166,8 @@ document.addEventListener("DOMContentLoaded", () => {
     contracts.forEach((c) => {
       const downPayment = Number(c.downPayment) || 0;
       const totalAmount = Number(c.totalAmount) || 0;
-      totalFinanced += (totalAmount + downPayment);
-      totalCollected += downPayment;
+      // แยกยอดเงินดาวน์ออกไปอยู่ช่องรวมเงินดาวน์ ไม่ต้องรวมกับช่องอื่น เหมือนยอดรวมตัดดอก
+      totalFinanced += totalAmount;
 
       const installments = c.installments || [];
       const paidAmt = installments
@@ -1203,10 +1209,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const downPayment = Number(c.downPayment) || 0;
       const totalAmount = Number(c.totalAmount) || 0;
 
-      // 1. หลังบ้านแสดงยอดทั้งหมดที่รวมทั้งเงินดาวน์ด้วย (ยอดปล่อยทั้งหมด = ยอดผ่อน + เงินดาวน์)
-      totalFinanced += (totalAmount + downPayment);
-      // เงินดาวน์นับเป็นยอดที่เก็บมาได้แล้วตั้งแต่เริ่มทำสัญญา
-      totalCollected += downPayment;
+      // แยกยอดเงินดาวน์ออกไปอยู่ช่องรวมเงินดาวน์ ไม่ต้องรวมกับช่องอื่น เหมือนยอดรวมตัดดอก
+      totalFinanced += totalAmount;
 
       const installments = c.installments || [];
       const paidAmt = installments
@@ -1487,6 +1491,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (currentTab === "bad_debt") {
       if (cardStatLateFines) cardStatLateFines.style.display = "none";
       if (cardStatInterestCut) cardStatInterestCut.style.display = "none";
+      if (cardStatDownPayment) cardStatDownPayment.style.display = "none";
       const allBadDebts = window.easyFinanceDB.getBadDebts ? window.easyFinanceDB.getBadDebts() : [];
       let totalBadAmount = 0;
       let badDebtCount = 0;
@@ -1515,6 +1520,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cardStatLateFines) cardStatLateFines.style.display = "";
     if (cardStatMotorcycle) cardStatMotorcycle.style.display = "";
     if (cardStatInterestCut) cardStatInterestCut.style.display = "";
+    if (cardStatDownPayment) cardStatDownPayment.style.display = "";
 
     const contracts = window.easyFinanceDB.getContracts();
     let totalFinanced = 0;
@@ -1531,6 +1537,9 @@ document.addEventListener("DOMContentLoaded", () => {
     let totalInterestCutCollected = 0;
     let totalInterestCutCount = 0;
 
+    let totalDownPaymentCollected = 0;
+    let totalDownPaymentCount = 0;
+
     contracts.forEach((c) => {
       const downPayment = Number(c.downPayment) || 0;
       const totalAmount = Number(c.totalAmount) || 0;
@@ -1541,16 +1550,23 @@ document.addEventListener("DOMContentLoaded", () => {
       const contractOutstanding = Math.max(0, totalAmount - contractPaidAmount);
 
       // Requirement: หมวดรถมอไซต์ ไม่ต้องยกยอดไปรวมกับยอดปล่อยสินเชื่อรวม ให้แยกยอดออกมาต่างหาก
+      // และแยกเงินดาวน์ออก ไม่ต้องรวมกับช่องอื่น เหมือนกันกับ ยอดรวมตัดดอก
       if (isMotorcycleContract(c)) {
-        totalMotorcycleFinanced += (totalAmount + downPayment);
-        totalMotorcycleCollected += (downPayment + contractPaidAmount);
+        totalMotorcycleFinanced += totalAmount;
+        totalMotorcycleCollected += contractPaidAmount;
         totalMotorcycleOutstanding += contractOutstanding;
         motorcycleContractsCount++;
       } else {
         // ยอดปล่อยสินเชื่อทั่วไป (ไม่รวมมอไซต์)
-        totalFinanced += (totalAmount + downPayment);
-        totalCollected += (downPayment + contractPaidAmount);
+        totalFinanced += totalAmount;
+        totalCollected += contractPaidAmount;
         totalOutstanding += contractOutstanding;
+      }
+
+      // ช่องรวมเงินดาวน์: รวมเงินดาวน์แยกต่างหาก
+      if (downPayment > 0) {
+        totalDownPaymentCollected += downPayment;
+        totalDownPaymentCount++;
       }
 
       // Requirement 4: คำนวณยอดค่าปรับแยกต่างหาก ไม่รวมกับยอดปล่อยสินเชื่อรวม
@@ -1667,6 +1683,15 @@ document.addEventListener("DOMContentLoaded", () => {
         statInterestCutSub.textContent = `ตัดดอก ${totalInterestCutCount} รายการ (คลิกดูสรุปต่อวัน)`;
       }
 
+      // ช่องรวมเงินดาวน์ (แยกต่างหาก ไม่ต้องรวมกับช่องอื่น เหมือนกันกับ ยอดรวมตัดดอก)
+      if (statTotalDownPayment) {
+        statTotalDownPayment.textContent = `฿${totalDownPaymentCollected.toLocaleString()}`;
+        statTotalDownPayment.classList.remove("masked-stat-text");
+      }
+      if (statDownPaymentSub) {
+        statDownPaymentSub.textContent = `เงินดาวน์ ${totalDownPaymentCount} รายการ (คลิกดูสรุปต่อวัน)`;
+      }
+
       if (quickPillDaily) {
         quickPillDaily.textContent = `฿${(dailyStats.totalFinanced || 0).toLocaleString()}`;
         quickPillDaily.classList.remove("masked-stat-text");
@@ -1705,6 +1730,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if (statInterestCutSub) {
         statInterestCutSub.textContent = "เฉพาะสิทธิ์หัวหน้าเท่านั้น";
+      }
+
+      // ช่องรวมเงินดาวน์ปิดเป็น * สำหรับพนักงาน
+      if (statTotalDownPayment) {
+        statTotalDownPayment.textContent = "฿******";
+        statTotalDownPayment.classList.add("masked-stat-text");
+      }
+      if (statDownPaymentSub) {
+        statDownPaymentSub.textContent = "เฉพาะสิทธิ์หัวหน้าเท่านั้น";
       }
 
       // ช่องยอดรวมมอไซต์ปิดเป็น * สำหรับพนักงาน
@@ -2983,67 +3017,40 @@ document.addEventListener("DOMContentLoaded", () => {
     contractsList.forEach((c) => {
       const isCompleted = isContractCompleted(c);
       const installments = c.installments || [];
-      const paidInstCount = installments.filter((i) => i.status === "paid").length;
-      const totalCount = installments.length;
-      const downPayment = Number(c.downPayment) || 0;
-      const totalAmount = Number(c.totalAmount) || 0;
-      const totalFinanced = totalAmount + downPayment;
+      const pendingInst = installments.find((i) => i.status !== "paid");
+      const contractTotal = Number(c.totalAmount) || 0;
       const totalPaidAmt = installments
-        .filter((i) => i.status === "paid")
+        .filter((i) => i.status === "paid" && !i.isPrincipalInterestCut)
         .reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
-      const remainingBalance = Math.max(0, totalAmount - totalPaidAmt);
+      const remainingBalance = Math.max(0, contractTotal - totalPaidAmt);
 
+      // ตรวจสอบสถานะการชำระเงินตามวันที่เลือก
       const dailyStatus = getDailyStatusForDate(c, selectedDailyDate);
       const isPaid = dailyStatus.status === "paid";
-      const instAmt = Number(dailyStatus.installment ? dailyStatus.installment.amount : (installments[0]?.amount || 0));
-
-      const freqLabels = {
-        daily: '<span class="overview-card-badge badge-daily" style="font-size: 0.68rem; padding: 2px 6px;">รายวัน</span>',
-        weekly: '<span class="overview-card-badge badge-weekly" style="font-size: 0.68rem; padding: 2px 6px;">รายอาทิตย์</span>',
-        monthly: '<span class="overview-card-badge badge-monthly" style="font-size: 0.68rem; padding: 2px 6px;">รายเดือน</span>'
-      };
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>
-          <span class="contract-id-pill" style="border-color: rgba(56, 189, 248, 0.45); color: #38bdf8; background: rgba(56, 189, 248, 0.1);">
-            <i class="fa-solid fa-motorcycle" style="font-size: 0.72rem; margin-right: 4px;"></i>${c.id}
-          </span>
-        </td>
-        <td>
           <div class="customer-cell">
             <img class="customer-thumb" src="${c.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100"}" alt="">
             <div class="customer-info">
-              <div class="name" style="font-weight: 600; color: #fff;">${c.name}</div>
-              <div class="sub" style="font-size: 0.75rem; color: #38bdf8;">
-                <i class="fa-solid fa-phone" style="font-size: 0.7rem;"></i> ${c.phone}
-              </div>
-              <div class="sub" style="font-size: 0.72rem; color: var(--text-dim);">${c.email}</div>
+              <div class="name">${c.name}</div>
+              <div class="sub">${c.id} | ${c.phone}</div>
+              ${Number(c.lateFine) > 0 ? `<div style="margin-top: 3px;"><span class="badge-fine"><i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ฿${Number(c.lateFine).toLocaleString()}</span></div>` : ""}
             </div>
           </div>
         </td>
         <td>
-          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
-            ${freqLabels[c.paymentFrequency] || ""}
-            <span style="color: #fff; font-weight: 600;">${c.itemFinanced || "รถมอเตอร์ไซค์"}</span>
-          </div>
-          <div style="font-size: 0.72rem; color: var(--text-dim);">${c.dueSchedule || "-"}</div>
-        </td>
-        <td>
-          <strong style="color: #38bdf8; font-size: 0.95rem;">฿${totalFinanced.toLocaleString()}</strong>
-          ${downPayment > 0 
-            ? `<div style="font-size: 0.72rem; color: #7dd3fc; margin-top: 2px;"><i class="fa-solid fa-coins"></i> ดาวน์ ฿${downPayment.toLocaleString()} + ผ่อน ฿${totalAmount.toLocaleString()}</div>` 
-            : `<div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">(ไม่มีเงินดาวน์)</div>`
-          }
+          <span style="color: #fff; font-weight: 500;">${c.itemFinanced || "-"}</span>
+          <div style="font-size: 0.72rem; color: var(--text-dim);">${c.dueSchedule || "ทุกวัน"}</div>
         </td>
         <td>
           ${isPaid
-            ? `<strong style="color: var(--primary-light); font-size: 0.95rem;">฿${Number(dailyStatus.amount || instAmt).toLocaleString()}</strong>`
+            ? `<strong style="color: var(--primary-light);">฿${Number(dailyStatus.amount || (installments[0]?.amount || 0)).toLocaleString()}</strong>`
             : isCompleted
               ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
-              : `<strong style="color: var(--primary-light); font-size: 0.95rem;">฿${instAmt.toLocaleString()}</strong>`
+              : `<strong style="color: var(--primary-light);">฿${Number(pendingInst ? pendingInst.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
           }
-          <div style="font-size: 0.72rem; color: var(--text-dim);">${paidInstCount} / ${totalCount} งวด</div>
         </td>
         <td>
           ${isPaid
@@ -3052,11 +3059,8 @@ document.addEventListener("DOMContentLoaded", () => {
               ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
               : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${dailyStatus.label}</span>`
           }
-          ${Number(c.lateFine) > 0 ? `<div style="margin-top: 4px;"><span class="badge-fine"><i class="fa-solid fa-triangle-exclamation"></i> ปรับ ฿${Number(c.lateFine).toLocaleString()}</span></div>` : ""}
         </td>
-        <td>
-          <strong style="color: #fbbf24; font-size: 0.95rem;">฿${remainingBalance.toLocaleString()}</strong>
-        </td>
+        <td>฿${remainingBalance.toLocaleString()}</td>
         <td>
           <div class="table-actions">
             ${isPaid
@@ -3069,16 +3073,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 : dailyStatus.installment
                   ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${dailyStatus.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
                       <i class="fa-solid fa-check"></i> บันทึกรับชำระ
-                    </button>`
+                     </button>`
                   : ""
             }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
-              <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ
+              <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
             </button>
             <button class="btn-table-action" onclick="openContractDetails('${c.id}')" title="ดูตารางงวด">
-              <i class="fa-solid fa-list-check"></i> ดูงวด
+              <i class="fa-solid fa-table-list"></i> ดูงวด
             </button>
-            <button class="btn-table-action" onclick="editContract('${c.id}')" title="แก้ไข">
+            <button class="btn-table-action" onclick="editContract('${c.id}')" title="แก้ไขสัญญา">
               <i class="fa-solid fa-pen-to-square"></i>
             </button>
             <button class="btn-table-action" onclick="deleteContractConfirm('${c.id}')" title="ลบสัญญา" style="color: #f87171;">
@@ -3090,7 +3094,6 @@ document.addEventListener("DOMContentLoaded", () => {
       tableBody.appendChild(tr);
     });
   }
-
   // --- 4.5 BAD DEBTS TABLE (ประวัติหนี้เสีย / แบล็คลิส / ผ่อนล่าช้า) ---
   function renderBadDebtTable(badDebtsList) {
     if (dateFilterBar) dateFilterBar.style.display = "none";
@@ -3174,12 +3177,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- 5. ADD / EDIT CONTRACT LOGIC ---
 
-  // ช่องกรอกเงินดาวน์: แสดงสำหรับหมวดผ่อนมอเตอร์ไซค์ และ ผ่อนทอง (หมวดสินค้าทั่วไปจะไม่มีเงินดาวน์)
+  // ช่องกรอกเงินดาวน์: เปิดให้กรอกได้ทุกหมวด (ใส่ 0 หากไม่มี) เพื่อบันทึกเงินดาวน์แยกต่างหาก
   function updateDownPaymentVisibility() {
     const cat = formItemCategory ? formItemCategory.value : "general";
-    const hasDownPayment = cat === "motorcycle" || cat === "gold";
     if (formDownPaymentGroup) {
-      formDownPaymentGroup.style.display = hasDownPayment ? "block" : "none";
+      formDownPaymentGroup.style.display = "block";
     }
     const lblTitle = document.getElementById("lblDownPaymentTitle");
     if (lblTitle) {
@@ -3190,9 +3192,6 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         lblTitle.innerHTML = '<i class="fa-solid fa-coins"></i> เงินดาวน์ (บาท)';
       }
-    }
-    if (!hasDownPayment && formDownPayment) {
-      formDownPayment.value = "0";
     }
   }
 
@@ -3240,6 +3239,8 @@ document.addEventListener("DOMContentLoaded", () => {
         : "เช่น ผ่อนทองคำ 1 บาท, Honda Wave 110i, iPhone 16";
     }
     updateDownPaymentVisibility();
+    if (formDownPayment) formDownPayment.value = "0";
+    if (formDownPaymentDate) formDownPaymentDate.value = getLocalDateStr();
     if (formFirstPaymentDate) formFirstPaymentDate.value = getLocalDateStr();
 
     // สุ่มรหัสสัญญาใหม่
@@ -3282,9 +3283,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const avatar = formAvatar.value.trim() || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150";
     const itemFinanced = formItemFinanced.value.trim();
     const itemCategory = formItemCategory ? formItemCategory.value : "general";
-    const hasDownPayment = itemCategory === "motorcycle" || itemCategory === "gold";
-    // ช่องเงินดาวน์: มีสำหรับหมวดรถมอเตอร์ไซค์ และ ผ่อนทอง (หมวดสินค้าทั่วไปไม่มีเงินดาวน์ 0 บาท)
-    const downPayment = (hasDownPayment && formDownPayment) ? (parseFloat(formDownPayment.value) || 0) : 0;
+    // ช่องเงินดาวน์: รองรับทุกหมวด ใส่ 0 หากไม่มี
+    const downPayment = formDownPayment ? (parseFloat(formDownPayment.value) || 0) : 0;
+    const downPaymentDate = (formDownPaymentDate && formDownPaymentDate.value) ? formDownPaymentDate.value : getLocalDateStr();
     const idCard = formIdCard ? formIdCard.value.trim() : "";
     const facebookLink = formFacebook ? formFacebook.value.trim() : "";
     const address = formAddress ? formAddress.value.trim() : "";
@@ -3370,6 +3371,7 @@ document.addEventListener("DOMContentLoaded", () => {
       itemCategory,
       itemFinanced,
       downPayment,
+      downPaymentDate: downPayment > 0 ? downPaymentDate : (existing?.downPaymentDate || ""),
       lateFine: (existing && existing.lateFine) || 0,
       lateFineReason: (existing && existing.lateFineReason) || "",
       totalAmount,
@@ -3417,8 +3419,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     updateDownPaymentVisibility();
     if (formDownPayment) {
-      const hasDownPayment = formItemCategory && (formItemCategory.value === "motorcycle" || formItemCategory.value === "gold");
-      formDownPayment.value = (hasDownPayment && contract.downPayment !== undefined) ? contract.downPayment : 0;
+      formDownPayment.value = contract.downPayment !== undefined ? contract.downPayment : 0;
+    }
+    if (formDownPaymentDate) {
+      formDownPaymentDate.value = contract.downPaymentDate || (contract.firstPaymentDate ? contract.firstPaymentDate.slice(0, 10) : getLocalDateStr());
     }
     formTotalAmount.value = contract.totalAmount || 0;
     formTotalInstallments.value = contract.totalInstallments || 1;
@@ -4127,6 +4131,166 @@ document.addEventListener("DOMContentLoaded", () => {
   if (cardStatInterestCut) {
     cardStatInterestCut.addEventListener("click", () => {
       openInterestCutReportModal();
+    });
+  }
+
+  // --- DAILY DOWN PAYMENT REPORT HANDLERS ---
+
+  window.openDownPaymentReportModal = function () {
+    const datePicker = document.getElementById("downPaymentDatePicker");
+    if (datePicker) {
+      datePicker.value = selectedDailyDate || getLocalDateStr();
+    }
+    renderDownPaymentReport(datePicker ? datePicker.value : getLocalDateStr());
+    const modal = document.getElementById("downPaymentReportModal");
+    if (modal) modal.classList.add("active");
+  };
+
+  window.closeDownPaymentReportModal = function () {
+    const modal = document.getElementById("downPaymentReportModal");
+    if (modal) modal.classList.remove("active");
+  };
+
+  window.onDownPaymentDateChange = function (dateVal) {
+    renderDownPaymentReport(dateVal);
+  };
+
+  window.setDownPaymentDateToday = function () {
+    const today = getLocalDateStr();
+    const datePicker = document.getElementById("downPaymentDatePicker");
+    if (datePicker) datePicker.value = today;
+    renderDownPaymentReport(today);
+  };
+
+  window.showAllDownPayments = function () {
+    const datePicker = document.getElementById("downPaymentDatePicker");
+    if (datePicker) datePicker.value = "";
+    renderDownPaymentReport(null);
+  };
+
+  window.renderDownPaymentReport = function (filterDateStr = null) {
+    const allHistory = window.easyFinanceDB.getAllDownPaymentHistory ? window.easyFinanceDB.getAllDownPaymentHistory() : [];
+    const tableBody = document.getElementById("downPaymentTableBody");
+    const breakdownBody = document.getElementById("downPaymentDailyBreakdownBody");
+    const countBadge = document.getElementById("downPaymentCountBadge");
+    const titleEl = document.getElementById("downPaymentListTitle");
+    const badgesContainer = document.getElementById("downPaymentSummaryBadges");
+
+    const filteredList = filterDateStr
+      ? allHistory.filter((h) => (h.dateStr && h.dateStr === filterDateStr) || (h.paidAt && h.paidAt.includes(filterDateStr)))
+      : allHistory;
+
+    const totalAmountFiltered = filteredList.reduce((sum, h) => sum + (Number(h.amount) || 0), 0);
+    const totalAmountAll = allHistory.reduce((sum, h) => sum + (Number(h.amount) || 0), 0);
+
+    if (titleEl) {
+      titleEl.textContent = filterDateStr
+        ? `รายการลูกค้าที่ชำระเงินดาวน์ประจำวันที่ ${formatDateThai(filterDateStr)}`
+        : "รายการลูกค้าที่ชำระเงินดาวน์ทั้งหมด (ทุกวัน)";
+    }
+    if (countBadge) {
+      countBadge.textContent = `${filteredList.length} รายการ (฿${totalAmountFiltered.toLocaleString()})`;
+    }
+
+    if (badgesContainer) {
+      badgesContainer.innerHTML = `
+        <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; color: #34d399; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-calendar-day"></i>
+          <span>เงินดาวน์วันที่เลือก: <strong>฿${totalAmountFiltered.toLocaleString()}</strong> (${filteredList.length} ราย)</span>
+        </div>
+        <div style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-coins"></i>
+          <span>ยอดเงินดาวน์รวมทั้งหมด: <strong>฿${totalAmountAll.toLocaleString()}</strong> (${allHistory.length} ราย)</span>
+        </div>
+      `;
+    }
+
+    if (tableBody) {
+      tableBody.innerHTML = "";
+      if (filteredList.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 25px;">ไม่พบรายการเงินดาวน์${filterDateStr ? ` ในวันที่ ${formatDateThai(filterDateStr)}` : ""}</td></tr>`;
+      } else {
+        filteredList.forEach((item) => {
+          const tr = document.createElement("tr");
+          tr.className = "tr-down-payment";
+          const catBadges = {
+            motorcycle: '<span class="status-badge" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);"><i class="fa-solid fa-motorcycle"></i> รถมอไซค์</span>',
+            gold: '<span class="status-badge" style="background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3);"><i class="fa-solid fa-coins"></i> ผ่อนทอง</span>',
+            general: '<span class="status-badge" style="background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3);">ทั่วไป</span>'
+          };
+          const badgeHtml = catBadges[item.itemCategory] || catBadges.general;
+
+          tr.innerHTML = `
+            <td>${item.paidAt ? formatDateThai(item.paidAt) : "-"}</td>
+            <td>
+              <strong style="color: #fff;">${item.contractName}</strong>
+              <span style="font-size: 0.72rem; color: var(--text-dim); display: block;">รหัส: ${item.contractId} (${item.phone || "-"})</span>
+            </td>
+            <td>${item.itemFinanced || "-"}</td>
+            <td>${badgeHtml}</td>
+            <td style="text-align: right;"><strong style="color: #34d399; font-size: 0.95rem;">฿${Number(item.amount || 0).toLocaleString()}</strong></td>
+            <td style="text-align: center;">
+              <button type="button" class="btn-table-action" onclick="openContractDetails('${item.contractId}')" style="padding: 4px 10px; font-size: 0.75rem; color: #34d399; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3);">
+                <i class="fa-solid fa-eye"></i> ดูสัญญา
+              </button>
+            </td>
+          `;
+          tableBody.appendChild(tr);
+        });
+      }
+    }
+
+    if (breakdownBody) {
+      breakdownBody.innerHTML = "";
+      const grouped = {};
+      allHistory.forEach((h) => {
+        const d = h.dateStr || (h.paidAt ? h.paidAt.slice(0, 10) : "ไม่ระบุ");
+        if (!grouped[d]) {
+          grouped[d] = {
+            dateStr: d,
+            count: 0,
+            totalAmount: 0,
+            clients: []
+          };
+        }
+        grouped[d].count += 1;
+        grouped[d].totalAmount += Number(h.amount) || 0;
+        if (!grouped[d].clients.includes(h.contractName)) {
+          grouped[d].clients.push(h.contractName);
+        }
+      });
+
+      const dates = Object.keys(grouped).sort().reverse();
+      if (dates.length === 0) {
+        breakdownBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: 18px;">ยังไม่มีประวัติเงินดาวน์ในระบบ</td></tr>`;
+      } else {
+        dates.forEach((d) => {
+          const row = grouped[d];
+          const isSelected = filterDateStr === d;
+          const tr = document.createElement("tr");
+          if (isSelected) {
+            tr.style.background = "rgba(16, 185, 129, 0.12)";
+          }
+          tr.innerHTML = `
+            <td><strong>${formatDateThai(d)}</strong> <span style="font-size: 0.72rem; color: var(--text-dim);">(${d})</span></td>
+            <td style="text-align: center;"><span class="status-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);">${row.count} ราย</span></td>
+            <td style="text-align: right;"><strong style="color: #34d399; font-size: 0.95rem;">฿${row.totalAmount.toLocaleString()}</strong></td>
+            <td style="font-size: 0.8rem; color: #cbd5e1;">${row.clients.join(", ")}</td>
+            <td style="text-align: center;">
+              <button type="button" class="btn-table-action" onclick="document.getElementById('downPaymentDatePicker').value='${d}'; onDownPaymentDateChange('${d}');" style="padding: 4px 10px; font-size: 0.75rem; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35);">
+                <i class="fa-solid fa-filter"></i> เลือกดูวันนี้
+              </button>
+            </td>
+          `;
+          breakdownBody.appendChild(tr);
+        });
+      }
+    }
+  };
+
+  if (cardStatDownPayment) {
+    cardStatDownPayment.addEventListener("click", () => {
+      openDownPaymentReportModal();
     });
   }
 
