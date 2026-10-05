@@ -49,6 +49,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const statTotalDownPayment = document.getElementById("statTotalDownPayment");
   const statDownPaymentSub = document.getElementById("statDownPaymentSub");
   const downPaymentReportModal = document.getElementById("downPaymentReportModal");
+  const cardStatDailyAllCategories = document.getElementById("cardStatDailyAllCategories");
+  const statLabelDailyAllCategories = document.getElementById("statLabelDailyAllCategories");
+  const statTotalDailyAllCategories = document.getElementById("statTotalDailyAllCategories");
+  const statDailyAllCategoriesSub = document.getElementById("statDailyAllCategoriesSub");
+  const dailyAllCategoriesReportModal = document.getElementById("dailyAllCategoriesReportModal");
   const addManualInstallmentModal = document.getElementById("addManualInstallmentModal");
   const editInstallmentModal = document.getElementById("editInstallmentModal");
 
@@ -67,10 +72,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const quickPillWeekly = document.getElementById("quickPillWeekly");
   const quickPillMonthly = document.getElementById("quickPillMonthly");
   const quickPillMotorcycle = document.getElementById("quickPillMotorcycle");
+  const quickPillLateFine = document.getElementById("quickPillLateFine");
   const pillDailyBtn = document.getElementById("pillDailyBtn");
   const pillWeeklyBtn = document.getElementById("pillWeeklyBtn");
   const pillMonthlyBtn = document.getElementById("pillMonthlyBtn");
   const pillMotorcycleBtn = document.getElementById("pillMotorcycleBtn");
+  const pillLateFineBtn = document.getElementById("pillLateFineBtn");
   const menuMotorcycle = document.getElementById("menuMotorcycle");
   const motorcycleCountBadge = document.getElementById("motorcycleCountBadge");
   const summaryQuickPills = document.getElementById("summaryQuickPills");
@@ -91,6 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const dailyTotalAmountVal = document.getElementById("dailyTotalAmountVal");
   const dailyPaidAmountVal = document.getElementById("dailyPaidAmountVal");
   const dailyPendingAmountVal = document.getElementById("dailyPendingAmountVal");
+  const dailyFineAmountVal = document.getElementById("dailyFineAmountVal");
 
   // DOM Elements - Contract Modal (Requirement 1: คำนวณงวดอิงจากยอดรวม)
   const contractModal = document.getElementById("contractModal");
@@ -1492,6 +1500,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (cardStatLateFines) cardStatLateFines.style.display = "none";
       if (cardStatInterestCut) cardStatInterestCut.style.display = "none";
       if (cardStatDownPayment) cardStatDownPayment.style.display = "none";
+      if (cardStatDailyAllCategories) cardStatDailyAllCategories.style.display = "none";
       const allBadDebts = window.easyFinanceDB.getBadDebts ? window.easyFinanceDB.getBadDebts() : [];
       let totalBadAmount = 0;
       let badDebtCount = 0;
@@ -1521,6 +1530,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cardStatMotorcycle) cardStatMotorcycle.style.display = "";
     if (cardStatInterestCut) cardStatInterestCut.style.display = "";
     if (cardStatDownPayment) cardStatDownPayment.style.display = "";
+    if (cardStatDailyAllCategories) cardStatDailyAllCategories.style.display = "";
 
     const contracts = window.easyFinanceDB.getContracts();
     let totalFinanced = 0;
@@ -1652,9 +1662,11 @@ document.addEventListener("DOMContentLoaded", () => {
       statContractsCount.textContent = generalContractsCount;
     }
 
+    const totalLateFinesAll = totalLateFinesCollected + totalLateFinesPending;
+
     if (isManager) {
       if (statTotalLateFines) {
-        statTotalLateFines.textContent = `฿${totalLateFinesCollected.toLocaleString()}`;
+        statTotalLateFines.textContent = `฿${totalLateFinesAll.toLocaleString()}`;
         statTotalLateFines.classList.remove("masked-stat-text");
       }
       if (statLateFinesSub) {
@@ -1663,6 +1675,10 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           statLateFinesSub.textContent = `ยอดค่าปรับที่เก็บได้ทั้งหมด`;
         }
+      }
+      if (quickPillLateFine) {
+        quickPillLateFine.textContent = `฿${totalLateFinesAll.toLocaleString()}`;
+        quickPillLateFine.classList.remove("masked-stat-text");
       }
 
       // ช่องยอดรวมมอไซต์ (Requirement: แยกยอดออกมาต่างหากใส่ในช่องยอดรวมมอไซต์)
@@ -1692,6 +1708,20 @@ document.addEventListener("DOMContentLoaded", () => {
         statDownPaymentSub.textContent = `เงินดาวน์ ${totalDownPaymentCount} รายการ (คลิกดูสรุปต่อวัน)`;
       }
 
+      // ช่องสรุปรวมต่อวัน (รวมยอดรับแล้วของทุกหมวดประจำวัน: รายวัน รายอาทิตย์ รายเดือน รถมอเตอร์ไซค์)
+      const allDailyCollected = window.easyFinanceDB.getAllDailyAllCategoriesHistory ? window.easyFinanceDB.getAllDailyAllCategoriesHistory() : [];
+      const todayStr = getLocalDateStr();
+      const todayCollectedList = allDailyCollected.filter((h) => (h.dateStr && h.dateStr === todayStr) || (h.paidAt && h.paidAt.includes(todayStr)));
+      const todayTotalAmount = todayCollectedList.reduce((sum, h) => sum + (Number(h.amount) || 0), 0);
+
+      if (statTotalDailyAllCategories) {
+        statTotalDailyAllCategories.textContent = `฿${todayTotalAmount.toLocaleString()}`;
+        statTotalDailyAllCategories.classList.remove("masked-stat-text");
+      }
+      if (statDailyAllCategoriesSub) {
+        statDailyAllCategoriesSub.textContent = `รับแล้ววันนี้ 4 หมวด: ${todayCollectedList.length} รายการ (คลิกดูสรุปต่อวัน)`;
+      }
+
       if (quickPillDaily) {
         quickPillDaily.textContent = `฿${(dailyStats.totalFinanced || 0).toLocaleString()}`;
         quickPillDaily.classList.remove("masked-stat-text");
@@ -1717,6 +1747,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (statLateFinesSub) {
         statLateFinesSub.textContent = "เฉพาะสิทธิ์หัวหน้าเท่านั้น";
       }
+      if (quickPillLateFine) {
+        quickPillLateFine.textContent = "฿******";
+        quickPillLateFine.classList.add("masked-stat-text");
+      }
       if (statTotalMotorcycle) {
         statTotalMotorcycle.textContent = "฿******";
         statTotalMotorcycle.classList.add("masked-stat-text");
@@ -1739,6 +1773,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if (statDownPaymentSub) {
         statDownPaymentSub.textContent = "เฉพาะสิทธิ์หัวหน้าเท่านั้น";
+      }
+
+      // ช่องสรุปรวมต่อวันปิดเป็น * สำหรับพนักงาน
+      if (statTotalDailyAllCategories) {
+        statTotalDailyAllCategories.textContent = "฿******";
+        statTotalDailyAllCategories.classList.add("masked-stat-text");
+      }
+      if (statDailyAllCategoriesSub) {
+        statDailyAllCategoriesSub.textContent = "เฉพาะสิทธิ์หัวหน้าเท่านั้น";
       }
 
       // ช่องยอดรวมมอไซต์ปิดเป็น * สำหรับพนักงาน
@@ -2009,6 +2052,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const allDailyContracts = allContracts.filter((c) => c.paymentFrequency === "daily" && !isMotorcycleContract(c));
       let paidCount = 0;
       let pendingCount = 0;
+      let fineCount = 0;
       let allCount = 0;
       allDailyContracts.forEach((c) => {
         const st = getDailyStatusForDate(c, selectedDailyDate).status;
@@ -2018,6 +2062,9 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (st === "pending") {
           pendingCount++;
           allCount++;
+        }
+        if (Number(c.lateFine) > 0) {
+          fineCount++;
         }
       });
       adminSubTabNav.innerHTML = `
@@ -2036,11 +2083,18 @@ document.addEventListener("DOMContentLoaded", () => {
           <span>ค้างจ่าย (${dateDisplay})</span>
           <span class="tab-count-badge">${pendingCount}</span>
         </button>
+        ${fineCount > 0 ? `
+        <button class="tab-btn ${currentSubFilter === "fine" ? "active" : ""}" onclick="setSubFilter('fine')">
+          <i class="fa-solid fa-triangle-exclamation" style="color: #fb923c;"></i>
+          <span>มีค่าปรับ</span>
+          <span class="tab-count-badge" style="background: rgba(251, 146, 60, 0.25); color: #fb923c;">${fineCount}</span>
+        </button>` : ""}
       `;
     } else if (currentTab === "weekly") {
       const allWeeklyContracts = allContracts.filter((c) => c.paymentFrequency === "weekly" && !isMotorcycleContract(c));
       let paidCount = 0;
       let pendingCount = 0;
+      let fineCount = 0;
       let allCount = 0;
       allWeeklyContracts.forEach((c) => {
         const st = getDailyStatusForDate(c, selectedDailyDate).status;
@@ -2050,6 +2104,9 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (st === "pending") {
           pendingCount++;
           allCount++;
+        }
+        if (Number(c.lateFine) > 0) {
+          fineCount++;
         }
       });
       adminSubTabNav.innerHTML = `
@@ -2068,11 +2125,18 @@ document.addEventListener("DOMContentLoaded", () => {
           <span>ค้างจ่าย (${dateDisplay})</span>
           <span class="tab-count-badge">${pendingCount}</span>
         </button>
+        ${fineCount > 0 ? `
+        <button class="tab-btn ${currentSubFilter === "fine" ? "active" : ""}" onclick="setSubFilter('fine')">
+          <i class="fa-solid fa-triangle-exclamation" style="color: #fb923c;"></i>
+          <span>มีค่าปรับ</span>
+          <span class="tab-count-badge" style="background: rgba(251, 146, 60, 0.25); color: #fb923c;">${fineCount}</span>
+        </button>` : ""}
       `;
     } else if (currentTab === "monthly") {
       const allMonthlyContracts = allContracts.filter((c) => c.paymentFrequency === "monthly" && !isMotorcycleContract(c));
       let paidCount = 0;
       let pendingCount = 0;
+      let fineCount = 0;
       let allCount = 0;
       allMonthlyContracts.forEach((c) => {
         const st = getDailyStatusForDate(c, selectedDailyDate).status;
@@ -2082,6 +2146,9 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (st === "pending") {
           pendingCount++;
           allCount++;
+        }
+        if (Number(c.lateFine) > 0) {
+          fineCount++;
         }
       });
       adminSubTabNav.innerHTML = `
@@ -2100,6 +2167,12 @@ document.addEventListener("DOMContentLoaded", () => {
           <span>ค้างจ่าย (${dateDisplay})</span>
           <span class="tab-count-badge">${pendingCount}</span>
         </button>
+        ${fineCount > 0 ? `
+        <button class="tab-btn ${currentSubFilter === "fine" ? "active" : ""}" onclick="setSubFilter('fine')">
+          <i class="fa-solid fa-triangle-exclamation" style="color: #fb923c;"></i>
+          <span>มีค่าปรับ</span>
+          <span class="tab-count-badge" style="background: rgba(251, 146, 60, 0.25); color: #fb923c;">${fineCount}</span>
+        </button>` : ""}
       `;
     } else if (currentTab === "overview") {
       adminSubTabNav.innerHTML = `
@@ -2166,6 +2239,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const allMotorcycleContracts = allContracts.filter(isMotorcycleContract);
       let paidCount = 0;
       let pendingCount = 0;
+      let fineCount = 0;
       let allCount = 0;
       allMotorcycleContracts.forEach((c) => {
         const st = getDailyStatusForDate(c, selectedDailyDate).status;
@@ -2175,6 +2249,9 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (st === "pending") {
           pendingCount++;
           allCount++;
+        }
+        if (Number(c.lateFine) > 0) {
+          fineCount++;
         }
       });
       adminSubTabNav.innerHTML = `
@@ -2193,9 +2270,16 @@ document.addEventListener("DOMContentLoaded", () => {
           <span>ค้างจ่าย (${dateDisplay})</span>
           <span class="tab-count-badge">${pendingCount}</span>
         </button>
+        ${fineCount > 0 ? `
+        <button class="tab-btn ${currentSubFilter === "fine" ? "active" : ""}" onclick="setSubFilter('fine')">
+          <i class="fa-solid fa-triangle-exclamation" style="color: #fb923c;"></i>
+          <span>มีค่าปรับ</span>
+          <span class="tab-count-badge" style="background: rgba(251, 146, 60, 0.25); color: #fb923c;">${fineCount}</span>
+        </button>` : ""}
       `;
     } else {
       // currentTab === 'all' (Requirement 3: ยอด Badge และแถวตารางต้องตรงกัน 100%)
+      const fineCount = allContracts.filter((c) => Number(c.lateFine) > 0).length;
       adminSubTabNav.innerHTML = `
         <button class="tab-btn ${currentSubFilter === "all" ? "active" : ""}" onclick="setSubFilter('all')">
           <i class="fa-solid fa-file-contract"></i>
@@ -2212,6 +2296,12 @@ document.addEventListener("DOMContentLoaded", () => {
           <span>ปิดสัญญาแล้ว</span>
           <span class="tab-count-badge">${completedContractsCount}</span>
         </button>
+        ${fineCount > 0 ? `
+        <button class="tab-btn ${currentSubFilter === "fine" ? "active" : ""}" onclick="setSubFilter('fine')">
+          <i class="fa-solid fa-triangle-exclamation" style="color: #fb923c;"></i>
+          <span>มีค่าปรับ</span>
+          <span class="tab-count-badge" style="background: rgba(251, 146, 60, 0.25); color: #fb923c;">${fineCount}</span>
+        </button>` : ""}
       `;
     }
   }
@@ -2289,7 +2379,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // 3. Filter by Sub-filter (Requirement 2 & 3: กรองตรงตาม Badge)
-    if (currentTab === "daily" || currentTab === "weekly" || currentTab === "monthly" || currentTab === "motorcycle") {
+    if (currentSubFilter === "fine") {
+      filtered = filtered.filter((c) => Number(c.lateFine) > 0);
+    } else if (currentTab === "daily" || currentTab === "weekly" || currentTab === "monthly" || currentTab === "motorcycle") {
       filtered = filtered.filter((c) => {
         const st = getDailyStatusForDate(c, selectedDailyDate).status;
         // หากเป็นสัญญาที่ปิดสัญญาแล้ว และไม่ได้จ่ายในวันนี้ (st === "completed") ไม่ต้องแสดงในหน้าของวันนั้น
@@ -2354,6 +2446,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let dailyTotalAmount = 0;
     let dailyPaidAmount = 0;
     let dailyPendingAmount = 0;
+    let dailyFineAmount = 0;
+    let dailyFineCount = 0;
     let paidCount = 0;
     let pendingCount = 0;
 
@@ -2369,6 +2463,13 @@ document.addEventListener("DOMContentLoaded", () => {
         pendingCount++;
         dailyPendingAmount += amt;
         dailyTotalAmount += amt;
+      }
+      if (dailyStatus.lateFineAmount) {
+        dailyFineAmount += Number(dailyStatus.lateFineAmount) || 0;
+        dailyFineCount++;
+      } else if (Number(c.lateFine) > 0) {
+        dailyFineAmount += Number(c.lateFine) || 0;
+        dailyFineCount++;
       }
     });
 
@@ -2389,6 +2490,16 @@ document.addEventListener("DOMContentLoaded", () => {
         ? `<i class="fa-solid fa-clock"></i> รอเก็บ ฿${dailyPendingAmount.toLocaleString()}`
         : `<i class="fa-solid fa-clock"></i> รอเก็บ ฿******`;
     }
+    if (dailyFineAmountVal) {
+      if (dailyFineAmount > 0) {
+        dailyFineAmountVal.style.display = "inline-flex";
+        dailyFineAmountVal.innerHTML = isManager
+          ? `<i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ฿${dailyFineAmount.toLocaleString()}`
+          : `<i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ฿******`;
+      } else {
+        dailyFineAmountVal.style.display = "none";
+      }
+    }
     if (dateDailyTotalBadge) {
       // Trigger pop animation เพื่อให้ยอดเด้งสรุปขึ้นมาตามที่ผู้ใช้ต้องการ
       dateDailyTotalBadge.classList.remove("pop-animate");
@@ -2401,12 +2512,13 @@ document.addEventListener("DOMContentLoaded", () => {
         <span>สรุปประจำวันที่ <strong>${dateDisplay}</strong>:</span>
         <span class="date-stat-chip chip-paid"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว ${paidCount} ราย</span>
         <span class="date-stat-chip chip-pending"><i class="fa-solid fa-clock"></i> ค้างจ่าย ${pendingCount} ราย</span>
+        ${dailyFineCount > 0 ? `<span class="date-stat-chip" style="background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.35);"><i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ${dailyFineCount} ราย (฿${dailyFineAmount.toLocaleString()})</span>` : ""}
       `;
     }
     updateDateFilterProgress(paidCount, pendingCount);
 
     if (contractsList.length === 0) {
-      const filterLabel = currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${dateDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${dateDisplay})` : "ทั้งหมด";
+      const filterLabel = currentSubFilter === "fine" ? `ที่มีค่าปรับ (${dateDisplay})` : currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${dateDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${dateDisplay})` : "ทั้งหมด";
       tableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 30px;">ไม่พบข้อมูลลูกค้ารายวัน (${filterLabel})</td></tr>`;
       return;
     }
@@ -2477,6 +2589,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
             </button>
+            ${Number(c.lateFine) > 0 ? `<button type="button" class="btn-table-action btn-cancel-fine" onclick="cancelCustomerLateFine('${c.id}')" title="ยกเลิกค่าปรับของลูกค้าคนนี้ (ล้างค่าปรับเป็น 0 บาท หน้าลูกค้าหายทันที)"><i class="fa-solid fa-ban"></i> ยกเลิกค่าปรับ</button>` : ""}
             <button class="btn-table-action" onclick="openContractDetails('${c.id}')" title="ดูตารางงวด">
               <i class="fa-solid fa-table-list"></i> ดูงวด
             </button>
@@ -2516,6 +2629,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // คำนวณสรุปยอดรายอาทิตย์ประจำวันที่เลือก (Requirement 1: ดึงยอดจ่ายแล้วตามวันที่ชำระ paidAt ส่วนกำหนดชำระคงเดิมไม่ต้องดึงคำนวณยอดไปแสดง)
     const allWeeklyContracts = window.easyFinanceDB.getContracts().filter((c) => c.paymentFrequency === "weekly" && !isMotorcycleContract(c));
     let weeklyPaidAmount = 0;
+    let weeklyFineAmount = 0;
+    let weeklyFineCount = 0;
     let paidCount = 0;
     let pendingCount = 0;
 
@@ -2528,6 +2643,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!isContractCompleted(c)) {
           pendingCount++;
         }
+      }
+      if (statusObj.lateFineAmount) {
+        weeklyFineAmount += Number(statusObj.lateFineAmount) || 0;
+        weeklyFineCount++;
+      } else if (Number(c.lateFine) > 0) {
+        weeklyFineAmount += Number(c.lateFine) || 0;
+        weeklyFineCount++;
       }
     });
 
@@ -2544,6 +2666,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (dailyPendingAmountVal) {
       dailyPendingAmountVal.style.display = "none";
     }
+    if (dailyFineAmountVal) {
+      if (weeklyFineAmount > 0) {
+        dailyFineAmountVal.style.display = "inline-flex";
+        dailyFineAmountVal.innerHTML = isManagerWeekly
+          ? `<i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ฿${weeklyFineAmount.toLocaleString()}`
+          : `<i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ฿******`;
+      } else {
+        dailyFineAmountVal.style.display = "none";
+      }
+    }
     if (dateDailyTotalBadge) {
       dateDailyTotalBadge.classList.remove("pop-animate");
       void dateDailyTotalBadge.offsetWidth;
@@ -2555,12 +2687,13 @@ document.addEventListener("DOMContentLoaded", () => {
         <span>สรุปประจำวันที่ <strong>${dateDisplay}</strong>:</span>
         <span class="date-stat-chip chip-paid"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว ${paidCount} ราย (฿${weeklyPaidAmount.toLocaleString()})</span>
         <span class="date-stat-chip chip-pending"><i class="fa-solid fa-clock"></i> รอชำระ ${pendingCount} ราย</span>
+        ${weeklyFineCount > 0 ? `<span class="date-stat-chip" style="background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.35);"><i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ${weeklyFineCount} ราย (฿${weeklyFineAmount.toLocaleString()})</span>` : ""}
       `;
     }
     updateDateFilterProgress(paidCount, pendingCount);
 
     if (contractsList.length === 0) {
-      const filterLabel = currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${dateDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${dateDisplay})` : "ทั้งหมด";
+      const filterLabel = currentSubFilter === "fine" ? `ที่มีค่าปรับ (${dateDisplay})` : currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${dateDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${dateDisplay})` : "ทั้งหมด";
       tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 30px;">ไม่พบข้อมูลลูกค้ารายอาทิตย์ (${filterLabel})</td></tr>`;
       return;
     }
@@ -2643,6 +2776,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
             </button>
+            ${Number(c.lateFine) > 0 ? `<button type="button" class="btn-table-action btn-cancel-fine" onclick="cancelCustomerLateFine('${c.id}')" title="ยกเลิกค่าปรับของลูกค้าคนนี้ (ล้างค่าปรับเป็น 0 บาท หน้าลูกค้าหายทันที)"><i class="fa-solid fa-ban"></i> ยกเลิกค่าปรับ</button>` : ""}
             <button class="btn-table-action" onclick="openContractDetails('${c.id}')" title="ดูตารางงวด">
               <i class="fa-solid fa-table-list"></i> ดูงวด
             </button>
@@ -2684,6 +2818,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let monthlyPaidAmount = 0;
     let paidCount = 0;
     let pendingCount = 0;
+    let monthlyFineAmount = 0;
+    let monthlyFineCount = 0;
 
     allMonthlyContracts.forEach((c) => {
       const statusObj = getDailyStatusForDate(c, selectedDailyDate);
@@ -2694,6 +2830,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!isContractCompleted(c)) {
           pendingCount++;
         }
+      }
+      if (statusObj.lateFineAmount) {
+        monthlyFineAmount += Number(statusObj.lateFineAmount) || 0;
+        monthlyFineCount++;
+      } else if (Number(c.lateFine) > 0) {
+        monthlyFineAmount += Number(c.lateFine) || 0;
+        monthlyFineCount++;
       }
     });
 
@@ -2710,6 +2853,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (dailyPendingAmountVal) {
       dailyPendingAmountVal.style.display = "none";
     }
+    if (dailyFineAmountVal) {
+      if (monthlyFineCount > 0) {
+        dailyFineAmountVal.style.display = "inline-flex";
+        dailyFineAmountVal.innerHTML = isManagerMonthly
+          ? `<i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ฿${monthlyFineAmount.toLocaleString()}`
+          : `<i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ฿******`;
+      } else {
+        dailyFineAmountVal.style.display = "none";
+      }
+    }
     if (dateDailyTotalBadge) {
       dateDailyTotalBadge.classList.remove("pop-animate");
       void dateDailyTotalBadge.offsetWidth;
@@ -2721,12 +2874,13 @@ document.addEventListener("DOMContentLoaded", () => {
         <span>สรุปประจำวันที่ <strong>${dateDisplay}</strong>:</span>
         <span class="date-stat-chip chip-paid"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว ${paidCount} ราย (฿${monthlyPaidAmount.toLocaleString()})</span>
         <span class="date-stat-chip chip-pending"><i class="fa-solid fa-clock"></i> รอชำระ ${pendingCount} ราย</span>
+        ${monthlyFineCount > 0 ? `<span class="date-stat-chip" style="background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.35);"><i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ${monthlyFineCount} ราย (฿${monthlyFineAmount.toLocaleString()})</span>` : ""}
       `;
     }
     updateDateFilterProgress(paidCount, pendingCount);
 
     if (contractsList.length === 0) {
-      const filterLabel = currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${dateDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${dateDisplay})` : "ทั้งหมด";
+      const filterLabel = currentSubFilter === "fine" ? `ที่มีค่าปรับ (${dateDisplay})` : currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${dateDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${dateDisplay})` : "ทั้งหมด";
       tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 30px;">ไม่พบข้อมูลลูกค้ารายเดือน (${filterLabel})</td></tr>`;
       return;
     }
@@ -2809,6 +2963,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
             </button>
+            ${Number(c.lateFine) > 0 ? `<button type="button" class="btn-table-action btn-cancel-fine" onclick="cancelCustomerLateFine('${c.id}')" title="ยกเลิกค่าปรับของลูกค้าคนนี้ (ล้างค่าปรับเป็น 0 บาท หน้าลูกค้าหายทันที)"><i class="fa-solid fa-ban"></i> ยกเลิกค่าปรับ</button>` : ""}
             <button class="btn-table-action" onclick="openContractDetails('${c.id}')" title="ดูตารางงวด">
               <i class="fa-solid fa-table-list"></i> ดูงวด
             </button>
@@ -2901,6 +3056,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ
             </button>
+            ${Number(c.lateFine) > 0 ? `<button type="button" class="btn-table-action btn-cancel-fine" onclick="cancelCustomerLateFine('${c.id}')" title="ยกเลิกค่าปรับของลูกค้าคนนี้ (ล้างค่าปรับเป็น 0 บาท หน้าลูกค้าหายทันที)"><i class="fa-solid fa-ban"></i> ยกเลิกค่าปรับ</button>` : ""}
             <button class="btn-table-action" onclick="openContractDetails('${c.id}')" title="ดูตารางงวด">
               <i class="fa-solid fa-list-check"></i>
             </button>
@@ -2943,6 +3099,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let mcTotalAmount = 0;
     let mcPaidAmount = 0;
     let mcPendingAmount = 0;
+    let mcFineAmount = 0;
+    let mcFineCount = 0;
     let paidCount = 0;
     let pendingCount = 0;
 
@@ -2958,6 +3116,13 @@ document.addEventListener("DOMContentLoaded", () => {
         pendingCount++;
         mcPendingAmount += amt;
         mcTotalAmount += amt;
+      }
+      if (dailyStatus.lateFineAmount) {
+        mcFineAmount += Number(dailyStatus.lateFineAmount) || 0;
+        mcFineCount++;
+      } else if (Number(c.lateFine) > 0) {
+        mcFineAmount += Number(c.lateFine) || 0;
+        mcFineCount++;
       }
     });
 
@@ -2976,6 +3141,16 @@ document.addEventListener("DOMContentLoaded", () => {
         ? `<i class="fa-solid fa-clock"></i> รอเก็บ ฿${mcPendingAmount.toLocaleString()}`
         : `<i class="fa-solid fa-clock"></i> รอเก็บ ฿******`;
     }
+    if (dailyFineAmountVal) {
+      if (mcFineCount > 0) {
+        dailyFineAmountVal.style.display = "inline-flex";
+        dailyFineAmountVal.innerHTML = isManager
+          ? `<i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ฿${mcFineAmount.toLocaleString()}`
+          : `<i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ฿******`;
+      } else {
+        dailyFineAmountVal.style.display = "none";
+      }
+    }
     if (dateDailyTotalBadge) {
       dateDailyTotalBadge.classList.remove("pop-animate");
       void dateDailyTotalBadge.offsetWidth;
@@ -2987,6 +3162,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <span>สรุปประจำวันที่ <strong>${dateDisplay}</strong>:</span>
         <span class="date-stat-chip chip-paid"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว ${paidCount} ราย</span>
         <span class="date-stat-chip chip-pending"><i class="fa-solid fa-clock"></i> ค้างจ่าย ${pendingCount} ราย</span>
+        ${mcFineCount > 0 ? `<span class="date-stat-chip" style="background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.35);"><i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ${mcFineCount} ราย (฿${mcFineAmount.toLocaleString()})</span>` : ""}
       `;
     }
     updateDateFilterProgress(paidCount, pendingCount);
@@ -2999,7 +3175,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <i class="fa-solid fa-motorcycle"></i>
             </div>
             <div style="font-weight: 600; color: #fff; font-size: 1rem; margin-bottom: 6px;">
-              ไม่พบรายการสัญญารถมอเตอร์ไซค์ (${currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${dateDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${dateDisplay})` : "ทั้งหมด"})
+              ไม่พบรายการสัญญารถมอเตอร์ไซค์ (${currentSubFilter === "fine" ? `ที่มีค่าปรับ (${dateDisplay})` : currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${dateDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${dateDisplay})` : "ทั้งหมด"})
             </div>
             <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
               สามารถกดปุ่ม "+ เพิ่มสัญญาใหม่" เพื่อบันทึกสัญญาผ่อนรถมอเตอร์ไซค์แยกหมวดได้ทันที
@@ -3079,6 +3255,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
             </button>
+            ${Number(c.lateFine) > 0 ? `<button type="button" class="btn-table-action btn-cancel-fine" onclick="cancelCustomerLateFine('${c.id}')" title="ยกเลิกค่าปรับของลูกค้าคนนี้ (ล้างค่าปรับเป็น 0 บาท หน้าลูกค้าหายทันที)"><i class="fa-solid fa-ban"></i> ยกเลิกค่าปรับ</button>` : ""}
             <button class="btn-table-action" onclick="openContractDetails('${c.id}')" title="ดูตารางงวด">
               <i class="fa-solid fa-table-list"></i> ดูงวด
             </button>
@@ -3509,6 +3686,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Render metadata
     detailContractMeta.innerHTML = `
+      ${Number(contract.lateFine) > 0 ? `
+        <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.45); border-radius: 8px; padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <i class="fa-solid fa-triangle-exclamation" style="color: #f87171; font-size: 1.3rem;"></i>
+            <div>
+              <div style="font-weight: 700; color: #fca5a5; font-size: 0.96rem;">มีค่าปรับค้างชำระ: ฿${Number(contract.lateFine).toLocaleString()}</div>
+              <div style="font-size: 0.76rem; color: #fecaca; margin-top: 1px;">${contract.lateFineReason ? `หมายเหตุ: ${contract.lateFineReason}` : "ลูกค้ามีค่าปรับค้างชำระ เกินกำหนด"}</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <button type="button" class="btn-penalty-action has-fine" onclick="openPenaltyModal('${contract.id}')" style="padding: 5px 12px; font-size: 0.8rem;">
+              <i class="fa-solid fa-pen-to-square"></i> บันทึกรับ / ปรับยอด
+            </button>
+            <button type="button" class="btn-table-action btn-cancel-fine" onclick="cancelCustomerLateFine('${contract.id}')" style="padding: 5px 12px; font-size: 0.8rem;">
+              <i class="fa-solid fa-ban"></i> ยกเลิกค่าปรับ (ล้างเป็น 0)
+            </button>
+          </div>
+        </div>
+      ` : ""}
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 0.85rem;">
         <div><strong>ลูกค้า:</strong> ${contract.name} (${contract.phone})</div>
         <div><strong>อีเมลเข้าใช้งาน:</strong> ${contract.email}</div>
@@ -3530,6 +3726,9 @@ document.addEventListener("DOMContentLoaded", () => {
           </button>
         </div>
 
+        <button type="button" class="btn-table-action" onclick="openPenaltyModal('${contract.id}')" style="padding: 6px 14px; font-size: 0.8rem; background: ${Number(contract.lateFine) > 0 ? "rgba(239, 68, 68, 0.18)" : "rgba(245, 158, 11, 0.15)"}; color: ${Number(contract.lateFine) > 0 ? "#f87171" : "#fbbf24"}; border: 1px solid ${Number(contract.lateFine) > 0 ? "rgba(239, 68, 68, 0.4)" : "rgba(245, 158, 11, 0.35)"};">
+          <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(contract.lateFine) > 0 ? ` (฿${Number(contract.lateFine).toLocaleString()})` : ""}
+        </button>
         <button type="button" class="btn-table-action" onclick="copyClientLineLink('${contract.id}')" style="padding: 6px 14px; font-size: 0.8rem; background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3);">
           <i class="fa-solid fa-share-nodes"></i> คัดลอกลิงก์ส่ง LINE ให้ลูกค้า
         </button>
@@ -4294,6 +4493,320 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // --- DAILY ALL CATEGORIES REPORT HANDLERS (ช่องสรุปรวมต่อวัน: รวมรับแล้ว รายวัน รายอาทิตย์ รายเดือน รถมอเตอร์ไซค์) ---
+
+  window.openDailyAllCategoriesReportModal = function () {
+    const datePicker = document.getElementById("dailyAllCategoriesDatePicker");
+    if (datePicker) {
+      datePicker.value = selectedDailyDate || getLocalDateStr();
+    }
+    renderDailyAllCategoriesReport(datePicker ? datePicker.value : getLocalDateStr());
+    const modal = document.getElementById("dailyAllCategoriesReportModal");
+    if (modal) modal.classList.add("active");
+  };
+
+  window.closeDailyAllCategoriesReportModal = function () {
+    const modal = document.getElementById("dailyAllCategoriesReportModal");
+    if (modal) modal.classList.remove("active");
+  };
+
+  window.onDailyAllCategoriesDateChange = function (dateVal) {
+    renderDailyAllCategoriesReport(dateVal);
+  };
+
+  window.setDailyAllCategoriesDateToday = function () {
+    const today = getLocalDateStr();
+    const datePicker = document.getElementById("dailyAllCategoriesDatePicker");
+    if (datePicker) datePicker.value = today;
+    renderDailyAllCategoriesReport(today);
+  };
+
+  window.showAllDailyCategoriesPayments = function () {
+    const datePicker = document.getElementById("dailyAllCategoriesDatePicker");
+    if (datePicker) datePicker.value = "";
+    renderDailyAllCategoriesReport(null);
+  };
+
+  window.renderDailyAllCategoriesReport = function (filterDateStr = null) {
+    const allHistory = window.easyFinanceDB.getAllDailyAllCategoriesHistory ? window.easyFinanceDB.getAllDailyAllCategoriesHistory() : [];
+    const tableBody = document.getElementById("dailyAllCategoriesTableBody");
+    const breakdownBody = document.getElementById("dailyAllCategoriesBreakdownBody");
+    const countBadge = document.getElementById("dailyAllCategoriesCountBadge");
+    const titleEl = document.getElementById("dailyAllCategoriesListTitle");
+    const badgesContainer = document.getElementById("dailyAllCategoriesSummaryBadges");
+    const cardsGrid = document.getElementById("dailyAllCategoriesCardsGrid");
+
+    const filteredList = filterDateStr
+      ? allHistory.filter((h) => (h.dateStr && h.dateStr === filterDateStr) || (h.paidAt && h.paidAt.includes(filterDateStr)))
+      : allHistory;
+
+    const totalAmountFiltered = filteredList.reduce((sum, h) => sum + (Number(h.amount) || 0), 0);
+    const totalAmountAll = allHistory.reduce((sum, h) => sum + (Number(h.amount) || 0), 0);
+
+    // คำนวณสรุป 4 หมวดหมู่ของวันที่เลือก
+    const catTotals = {
+      daily: { title: "หมวดรายวัน", amount: 0, count: 0, color: "#34d399", bg: "rgba(16, 185, 129, 0.15)", border: "rgba(16, 185, 129, 0.35)", icon: "fa-solid fa-clock" },
+      weekly: { title: "หมวดรายอาทิตย์", amount: 0, count: 0, color: "#60a5fa", bg: "rgba(59, 130, 246, 0.15)", border: "rgba(59, 130, 246, 0.35)", icon: "fa-solid fa-calendar-week" },
+      monthly: { title: "หมวดรายเดือน", amount: 0, count: 0, color: "#c084fc", bg: "rgba(168, 85, 247, 0.15)", border: "rgba(168, 85, 247, 0.35)", icon: "fa-solid fa-calendar-days" },
+      motorcycle: { title: "หมวดรถมอเตอร์ไซค์", amount: 0, count: 0, color: "#38bdf8", bg: "rgba(56, 189, 248, 0.15)", border: "rgba(56, 189, 248, 0.35)", icon: "fa-solid fa-motorcycle" }
+    };
+
+    filteredList.forEach((item) => {
+      const c = item.category || "daily";
+      if (catTotals[c]) {
+        catTotals[c].amount += Number(item.amount) || 0;
+        catTotals[c].count += 1;
+      }
+    });
+
+    if (titleEl) {
+      titleEl.textContent = filterDateStr
+        ? `รายการรับชำระเงินทุกหมวดประจำวันที่ ${formatDateThai(filterDateStr)}`
+        : "รายการรับชำระเงินทุกหมวดทั้งหมด (ทุกวันสะสม)";
+    }
+    if (countBadge) {
+      countBadge.textContent = `${filteredList.length} รายการ (รวม ฿${totalAmountFiltered.toLocaleString()})`;
+    }
+
+    if (badgesContainer) {
+      badgesContainer.innerHTML = `
+        <div style="background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; color: #c084fc; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-calendar-day"></i>
+          <span>ยอดรับแล้ววันที่เลือก: <strong>฿${totalAmountFiltered.toLocaleString()}</strong> (${filteredList.length} รายการ)</span>
+        </div>
+        <div style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-layer-group"></i>
+          <span>ยอดรับแล้วสะสมทั้งหมด: <strong>฿${totalAmountAll.toLocaleString()}</strong> (${allHistory.length} รายการ)</span>
+        </div>
+      `;
+    }
+
+    if (cardsGrid) {
+      cardsGrid.innerHTML = `
+        <div class="cat-mini-summary-card" style="border-left: 3px solid ${catTotals.daily.color};">
+          <div>
+            <div style="font-size: 0.78rem; color: var(--text-dim); display: flex; align-items: center; gap: 5px;">
+              <i class="${catTotals.daily.icon}" style="color: ${catTotals.daily.color};"></i> ${catTotals.daily.title}
+            </div>
+            <div style="font-size: 1.15rem; font-weight: 700; color: ${catTotals.daily.color}; margin-top: 2px;">
+              ฿${catTotals.daily.amount.toLocaleString()}
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span class="status-badge" style="background: ${catTotals.daily.bg}; color: ${catTotals.daily.color}; border: 1px solid ${catTotals.daily.border}; font-size: 0.72rem;">
+              ${catTotals.daily.count} รายการ
+            </span>
+          </div>
+        </div>
+
+        <div class="cat-mini-summary-card" style="border-left: 3px solid ${catTotals.weekly.color};">
+          <div>
+            <div style="font-size: 0.78rem; color: var(--text-dim); display: flex; align-items: center; gap: 5px;">
+              <i class="${catTotals.weekly.icon}" style="color: ${catTotals.weekly.color};"></i> ${catTotals.weekly.title}
+            </div>
+            <div style="font-size: 1.15rem; font-weight: 700; color: ${catTotals.weekly.color}; margin-top: 2px;">
+              ฿${catTotals.weekly.amount.toLocaleString()}
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span class="status-badge" style="background: ${catTotals.weekly.bg}; color: ${catTotals.weekly.color}; border: 1px solid ${catTotals.weekly.border}; font-size: 0.72rem;">
+              ${catTotals.weekly.count} รายการ
+            </span>
+          </div>
+        </div>
+
+        <div class="cat-mini-summary-card" style="border-left: 3px solid ${catTotals.monthly.color};">
+          <div>
+            <div style="font-size: 0.78rem; color: var(--text-dim); display: flex; align-items: center; gap: 5px;">
+              <i class="${catTotals.monthly.icon}" style="color: ${catTotals.monthly.color};"></i> ${catTotals.monthly.title}
+            </div>
+            <div style="font-size: 1.15rem; font-weight: 700; color: ${catTotals.monthly.color}; margin-top: 2px;">
+              ฿${catTotals.monthly.amount.toLocaleString()}
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span class="status-badge" style="background: ${catTotals.monthly.bg}; color: ${catTotals.monthly.color}; border: 1px solid ${catTotals.monthly.border}; font-size: 0.72rem;">
+              ${catTotals.monthly.count} รายการ
+            </span>
+          </div>
+        </div>
+
+        <div class="cat-mini-summary-card" style="border-left: 3px solid ${catTotals.motorcycle.color};">
+          <div>
+            <div style="font-size: 0.78rem; color: var(--text-dim); display: flex; align-items: center; gap: 5px;">
+              <i class="${catTotals.motorcycle.icon}" style="color: ${catTotals.motorcycle.color};"></i> ${catTotals.motorcycle.title}
+            </div>
+            <div style="font-size: 1.15rem; font-weight: 700; color: ${catTotals.motorcycle.color}; margin-top: 2px;">
+              ฿${catTotals.motorcycle.amount.toLocaleString()}
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span class="status-badge" style="background: ${catTotals.motorcycle.bg}; color: ${catTotals.motorcycle.color}; border: 1px solid ${catTotals.motorcycle.border}; font-size: 0.72rem;">
+              ${catTotals.motorcycle.count} รายการ
+            </span>
+          </div>
+        </div>
+      `;
+    }
+
+    if (tableBody) {
+      tableBody.innerHTML = "";
+      if (filteredList.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 25px;">ไม่พบรายการรับชำระ${filterDateStr ? ` ในวันที่ ${formatDateThai(filterDateStr)}` : ""}</td></tr>`;
+      } else {
+        const catBadges = {
+          motorcycle: '<span class="status-badge badge-cat-motorcycle"><i class="fa-solid fa-motorcycle"></i> รถมอเตอร์ไซค์</span>',
+          daily: '<span class="status-badge badge-cat-daily"><i class="fa-solid fa-clock"></i> รายวัน</span>',
+          weekly: '<span class="status-badge badge-cat-weekly"><i class="fa-solid fa-calendar-week"></i> รายอาทิตย์</span>',
+          monthly: '<span class="status-badge badge-cat-monthly"><i class="fa-solid fa-calendar-days"></i> รายเดือน</span>'
+        };
+
+        filteredList.forEach((item) => {
+          const tr = document.createElement("tr");
+          tr.className = "tr-daily-category-item";
+          const badgeHtml = catBadges[item.category] || catBadges.daily;
+
+          let instCol = item.isDirectFine
+            ? '<span class="status-badge" style="background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.3);">ค่าปรับล่าช้า</span>'
+            : `งวดที่ ${item.installmentNo}`;
+
+          if (item.fineAmount > 0 && !item.isDirectFine) {
+            instCol += `<span style="font-size: 0.72rem; color: #fb923c; display: block;">+ ค่าปรับ ฿${Number(item.fineAmount).toLocaleString()}</span>`;
+          }
+
+          let amountSub = "";
+          if (item.baseAmount > 0 && item.fineAmount > 0) {
+            amountSub = `<span style="font-size: 0.7rem; color: var(--text-dim); display: block;">(ค่างวด ฿${Number(item.baseAmount).toLocaleString()})</span>`;
+          }
+
+          let slipBtn = "";
+          if (item.slipUrl) {
+            slipBtn = `
+              <button type="button" class="btn-table-action" onclick="viewSlip('${item.slipUrl}', 'สลิป ${item.contractName} (${item.categoryLabel})')" style="padding: 4px 8px; font-size: 0.75rem; color: #38bdf8; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); margin-left: 4px;">
+                <i class="fa-solid fa-image"></i> สลิป
+              </button>
+            `;
+          }
+
+          tr.innerHTML = `
+            <td>${item.paidAt ? formatDateThai(item.paidAt) : (item.dateStr ? formatDateThai(item.dateStr) : "-")}</td>
+            <td>
+              <strong style="color: #fff;">${item.contractName}</strong>
+              <span style="font-size: 0.72rem; color: var(--text-dim); display: block;">รหัส: ${item.contractId} (${item.phone || "-"})</span>
+            </td>
+            <td>${item.itemFinanced || "-"}</td>
+            <td style="text-align: center;">${badgeHtml}</td>
+            <td>${instCol}</td>
+            <td style="text-align: right;">
+              <strong style="color: #34d399; font-size: 0.95rem;">฿${Number(item.amount || 0).toLocaleString()}</strong>
+              ${amountSub}
+            </td>
+            <td style="text-align: center;">
+              <button type="button" class="btn-table-action" onclick="openContractDetails('${item.contractId}')" style="padding: 4px 10px; font-size: 0.75rem; color: #c084fc; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3);">
+                <i class="fa-solid fa-eye"></i> ดูสัญญา
+              </button>
+              ${slipBtn}
+            </td>
+          `;
+          tableBody.appendChild(tr);
+        });
+      }
+    }
+
+    if (breakdownBody) {
+      breakdownBody.innerHTML = "";
+      const grouped = {};
+      allHistory.forEach((h) => {
+        const d = h.dateStr || (h.paidAt ? h.paidAt.slice(0, 10) : "ไม่ระบุ");
+        if (!grouped[d]) {
+          grouped[d] = {
+            dateStr: d,
+            count: 0,
+            totalAmount: 0,
+            dailyAmount: 0,
+            dailyCount: 0,
+            weeklyAmount: 0,
+            weeklyCount: 0,
+            monthlyAmount: 0,
+            monthlyCount: 0,
+            motorcycleAmount: 0,
+            motorcycleCount: 0,
+            clients: []
+          };
+        }
+        const amt = Number(h.amount) || 0;
+        grouped[d].count += 1;
+        grouped[d].totalAmount += amt;
+
+        if (h.category === "daily") {
+          grouped[d].dailyAmount += amt;
+          grouped[d].dailyCount += 1;
+        } else if (h.category === "weekly") {
+          grouped[d].weeklyAmount += amt;
+          grouped[d].weeklyCount += 1;
+        } else if (h.category === "monthly") {
+          grouped[d].monthlyAmount += amt;
+          grouped[d].monthlyCount += 1;
+        } else if (h.category === "motorcycle") {
+          grouped[d].motorcycleAmount += amt;
+          grouped[d].motorcycleCount += 1;
+        }
+
+        if (h.contractName && !grouped[d].clients.includes(h.contractName)) {
+          grouped[d].clients.push(h.contractName);
+        }
+      });
+
+      const dates = Object.keys(grouped).sort().reverse();
+      if (dates.length === 0) {
+        breakdownBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 18px;">ยังไม่มีประวัติการรับชำระในระบบ</td></tr>`;
+      } else {
+        dates.forEach((d) => {
+          const row = grouped[d];
+          const isSelected = filterDateStr === d;
+          const tr = document.createElement("tr");
+          if (isSelected) {
+            tr.style.background = "rgba(168, 85, 247, 0.12)";
+          }
+
+          let catChips = "";
+          if (row.dailyAmount > 0) {
+            catChips += `<span class="status-badge badge-cat-daily" style="margin: 2px; font-size: 0.72rem;"><i class="fa-solid fa-clock"></i> รายวัน: ฿${row.dailyAmount.toLocaleString()} (${row.dailyCount})</span>`;
+          }
+          if (row.weeklyAmount > 0) {
+            catChips += `<span class="status-badge badge-cat-weekly" style="margin: 2px; font-size: 0.72rem;"><i class="fa-solid fa-calendar-week"></i> รายอาทิตย์: ฿${row.weeklyAmount.toLocaleString()} (${row.weeklyCount})</span>`;
+          }
+          if (row.monthlyAmount > 0) {
+            catChips += `<span class="status-badge badge-cat-monthly" style="margin: 2px; font-size: 0.72rem;"><i class="fa-solid fa-calendar-days"></i> รายเดือน: ฿${row.monthlyAmount.toLocaleString()} (${row.monthlyCount})</span>`;
+          }
+          if (row.motorcycleAmount > 0) {
+            catChips += `<span class="status-badge badge-cat-motorcycle" style="margin: 2px; font-size: 0.72rem;"><i class="fa-solid fa-motorcycle"></i> มอเตอร์ไซค์: ฿${row.motorcycleAmount.toLocaleString()} (${row.motorcycleCount})</span>`;
+          }
+
+          tr.innerHTML = `
+            <td><strong>${formatDateThai(d)}</strong> <span style="font-size: 0.72rem; color: var(--text-dim);">(${d})</span></td>
+            <td style="text-align: center;"><span class="status-badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.35);">${row.count} รายการ</span></td>
+            <td><div style="display: flex; flex-wrap: wrap; gap: 4px;">${catChips || "-"}</div></td>
+            <td style="text-align: right;"><strong style="color: #34d399; font-size: 0.95rem;">฿${row.totalAmount.toLocaleString()}</strong></td>
+            <td style="font-size: 0.8rem; color: #cbd5e1; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${row.clients.join(", ")}">${row.clients.join(", ")}</td>
+            <td style="text-align: center;">
+              <button type="button" class="btn-table-action" onclick="document.getElementById('dailyAllCategoriesDatePicker').value='${d}'; onDailyAllCategoriesDateChange('${d}');" style="padding: 4px 10px; font-size: 0.75rem; background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4);">
+                <i class="fa-solid fa-filter"></i> เลือกดูวันนี้
+              </button>
+            </td>
+          `;
+          breakdownBody.appendChild(tr);
+        });
+      }
+    }
+  };
+
+  if (cardStatDailyAllCategories) {
+    cardStatDailyAllCategories.addEventListener("click", () => {
+      openDailyAllCategoriesReportModal();
+    });
+  }
+
   // --- DAILY LATE FINE REPORT HANDLERS (Requirement 1) ---
 
   window.openLateFineReportModal = function () {
@@ -4396,9 +4909,20 @@ document.addEventListener("DOMContentLoaded", () => {
               </span>
             </td>
             <td style="text-align: center;">
-              <button type="button" class="btn-table-action" onclick="openContractDetails('${item.contractId}')" style="padding: 4px 10px; font-size: 0.75rem; color: #fb923c; background: rgba(251, 146, 60, 0.15); border: 1px solid rgba(251, 146, 60, 0.3);">
-                <i class="fa-solid fa-eye"></i> ดูสัญญา
-              </button>
+              <div style="display: flex; gap: 4px; justify-content: center; align-items: center; flex-wrap: wrap;">
+                <button type="button" class="btn-table-action" onclick="openContractDetails('${item.contractId}')" style="padding: 4px 8px; font-size: 0.75rem; color: #fb923c; background: rgba(251, 146, 60, 0.15); border: 1px solid rgba(251, 146, 60, 0.3);">
+                  <i class="fa-solid fa-eye"></i> ดูสัญญา
+                </button>
+                ${isPending ? `
+                  <button type="button" class="btn-table-action btn-cancel-fine" onclick="cancelCustomerLateFine('${item.contractId}')" style="padding: 4px 8px; font-size: 0.75rem;">
+                    <i class="fa-solid fa-ban"></i> ยกเลิกค่าปรับ
+                  </button>
+                ` : (item.id ? `
+                  <button type="button" class="btn-table-action" onclick="undoDirectFinePayment('${item.contractId}', '${item.id}')" title="ยกเลิกรายการรับค่าปรับนี้" style="padding: 4px 8px; font-size: 0.75rem; color: #f87171; background: rgba(248, 113, 113, 0.15); border: 1px solid rgba(248, 113, 113, 0.3);">
+                    <i class="fa-solid fa-rotate-left"></i> ยกเลิกรับเงิน
+                  </button>
+                ` : "")}
+              </div>
             </td>
           `;
           tableBody.appendChild(tr);
@@ -5104,6 +5628,11 @@ document.addEventListener("DOMContentLoaded", () => {
                   <button type="button" class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
                     <i class="fa-solid fa-triangle-exclamation"></i> ${Number(c.lateFine) > 0 ? "แก้ไข/ล้างค่าปรับ" : "กรอกค่าปรับ"}
                   </button>
+                  ${Number(c.lateFine) > 0 ? `
+                    <button type="button" class="btn-table-action btn-cancel-fine" onclick="cancelCustomerLateFine('${c.id}')" title="ยกเลิกค่าปรับของลูกค้าคนนี้ (ล้างค่าปรับเป็น 0 บาท หน้าลูกค้าหายทันที)">
+                      <i class="fa-solid fa-ban"></i> ยกเลิกค่าปรับ
+                    </button>
+                  ` : ""}
                   <button type="button" class="btn-table-action" onclick="toggleContractTableExpand('${c.id}')" id="btnToggleExpand_${c.id}" style="padding: 3px 8px; font-size: 0.74rem; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;" title="ขยายดูตารางงวดทั้งหมด">
                     <i class="fa-solid fa-up-right-and-down-left-from-center"></i> ขยายตาราง (${totalInst} งวด)
                   </button>
@@ -5854,21 +6383,64 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  window.clearAndConfirmPenalty = async function () {
-    const contractId = penaltyContractId ? penaltyContractId.value : "";
+  // ยกเลิกค่าปรับของลูกค้ารายนั้น (ล้างค่าปรับเป็น 0 บาท หน้าลูกค้าหายทันที)
+  window.cancelCustomerLateFine = async function (contractId) {
     if (!contractId) return;
-
-    if (confirm(`ยืนยันการคีย์ออก / ล้างค่าปรับของสัญญา ${contractId} เป็น 0 บาท ใช่หรือไม่?\n(เมื่อยืนยันแล้ว กรอบค่าปรับหน้าลูกค้าจะหายไปทันที)`)) {
+    const contract = window.easyFinanceDB.getContractById(contractId);
+    if (!contract) {
+      showAdminToast("ไม่พบข้อมูลสัญญา", "error");
+      return;
+    }
+    const fineAmt = Number(contract.lateFine) || 0;
+    const fineText = fineAmt > 0 ? `ยอดค่าปรับ ฿${fineAmt.toLocaleString()}` : "ค่าปรับ";
+    if (confirm(`ยืนยันการ "ยกเลิกค่าปรับ" ของลูกค้า "${contract.name}" (สัญญา ${contract.id}) ${fineText} ใช่หรือไม่?\n\n• ระบบจะรีเซ็ตค่าปรับของลูกค้ารายนี้เป็น 0 บาททันที\n• หน้าบ้านลูกค้า: กรอบค่าปรับจะหายไปทันทีแบบเรียลไทม์\n• ยอดรวมค่าปรับและสถิติในระบบจะปรับลดทันที`)) {
       await window.easyFinanceDB.updateContractLateFine(contractId, 0, "");
-      showAdminToast(`ล้างค่าปรับสัญญา ${contractId} เป็น 0 สำเร็จ (หน้าลูกค้าค่าปรับหายไปแล้ว)`, "success");
+      showAdminToast(`ยกเลิกค่าปรับของลูกค้า ${contract.name} เรียบร้อยแล้ว (หน้าลูกค้าค่าปรับหายทันที)`, "success");
       closePenaltyModal();
       renderStatsCounters();
+      renderSubTabs();
       renderActiveTabTable();
+      if (currentViewingContractId === contractId && contractDetailModal && contractDetailModal.classList.contains("active")) {
+        openContractDetails(contractId);
+      }
       if (customerDatabaseModal && customerDatabaseModal.classList.contains("active")) {
         renderCustomerDatabaseList();
       }
       if (customerDossierModal && customerDossierModal.classList.contains("active") && currentViewingCustomerKey) {
         openCustomerDossier(currentViewingCustomerKey);
+      }
+      const lateFineModal = document.getElementById("lateFineReportModal");
+      if (lateFineModal && lateFineModal.classList.contains("active")) {
+        const datePicker = document.getElementById("lateFineDatePicker");
+        renderLateFineReport(datePicker ? datePicker.value : null);
+      }
+    }
+  };
+
+  // ยกเลิกค่าปรับจากปุ่มในหน้าต่าง Modal จัดการค่าปรับ
+  window.cancelCustomerLateFineFromModal = function () {
+    const contractId = penaltyContractId ? penaltyContractId.value : "";
+    if (contractId) {
+      cancelCustomerLateFine(contractId);
+    }
+  };
+
+  window.clearAndConfirmPenalty = function () {
+    cancelCustomerLateFineFromModal();
+  };
+
+  // ยกเลิกรายการรับเงินค่าปรับโดยตรง (Rollback direct fine payment)
+  window.undoDirectFinePayment = async function (contractId, fineHistId) {
+    if (!contractId || !fineHistId) return;
+    if (confirm(`ต้องการยกเลิกรายการรับเงินค่าปรับนี้ และคืนสถานะใช่หรือไม่?`)) {
+      if (window.easyFinanceDB.undoFinePayment) {
+        await window.easyFinanceDB.undoFinePayment(contractId, fineHistId);
+        showAdminToast("ยกเลิกรายการรับเงินค่าปรับเรียบร้อยแล้ว", "success");
+        renderStatsCounters();
+        renderSubTabs();
+        renderActiveTabTable();
+        const datePicker = document.getElementById("lateFineDatePicker");
+        renderLateFineReport(datePicker ? datePicker.value : null);
       }
     }
   };
@@ -6071,6 +6643,16 @@ document.addEventListener("DOMContentLoaded", () => {
     if (interestCutReportModal && interestCutReportModal.classList.contains("active")) {
       const picker = document.getElementById("interestCutDatePicker");
       renderInterestCutReport(picker && picker.value ? picker.value : null);
+    }
+    const downPaymentModal = document.getElementById("downPaymentReportModal");
+    if (downPaymentModal && downPaymentModal.classList.contains("active")) {
+      const picker = document.getElementById("downPaymentDatePicker");
+      renderDownPaymentReport(picker && picker.value ? picker.value : null);
+    }
+    const dailyAllCategoriesModal = document.getElementById("dailyAllCategoriesReportModal");
+    if (dailyAllCategoriesModal && dailyAllCategoriesModal.classList.contains("active")) {
+      const picker = document.getElementById("dailyAllCategoriesDatePicker");
+      renderDailyAllCategoriesReport(picker && picker.value ? picker.value : null);
     }
 
     const allBadDebts = window.easyFinanceDB.getBadDebts ? window.easyFinanceDB.getBadDebts() : [];

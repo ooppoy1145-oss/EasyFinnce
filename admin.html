@@ -305,6 +305,23 @@
               <i class="fa-solid fa-sack-dollar"></i>
             </div>
           </div>
+
+          <!-- ช่องสรุปรวมต่อวัน (Requirement: เพิ่มอีกช่องไว้ข้างๆ ช่องรวมเงินดาวน์ สรุปยอดทั้งหมดของวัน รวมรับแล้วของ รายวัน รายอาทิตย์ รายเดือน รถมอเตอร์ไซค์) -->
+          <div class="stat-counter-card" id="cardStatDailyAllCategories" style="cursor: pointer;"
+            onclick="openDailyAllCategoriesReportModal()" title="คลิกเพื่อดูสรุปรวมรับแล้วต่อวันทุกหมวด">
+            <div class="stat-info">
+              <div class="stat-label" id="statLabelDailyAllCategories" style="color: #c084fc;">
+                <i class="fa-solid fa-calendar-check"></i> ช่องสรุปรวมต่อวัน
+              </div>
+              <div class="stat-val" id="statTotalDailyAllCategories" style="color: #c084fc;">฿0</div>
+              <div id="statDailyAllCategoriesSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
+                รวมรับแล้วทุกหมวด (คลิกดูสรุปต่อวัน)</div>
+            </div>
+            <div class="stat-icon-box" id="statIconDailyAllCategories"
+              style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.35);">
+              <i class="fa-solid fa-receipt"></i>
+            </div>
+          </div>
         </div>
 
         <!-- Action Bar: Search, Dashboard Overview Button & Add Contract -->
@@ -361,6 +378,13 @@
             <i class="fa-solid fa-motorcycle" style="color: #38bdf8;"></i>
             <span>ยอดรวมมอไซต์: <strong class="pill-val" id="quickPillMotorcycle"
                 style="color: #38bdf8;">฿0</strong></span>
+          </button>
+          <!-- 3.1.5 ยอดรวมค่าปรับ (คลิกเพื่อดูสรุปยอดค่าปรับรายวัน) -->
+          <button class="summary-pill-btn" id="pillLateFineBtn" onclick="openLateFineReportModal()"
+            style="border-color: rgba(251, 146, 60, 0.35);" title="คลิกเพื่อดูสรุปยอดค่าปรับรายวัน">
+            <i class="fa-solid fa-triangle-exclamation" style="color: #fb923c;"></i>
+            <span>ยอดรวมค่าปรับ: <strong class="pill-val" id="quickPillLateFine"
+                style="color: #fb923c;">฿0</strong></span>
           </button>
         </div>
 
@@ -419,6 +443,10 @@
                 </span>
                 <span class="daily-mini-chip chip-pending" id="dailyPendingAmountVal">
                   <i class="fa-solid fa-clock"></i> รอเก็บ ฿0
+                </span>
+                <span class="daily-mini-chip chip-fine" id="dailyFineAmountVal" style="display: none; cursor: pointer;"
+                  onclick="openLateFineReportModal()" title="คลิกดูรายงานสรุปค่าปรับ">
+                  <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ฿0
                 </span>
               </div>
             </div>
@@ -963,6 +991,105 @@
             </tr>
           </thead>
           <tbody id="downPaymentDailyBreakdownBody">
+            <!-- Dynamic Breakdown Rows -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL 3.16: DAILY ALL CATEGORIES REPORT (ช่องสรุปรวมต่อวัน - รวมรับแล้ว รายวัน รายอาทิตย์ รายเดือน รถมอเตอร์ไซค์)
+       ==================================================================== -->
+  <div id="dailyAllCategoriesReportModal" class="admin-modal-overlay">
+    <div class="admin-modal-card admin-modal-card-report" style="max-width: 1100px; width: 96%;">
+      <div class="admin-modal-header" style="border-bottom: 1px solid rgba(168, 85, 247, 0.25);">
+        <div class="admin-modal-title">
+          <i class="fa-solid fa-calendar-check" style="color: #c084fc;"></i>
+          <span>สรุปรวมรับแล้วต่อวัน (รวมทั้ง รายวัน, รายอาทิตย์, รายเดือน, รถมอเตอร์ไซค์)</span>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnCloseDailyAllCategoriesModal"
+          onclick="closeDailyAllCategoriesReportModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Controls & Date Filter -->
+      <div
+        style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <label style="font-size: 0.85rem; color: var(--text-dim); font-weight: 500;">
+              <i class="fa-solid fa-calendar-day" style="color: #c084fc;"></i> เลือกวันที่:
+            </label>
+            <input type="date" id="dailyAllCategoriesDatePicker"
+              style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(168, 85, 247, 0.35); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem;"
+              onchange="onDailyAllCategoriesDateChange(this.value)" />
+            <button type="button" class="btn-table-action" onclick="setDailyAllCategoriesDateToday()"
+              style="padding: 6px 12px; font-size: 0.8rem; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4);">
+              วันนี้
+            </button>
+            <button type="button" class="btn-table-action" onclick="showAllDailyCategoriesPayments()"
+              style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.08); color: #fff; border: 1px solid var(--admin-border);">
+              แสดงทั้งหมด
+            </button>
+          </div>
+          <div id="dailyAllCategoriesSummaryBadges" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <!-- Dynamic Badges -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Category Breakdown Cards of the Selected Date (4 กล่องสรุปย่อย: รายวัน / รายอาทิตย์ / รายเดือน / มอเตอร์ไซค์) -->
+      <div id="dailyAllCategoriesCardsGrid"
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin-bottom: 18px;">
+        <!-- Dynamic Category Cards -->
+      </div>
+
+      <!-- Table 1: รายการรับชำระของวันที่เลือก (ระบุที่มาของแต่ละยอดชัดเจน) -->
+      <h4
+        style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        <span id="dailyAllCategoriesListTitle">รายการรับชำระเงินทุกหมวดประจำวัน</span>
+        <span id="dailyAllCategoriesCountBadge" class="status-badge"
+          style="background: rgba(168, 85, 247, 0.18); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4);">0 รายการ</span>
+      </h4>
+      <div class="table-responsive report-table-scroll-wrap report-daily-scroll" style="margin-bottom: 22px;">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>วันที่/เวลาที่รับชำระ</th>
+              <th>ลูกค้า</th>
+              <th>สิ่งที่ผ่อน</th>
+              <th style="text-align: center;">หมวดหมู่ที่มา</th>
+              <th>งวดที่ชำระ</th>
+              <th style="text-align: right;">ยอดรับแล้ว (บาท)</th>
+              <th style="text-align: center;">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="dailyAllCategoriesTableBody">
+            <!-- Dynamic Rows -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Table 2: สรุปแยกตามวัน (Daily Breakdown - ภาพรวมทุกวัน) -->
+      <h4
+        style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+        <i class="fa-solid fa-chart-line" style="color: #c084fc;"></i> สรุปยอดรับแล้วแยกตามวัน (ภาพรวมทุกวัน - แจกแจงที่มารายวัน, รายอาทิตย์, รายเดือน, รถมอเตอร์ไซค์)
+      </h4>
+      <div class="table-responsive report-table-scroll-wrap report-breakdown-scroll">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>วันที่</th>
+              <th style="text-align: center;">จำนวนรายการ</th>
+              <th>ยอดแยกตามหมวดหมู่ (รายวัน / รายอาทิตย์ / รายเดือน / มอเตอร์ไซค์)</th>
+              <th style="text-align: right;">ยอดรวมรับแล้ววันนั้น (บาท)</th>
+              <th>รายชื่อลูกค้า</th>
+              <th style="text-align: center;">เปิดดู</th>
+            </tr>
+          </thead>
+          <tbody id="dailyAllCategoriesBreakdownBody">
             <!-- Dynamic Breakdown Rows -->
           </tbody>
         </table>
@@ -1704,11 +1831,11 @@
               <span>บันทึกรับชำระค่าปรับนี้ (นับเข้ายอดรับแล้วประจำวัน)</span>
             </button>
 
-            <!-- 4. ปุ่มคีย์ออก / ล้างค่าปรับ (ให้ค่าปรับหน้าลูกค้าหายไป) -->
-            <button type="button" id="btnClearPenaltyAction" class="btn-table-action" onclick="clearAndConfirmPenalty()"
-              style="justify-content: center; padding: 10px; color: #f87171; border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.08); font-weight: 600;">
-              <i class="fa-solid fa-trash-can"></i>
-              <span>คีย์ออก / ล้างค่าปรับเป็น 0 (ยืนยันแล้วหน้าลูกค้าจะหายทันที)</span>
+            <!-- 4. ปุ่มยกเลิกค่าปรับ (ให้ค่าปรับหน้าลูกค้าหายไปทันที) -->
+            <button type="button" id="btnClearPenaltyAction" class="btn-table-action" onclick="cancelCustomerLateFineFromModal()"
+              style="justify-content: center; padding: 11px; color: #f87171; border-color: rgba(239,68,68,0.45); background: rgba(239,68,68,0.12); font-weight: 600; font-size: 0.88rem; border-radius: 8px;">
+              <i class="fa-solid fa-ban"></i>
+              <span>ยกเลิกค่าปรับของลูกค้ารายนี้ (เว้นค่าปรับ / ล้างเป็น 0 บาท หน้าลูกค้าหายทันที)</span>
             </button>
           </div>
         </form>

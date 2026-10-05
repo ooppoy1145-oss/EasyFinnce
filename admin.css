@@ -539,6 +539,14 @@ body {
   font-weight: 600;
 }
 
+.summary-pill-btn#pillLateFineBtn:hover,
+.summary-pill-btn#pillLateFineBtn.active {
+  background: rgba(251, 146, 60, 0.16);
+  border-color: rgba(251, 146, 60, 0.55);
+  color: #fb923c;
+  font-weight: 600;
+}
+
 #cardStatMotorcycle {
   transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
 }
@@ -1808,6 +1816,19 @@ tr.tr-interest-cut {
   border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
+.daily-mini-chip.chip-fine {
+  background: rgba(251, 146, 60, 0.2);
+  color: #fb923c;
+  border: 1px solid rgba(251, 146, 60, 0.4);
+  transition: var(--transition);
+}
+
+.daily-mini-chip.chip-fine:hover {
+  background: rgba(251, 146, 60, 0.32);
+  border-color: rgba(251, 146, 60, 0.65);
+  transform: translateY(-1px);
+}
+
 @keyframes datePop {
   0% { transform: scale(0.93); opacity: 0.6; }
   50% { transform: scale(1.04); }
@@ -2159,6 +2180,28 @@ tr.tr-interest-cut {
   background: rgba(239, 68, 68, 0.2);
   border-color: #ef4444;
   color: #fca5a5;
+}
+
+.btn-cancel-fine {
+  padding: 4px 8px;
+  font-size: 0.74rem;
+  color: #f87171 !important;
+  border: 1px solid rgba(248, 113, 113, 0.4) !important;
+  background: rgba(248, 113, 113, 0.1) !important;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.btn-cancel-fine:hover {
+  background: rgba(248, 113, 113, 0.25) !important;
+  border-color: rgba(248, 113, 113, 0.65) !important;
+  color: #fff !important;
+  transform: translateY(-1px);
 }
 
 /* Modals layering guarantee */
@@ -2693,4 +2736,49 @@ table.admin-table td .btn-group-tight {
   white-space: nowrap;
   text-align: center;
 }
+
+/* ==========================================================================
+   DAILY ALL CATEGORIES REPORT STYLES (สรุปรวมรับแล้วต่อวัน 4 หมวดหมู่)
+   ========================================================================== */
+.badge-cat-daily {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
+
+.badge-cat-weekly {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #60a5fa !important;
+  border: 1px solid rgba(59, 130, 246, 0.35) !important;
+}
+
+.badge-cat-monthly {
+  background: rgba(168, 85, 247, 0.15) !important;
+  color: #c084fc !important;
+  border: 1px solid rgba(168, 85, 247, 0.35) !important;
+}
+
+.badge-cat-motorcycle {
+  background: rgba(56, 189, 248, 0.15) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+}
+
+.cat-mini-summary-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.cat-mini-summary-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
 

@@ -1435,6 +1435,102 @@ class EasyFinanceDatabase {
     return list;
   }
 
+  // ดึงประวัติการรับชำระเงินทั้งหมดของทุกหมวดหมู่ (รายวัน, รายอาทิตย์, รายเดือน, รถมอเตอร์ไซค์)
+  getAllDailyAllCategoriesHistory() {
+    const contracts = this.getContracts();
+    const list = [];
+
+    contracts.forEach((c) => {
+      // ระบุหมวดหมู่สัญญา
+      let category = "daily";
+      let categoryLabel = "รายวัน";
+      const isMotorcycle = (typeof c.itemCategory === "string" && (c.itemCategory.toLowerCase().includes("motorcycle") || c.itemCategory.includes("มอไซ") || c.itemCategory.includes("มอเตอร์ไซค์"))) ||
+        (c.itemCategory === "motorcycle") ||
+        (typeof c.itemFinanced === "string" && (c.itemFinanced.includes("มอเตอร์ไซค์") || c.itemFinanced.includes("มอไซค์") || c.itemFinanced.includes("มอไซ") || c.itemFinanced.toLowerCase().includes("motorcycle")));
+
+      if (isMotorcycle) {
+        category = "motorcycle";
+        categoryLabel = "รถมอเตอร์ไซค์";
+      } else if (c.paymentFrequency === "daily") {
+        category = "daily";
+        categoryLabel = "รายวัน";
+      } else if (c.paymentFrequency === "weekly") {
+        category = "weekly";
+        categoryLabel = "รายอาทิตย์";
+      } else if (c.paymentFrequency === "monthly") {
+        category = "monthly";
+        categoryLabel = "รายเดือน";
+      }
+
+      // 1. ดึงงวดที่ชำระแล้ว (paid installments)
+      (c.installments || []).forEach((inst) => {
+        if (inst.status === "paid") {
+          const pDate = inst.paidAt || "";
+          const dateStr = pDate.length >= 10 ? pDate.slice(0, 10) : (inst.dueDate || "");
+          const instAmount = Number(inst.amount) || 0;
+          const fineAmount = Number(inst.paidLateFine) || 0;
+          const totalPaid = instAmount + fineAmount;
+
+          list.push({
+            id: "PAY-" + c.id + "-" + inst.installmentNo + "-" + (inst.paidAt || ""),
+            contractId: c.id,
+            contractName: c.name,
+            phone: c.phone || "",
+            itemFinanced: c.itemFinanced || "-",
+            category: category,
+            categoryLabel: categoryLabel,
+            installmentNo: Number(inst.installmentNo),
+            amount: totalPaid,
+            baseAmount: instAmount,
+            fineAmount: fineAmount,
+            paidAt: pDate,
+            dateStr: dateStr,
+            slipUrl: inst.slipUrl || null,
+            transactionRef: inst.transactionRef || "-",
+            status: "paid"
+          });
+        }
+      });
+
+      // 2. ดึงประวัติรับค่าปรับโดยตรง (Direct fine payments)
+      if (Array.isArray(c.finePaymentHistory)) {
+        c.finePaymentHistory.forEach((f, idx) => {
+          const pDate = f.paidAt || "";
+          const dateStr = pDate.length >= 10 ? pDate.slice(0, 10) : (f.dateStr || "");
+          const fineAmt = Number(f.amount) || 0;
+          list.push({
+            id: "FINE-PAY-" + c.id + "-" + (f.id || idx),
+            contractId: c.id,
+            contractName: c.name,
+            phone: c.phone || "",
+            itemFinanced: c.itemFinanced || "-",
+            category: category,
+            categoryLabel: categoryLabel,
+            installmentNo: "-",
+            amount: fineAmt,
+            baseAmount: 0,
+            fineAmount: fineAmt,
+            isDirectFine: true,
+            paidAt: pDate,
+            dateStr: dateStr,
+            slipUrl: null,
+            transactionRef: "-",
+            status: "paid"
+          });
+        });
+      }
+    });
+
+    // เรียงจากวันที่ล่าสุดลงไป
+    list.sort((a, b) => {
+      const da = a.paidAt && a.paidAt !== "-" ? a.paidAt : (a.dateStr || "");
+      const db = b.paidAt && b.paidAt !== "-" ? b.paidAt : (b.dateStr || "");
+      return db.localeCompare(da);
+    });
+
+    return list;
+  }
+
   // อัปเดตข้อมูลเพิ่มเติมของลูกค้า (บันทึกเพิ่มเติม, ลิงก์เฟสบุ๊ก, ที่อยู่, เลขบัตร)
   async updateCustomerProfile(phoneOrId, profileData) {
     let contracts = this.getContracts();
@@ -1499,6 +1595,7 @@ class EasyFinanceDatabase {
     const dateStr = paidDate || new Date().toISOString().slice(0, 10);
     c.finePaymentHistory = c.finePaymentHistory || [];
     c.finePaymentHistory.push({
+      id: "FINE-" + Date.now(),
       amount: amountToPay,
       paidAt: `${dateStr} 12:00:00`,
       note: "ชำระค่าปรับ"
@@ -1512,6 +1609,28 @@ class EasyFinanceDatabase {
 
     await this.saveContract(c);
     return c;
+  }
+
+  // ยกเลิกรายการรับชำระค่าปรับโดยตรง
+  async undoFinePayment(contractId, fineHistId) {
+    let contracts = this.getContracts();
+    const c = contracts.find((x) => x.id === contractId);
+    if (!c || !Array.isArray(c.finePaymentHistory)) return false;
+
+    const idx = c.finePaymentHistory.findIndex(
+      (h, i) => ("FINE-HIST-" + c.id + "-" + (h.id || i)) === fineHistId || h.id === fineHistId
+    );
+    if (idx !== -1) {
+      const removed = c.finePaymentHistory.splice(idx, 1)[0];
+      const amt = Number(removed.amount) || 0;
+      c.totalLateFinesCollected = Math.max(0, (Number(c.totalLateFinesCollected) || 0) - amt);
+      c.lateFine = (Number(c.lateFine) || 0) + amt;
+      c.hasLateFine = c.lateFine > 0;
+      c.updatedAt = new Date().toISOString();
+      await this.saveContract(c);
+      return true;
+    }
+    return false;
   }
 
   // --- PAYMENT SETTINGS METHODS ---
