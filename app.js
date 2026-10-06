@@ -747,6 +747,21 @@ document.addEventListener("DOMContentLoaded", () => {
       if (updated) {
         currentContractId = updated.id;
         renderDashboard(updated);
+        // หากเปิดหน้าต่างชำระเงินค้างอยู่ ให้อัปเดตยอดและรายละเอียดค่าปรับทันที
+        if (paymentModal && paymentModal.classList.contains("active") && activePayingInstallment) {
+          const contractFine = Math.max(0, Number(updated.lateFine) || 0);
+          const baseAmt = Number(activePayingInstallment.amount) || 0;
+          const finalAmountToPay = baseAmt + contractFine;
+          if (modalPayAmount) modalPayAmount.textContent = `฿${finalAmountToPay.toLocaleString()}`;
+          if (modalPayPenaltyNote && modalPayPenaltyVal) {
+            if (contractFine > 0) {
+              modalPayPenaltyNote.style.display = "block";
+              modalPayPenaltyVal.textContent = contractFine.toLocaleString();
+            } else {
+              modalPayPenaltyNote.style.display = "none";
+            }
+          }
+        }
         // หากก่อนหน้านี้ยังแสดงหน้า login อยู่ (เช่น ตอนเพิ่งเปิดลิงก์เข้ามาแล้ว Cloud เพิ่งโหลดเสร็จ) ให้เปิดหน้า Dashboard ทันที
         if (dashboardSection.classList.contains("hidden")) {
           showDashboard();

@@ -6345,14 +6345,37 @@ document.addEventListener("DOMContentLoaded", () => {
         showAdminToast(`ล้างค่าปรับสัญญา ${contractId} เป็น 0 เรียบร้อยแล้ว (หน้าลูกค้าค่าปรับจะหายทันที)`, "success");
       }
 
+      if (penaltyAmountInput) penaltyAmountInput.value = fineAmount > 0 ? fineAmount : "";
+      if (penaltyReasonInput) penaltyReasonInput.value = fineAmount > 0 ? reason : "";
+      if (currentFineStatusBadge) {
+        if (fineAmount > 0) {
+          currentFineStatusBadge.style.display = "inline-flex";
+          currentFineStatusBadge.textContent = `มีค่าปรับค้าง ฿${fineAmount.toLocaleString()}`;
+        } else {
+          currentFineStatusBadge.style.display = "none";
+          currentFineStatusBadge.textContent = "";
+        }
+      }
+
       closePenaltyModal();
       renderStatsCounters();
+      renderSubTabs();
+      if (currentTab === "overview") renderOverviewCards();
       renderActiveTabTable();
+
+      if (currentViewingContractId === contractId && contractDetailModal && contractDetailModal.classList.contains("active")) {
+        openContractDetails(contractId);
+      }
       if (customerDatabaseModal && customerDatabaseModal.classList.contains("active")) {
         renderCustomerDatabaseList();
       }
       if (customerDossierModal && customerDossierModal.classList.contains("active") && currentViewingCustomerKey) {
         openCustomerDossier(currentViewingCustomerKey);
+      }
+      const lateFineModal = document.getElementById("lateFineReportModal");
+      if (lateFineModal && lateFineModal.classList.contains("active")) {
+        const datePicker = document.getElementById("lateFineDatePicker");
+        renderLateFineReport(datePicker ? datePicker.value : null);
       }
     });
   }
@@ -6373,32 +6396,7 @@ document.addEventListener("DOMContentLoaded", () => {
       closePenaltyModal();
       renderStatsCounters();
       renderSubTabs();
-      renderActiveTabTable();
-      if (customerDatabaseModal && customerDatabaseModal.classList.contains("active")) {
-        renderCustomerDatabaseList();
-      }
-      if (customerDossierModal && customerDossierModal.classList.contains("active") && currentViewingCustomerKey) {
-        openCustomerDossier(currentViewingCustomerKey);
-      }
-    }
-  };
-
-  // ยกเลิกค่าปรับของลูกค้ารายนั้น (ล้างค่าปรับเป็น 0 บาท หน้าลูกค้าหายทันที)
-  window.cancelCustomerLateFine = async function (contractId) {
-    if (!contractId) return;
-    const contract = window.easyFinanceDB.getContractById(contractId);
-    if (!contract) {
-      showAdminToast("ไม่พบข้อมูลสัญญา", "error");
-      return;
-    }
-    const fineAmt = Number(contract.lateFine) || 0;
-    const fineText = fineAmt > 0 ? `ยอดค่าปรับ ฿${fineAmt.toLocaleString()}` : "ค่าปรับ";
-    if (confirm(`ยืนยันการ "ยกเลิกค่าปรับ" ของลูกค้า "${contract.name}" (สัญญา ${contract.id}) ${fineText} ใช่หรือไม่?\n\n• ระบบจะรีเซ็ตค่าปรับของลูกค้ารายนี้เป็น 0 บาททันที\n• หน้าบ้านลูกค้า: กรอบค่าปรับจะหายไปทันทีแบบเรียลไทม์\n• ยอดรวมค่าปรับและสถิติในระบบจะปรับลดทันที`)) {
-      await window.easyFinanceDB.updateContractLateFine(contractId, 0, "");
-      showAdminToast(`ยกเลิกค่าปรับของลูกค้า ${contract.name} เรียบร้อยแล้ว (หน้าลูกค้าค่าปรับหายทันที)`, "success");
-      closePenaltyModal();
-      renderStatsCounters();
-      renderSubTabs();
+      if (currentTab === "overview") renderOverviewCards();
       renderActiveTabTable();
       if (currentViewingContractId === contractId && contractDetailModal && contractDetailModal.classList.contains("active")) {
         openContractDetails(contractId);
@@ -6417,11 +6415,68 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // ยกเลิกค่าปรับจากปุ่มในหน้าต่าง Modal จัดการค่าปรับ
+  // ยกเลิกค่าปรับของลูกค้ารายนั้น (ล้างค่าปรับเป็น 0 บาท หน้าลูกค้าหายทันที)
+  window.cancelCustomerLateFine = async function (contractId, skipConfirm = false) {
+    if (!contractId) return;
+    const contract = window.easyFinanceDB.getContractById(contractId);
+    if (!contract) {
+      showAdminToast("ไม่พบข้อมูลสัญญา", "error");
+      return;
+    }
+    const fineAmt = Number(contract.lateFine) || 0;
+    const fineText = fineAmt > 0 ? `ยอดค่าปรับ ฿${fineAmt.toLocaleString()}` : "ค่าปรับ";
+
+    let proceed = skipConfirm;
+    if (!proceed) {
+      proceed = confirm(
+        `ยืนยันการ "ยกเลิกค่าปรับ" ของลูกค้า "${contract.name}" (สัญญา ${contract.id}) ${fineText} ใช่หรือไม่?\n\n` +
+        `• ระบบจะรีเซ็ตค่าปรับของลูกค้ารายนี้เป็น 0 บาททันที\n` +
+        `• หน้าบ้านลูกค้า: กรอบค่าปรับจะหายไปทันทีแบบเรียลไทม์\n` +
+        `• ยอดรวมค่าปรับและสถิติในระบบจะปรับลดทันที\n\n` +
+        `👉 กด [ ตกลง ] (OK) เพื่อยืนยันการล้างค่าปรับเป็น 0 บาททันที\n` +
+        `👉 กด [ ยกเลิก ] (Cancel) หากยังไม่ต้องการยกเลิกค่าปรับ`
+      );
+    }
+
+    if (proceed) {
+      await window.easyFinanceDB.updateContractLateFine(contractId, 0, "");
+      showAdminToast(`ยกเลิกค่าปรับของลูกค้า ${contract.name} เรียบร้อยแล้ว (หน้าลูกค้าค่าปรับหายทันที)`, "success");
+
+      if (penaltyAmountInput) penaltyAmountInput.value = "";
+      if (penaltyReasonInput) penaltyReasonInput.value = "";
+      if (currentFineStatusBadge) {
+        currentFineStatusBadge.style.display = "none";
+        currentFineStatusBadge.textContent = "";
+      }
+
+      closePenaltyModal();
+      renderStatsCounters();
+      renderSubTabs();
+      if (currentTab === "overview") renderOverviewCards();
+      renderActiveTabTable();
+
+      if (currentViewingContractId === contractId && contractDetailModal && contractDetailModal.classList.contains("active")) {
+        openContractDetails(contractId);
+      }
+      if (customerDatabaseModal && customerDatabaseModal.classList.contains("active")) {
+        renderCustomerDatabaseList();
+      }
+      if (customerDossierModal && customerDossierModal.classList.contains("active") && currentViewingCustomerKey) {
+        openCustomerDossier(currentViewingCustomerKey);
+      }
+      const lateFineModal = document.getElementById("lateFineReportModal");
+      if (lateFineModal && lateFineModal.classList.contains("active")) {
+        const datePicker = document.getElementById("lateFineDatePicker");
+        renderLateFineReport(datePicker ? datePicker.value : null);
+      }
+    }
+  };
+
+  // ยกเลิกค่าปรับจากปุ่มในหน้าต่าง Modal จัดการค่าปรับ (ล้างทันที ไม่ต้องมี confirm ซ้อน)
   window.cancelCustomerLateFineFromModal = function () {
     const contractId = penaltyContractId ? penaltyContractId.value : "";
     if (contractId) {
-      cancelCustomerLateFine(contractId);
+      cancelCustomerLateFine(contractId, true);
     }
   };
 
@@ -6434,10 +6489,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!contractId || !fineHistId) return;
     if (confirm(`ต้องการยกเลิกรายการรับเงินค่าปรับนี้ และคืนสถานะใช่หรือไม่?`)) {
       if (window.easyFinanceDB.undoFinePayment) {
-        await window.easyFinanceDB.undoFinePayment(contractId, fineHistId);
-        showAdminToast("ยกเลิกรายการรับเงินค่าปรับเรียบร้อยแล้ว", "success");
+        const ok = await window.easyFinanceDB.undoFinePayment(contractId, fineHistId);
+        if (ok) {
+          showAdminToast("ยกเลิกรายการรับเงินค่าปรับเรียบร้อยแล้ว", "success");
+        } else {
+          showAdminToast("ไม่พบรายการรับเงินค่าปรับที่ต้องการยกเลิก", "error");
+        }
         renderStatsCounters();
         renderSubTabs();
+        if (currentTab === "overview") renderOverviewCards();
         renderActiveTabTable();
         const datePicker = document.getElementById("lateFineDatePicker");
         renderLateFineReport(datePicker ? datePicker.value : null);

@@ -49,8 +49,8 @@ const INITIAL_CONTRACTS = [
     itemFinanced: "ผ่อนทองคำแท่ง 1 บาท (96.5%)",
     downPayment: 5000,
     downPaymentDate: "2026-01-01",
-    lateFine: 200,
-    lateFineReason: "ค้างชำระเกินกำหนด 3 วัน",
+    lateFine: 0,
+    lateFineReason: "",
     totalAmount: 42000,
     interestRate: 1.5,
     totalInstallments: 6,
@@ -677,8 +677,8 @@ class EasyFinanceDatabase {
       const data = localStorage.getItem(this.storageKeyPrefix + "contracts");
       const list = data ? JSON.parse(data) : [];
       return list.map((c) => {
-        const fine = c.lateFine !== undefined ? Number(c.lateFine) : (c.id === "EF-2026-001" ? 200 : 0);
-        const reason = c.lateFineReason !== undefined ? c.lateFineReason : (c.id === "EF-2026-001" ? "ค้างชำระเกินกำหนด 3 วัน" : "");
+        const fine = (c.lateFine !== undefined && c.lateFine !== null) ? Number(c.lateFine) : 0;
+        const reason = (c.lateFineReason !== undefined && c.lateFineReason !== null) ? String(c.lateFineReason) : "";
         return {
           ...c,
           downPayment: c.downPayment !== undefined ? Number(c.downPayment) : 0,
@@ -1611,25 +1611,42 @@ class EasyFinanceDatabase {
     return c;
   }
 
-  // ยกเลิกรายการรับชำระค่าปรับโดยตรง
+  // ยกเลิกรายการรับชำระค่าปรับโดยตรง (Rollback fine payment)
   async undoFinePayment(contractId, fineHistId) {
     let contracts = this.getContracts();
     const c = contracts.find((x) => x.id === contractId);
-    if (!c || !Array.isArray(c.finePaymentHistory)) return false;
+    if (!c) return false;
 
-    const idx = c.finePaymentHistory.findIndex(
-      (h, i) => ("FINE-HIST-" + c.id + "-" + (h.id || i)) === fineHistId || h.id === fineHistId
-    );
-    if (idx !== -1) {
-      const removed = c.finePaymentHistory.splice(idx, 1)[0];
-      const amt = Number(removed.amount) || 0;
-      c.totalLateFinesCollected = Math.max(0, (Number(c.totalLateFinesCollected) || 0) - amt);
-      c.lateFine = (Number(c.lateFine) || 0) + amt;
-      c.hasLateFine = c.lateFine > 0;
-      c.updatedAt = new Date().toISOString();
-      await this.saveContract(c);
-      return true;
+    // 1. ตรวจสอบกรณีเป็นรายการใน finePaymentHistory (FINE-HIST-...)
+    if (Array.isArray(c.finePaymentHistory)) {
+      const idx = c.finePaymentHistory.findIndex(
+        (h, i) => ("FINE-HIST-" + c.id + "-" + (h.id || i)) === fineHistId || h.id === fineHistId
+      );
+      if (idx !== -1) {
+        const removed = c.finePaymentHistory.splice(idx, 1)[0];
+        const amt = Number(removed.amount) || 0;
+        c.totalLateFinesCollected = Math.max(0, (Number(c.totalLateFinesCollected) || 0) - amt);
+        c.updatedAt = new Date().toISOString();
+        await this.saveContract(c);
+        return true;
+      }
     }
+
+    // 2. ตรวจสอบกรณีเป็นรายการชำระพร้อมงวด (INST-FINE-...)
+    if (fineHistId && String(fineHistId).startsWith("INST-FINE-") && Array.isArray(c.installments)) {
+      const parts = String(fineHistId).split("-");
+      const instNo = Number(parts[parts.length - 1]);
+      const inst = c.installments.find((i) => Number(i.installmentNo) === instNo);
+      if (inst && inst.paidLateFine) {
+        const amt = Number(inst.paidLateFine) || 0;
+        delete inst.paidLateFine;
+        c.totalLateFinesCollected = Math.max(0, (Number(c.totalLateFinesCollected) || 0) - amt);
+        c.updatedAt = new Date().toISOString();
+        await this.saveContract(c);
+        return true;
+      }
+    }
+
     return false;
   }
 
