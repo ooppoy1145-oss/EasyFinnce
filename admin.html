@@ -1159,14 +1159,22 @@
           <span>
             <i class="fa-solid fa-pen-to-square"></i> ช่องสำหรับกรอก เพิ่ม หรือ ลดยอดเงินในบัญชี
           </span>
-          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.76rem; color: #5eead4; background: rgba(20, 184, 166, 0.12); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(20, 184, 166, 0.35); cursor: pointer; user-select: none;" title="เปิดเพื่อให้ยอดเงินในธนาคารอัปเดตตามยอดสุทธิประจำวันอัตโนมัติ">
+              <input type="checkbox" id="bankReconAutoSyncToggle" onchange="onBankReconAutoSyncToggle(this.checked)" style="accent-color: #10b981; cursor: pointer;" />
+              <span>⚡ ซิงค์ยอดสุทธิอัตโนมัติ</span>
+            </label>
+            <button type="button" class="btn-table-action" onclick="applyReconciledToBankBalance()"
+              style="font-size: 0.78rem; padding: 4px 12px; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.45); font-weight: 600;">
+              <i class="fa-solid fa-cloud-arrow-up"></i> บันทึกยอดสุทธิเป็นเงินในธนาคาร
+            </button>
             <button type="button" class="btn-table-action" onclick="promptClearAccumulatedAdjustments()"
               style="font-size: 0.78rem; padding: 4px 12px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);">
-              <i class="fa-solid fa-arrows-rotate"></i> เคลียร์ยอดสะสม (เริ่มรอบใหม่)
+              <i class="fa-solid fa-arrows-rotate"></i> เคลียร์ยอดสะสม
             </button>
             <button type="button" class="btn-table-action" onclick="promptSetBankBaseBalance()"
               style="font-size: 0.78rem; padding: 4px 12px; background: rgba(255, 255, 255, 0.08); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.2);">
-              <i class="fa-solid fa-sliders"></i> กำหนดยอดเงินในบัญชีเริ่มต้น
+              <i class="fa-solid fa-sliders"></i> กำหนดยอดเริ่มต้น
             </button>
           </div>
         </div>
@@ -1234,10 +1242,16 @@
             <div id="bankReconAdjustmentsSummary" style="font-size: 0.78rem; color: var(--text-dim); flex: 1;">
               <!-- Adjustments info -->
             </div>
-            <button type="button" class="btn-table-action" onclick="promptClearAccumulatedAdjustments()" title="เคลียร์ยอดปรับเพิ่ม/ลดสะสม และยกยอดคงเหลือปัจจุบันเป็นยอดตั้งต้นใหม่"
-              style="font-size: 0.74rem; padding: 3px 9px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-              <i class="fa-solid fa-arrows-rotate"></i> เคลียร์ยอดสะสม
-            </button>
+            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+              <button type="button" class="btn-table-action" onclick="applyReconciledToBankBalance()" title="นำยอดบวกแล้วคงเหลือสุทธิมาบันทึกเป็นเงินในธนาคาร"
+                style="font-size: 0.74rem; padding: 3px 9px; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.45); border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: 600;">
+                <i class="fa-solid fa-cloud-arrow-up"></i> บันทึกยอดสุทธิ
+              </button>
+              <button type="button" class="btn-table-action" onclick="promptClearAccumulatedAdjustments()" title="เคลียร์ยอดปรับเพิ่ม/ลดสะสม และยกยอดคงเหลือปัจจุบันเป็นยอดตั้งต้นใหม่"
+                style="font-size: 0.74rem; padding: 3px 9px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                <i class="fa-solid fa-arrows-rotate"></i> เคลียร์ยอดสะสม
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1265,9 +1279,14 @@
       <!-- Card 3: แสดง 2 ยอดแล้วกระทบกัน ให้มียอดแสดงว่ายอดรวมเข้ามาวันนี้ บวกแล้วคงเหลือเท่าไหร่ (Requirement 4) -->
       <div class="bank-recon-summary-card"
         style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)); border: 2px solid rgba(20, 184, 166, 0.5); border-radius: var(--radius-lg); padding: 20px 24px; margin-bottom: 22px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);">
-        <div style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
-          <i class="fa-solid fa-calculator" style="color: #2dd4bf;"></i>
-          <span>สรุปผลการกระทบยอด: ยอดรวมเข้ามาวันนี้ บวกแล้วคงเหลือเท่าไหร่</span>
+        <div style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="fa-solid fa-calculator" style="color: #2dd4bf;"></i>
+            <span>สรุปผลการกระทบยอด: ยอดรวมเข้ามาวันนี้ บวกแล้วคงเหลือเท่าไหร่</span>
+          </div>
+          <div id="bankReconHeaderBadge">
+            <!-- Dynamic saved status -->
+          </div>
         </div>
         <div class="bank-recon-equation-grid"
           style="display: grid; grid-template-columns: 1fr auto 1fr auto 1.3fr; align-items: center; gap: 12px; text-align: center;">
@@ -1291,9 +1310,25 @@
             <div id="eqTotalReconciledAmount" style="font-size: 1.75rem; font-weight: 800; color: #34d399; margin-top: 4px;">฿0</div>
           </div>
         </div>
-        <div style="margin-top: 12px; font-size: 0.82rem; color: var(--text-dim); text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 10px;">
-          <i class="fa-solid fa-circle-info" style="color: #2dd4bf;"></i>
-          <span>แสดงการกระทบยอด: เงินในธนาคาร บวกกับ ยอดเงินทุกหมวดที่เก็บเข้ามาในระบบวันนี้ (รวมตัดดอก ไม่รวมเงินดาวน์)</span>
+
+        <!-- Action Row: บันทึกยอดบวกแล้วคงเหลือสุทธิเป็นเงินในธนาคารทันที -->
+        <div id="bankReconApplyActionArea"
+          style="margin-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 12px;">
+          <div id="bankReconReconciledStatusText" style="font-size: 0.85rem; color: var(--text-dim); display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-circle-info" style="color: #2dd4bf;"></i>
+            <span>ยอดคงเหลือสุทธิหลังรวมยอดรับและหักยอดโอนออก (คือยอดเงินจริงในธนาคาร)</span>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button type="button" id="btnApplyReconciledToBank" onclick="applyReconciledToBankBalance()"
+              style="background: linear-gradient(135deg, #10b981, #0d9488); color: #fff; border: 1px solid #34d399; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35); transition: all 0.2s ease;">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <span id="btnApplyReconciledLabel">บันทึกยอดสุทธิเป็นเงินในธนาคาร</span>
+            </button>
+            <button type="button" id="btnUndoReconciledBank" onclick="promptUndoReconciledBankBalance()"
+              style="display: none; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); padding: 9px 13px; border-radius: 8px; font-size: 0.82rem; cursor: pointer; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-rotate-left"></i> ยกเลิกบันทึก
+            </button>
+          </div>
         </div>
       </div>
 

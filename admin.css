@@ -2830,4 +2830,18 @@ table.admin-table td .btn-group-tight {
   filter: brightness(0.95);
 }
 
+#btnApplyReconciledToBank {
+  transition: all 0.2s ease;
+}
+
+#btnApplyReconciledToBank:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.15);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+}
+
+#btnApplyReconciledToBank:active {
+  transform: translateY(0);
+}
+
 

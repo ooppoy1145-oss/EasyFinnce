@@ -1830,10 +1830,10 @@ class EasyFinanceDatabase {
   getBankReconciliationData() {
     try {
       const data = localStorage.getItem(this.storageKeyPrefix + "bank_reconciliation");
-      return data ? JSON.parse(data) : { baseBalance: 0, adjustments: [] };
+      return data ? JSON.parse(data) : { baseBalance: 0, adjustments: [], reconciledDates: {}, autoSyncReconciled: false };
     } catch (e) {
       console.error("Error reading bank reconciliation data:", e);
-      return { baseBalance: 0, adjustments: [] };
+      return { baseBalance: 0, adjustments: [], reconciledDates: {}, autoSyncReconciled: false };
     }
   }
 
@@ -1842,6 +1842,8 @@ class EasyFinanceDatabase {
     const updated = {
       baseBalance: Number(data.baseBalance !== undefined ? data.baseBalance : current.baseBalance) || 0,
       adjustments: Array.isArray(data.adjustments) ? data.adjustments : (current.adjustments || []),
+      reconciledDates: typeof data.reconciledDates === "object" && data.reconciledDates !== null ? data.reconciledDates : (current.reconciledDates || {}),
+      autoSyncReconciled: data.autoSyncReconciled !== undefined ? !!data.autoSyncReconciled : !!current.autoSyncReconciled,
       updatedAt: new Date().toISOString()
     };
 
@@ -1961,6 +1963,78 @@ class EasyFinanceDatabase {
     data.adjustments = [];
     await this.saveBankReconciliationData(data);
     return true;
+  }
+
+  // บันทึกยอดคงเหลือสุทธิจากการกระทบยอดประจำวัน เป็นยอดเงินในธนาคาร
+  async applyReconciledBankBalance({ dateStr, reconciledAmount, baseBefore, todayCollections }) {
+    const data = this.getBankReconciliationData();
+    const targetDate = dateStr || new Date().toISOString().slice(0, 10);
+    const newBalance = Math.max(0, Number(reconciledAmount) || 0);
+    const adjustments = Array.isArray(data.adjustments) ? data.adjustments : [];
+    const nowIso = new Date().toISOString();
+
+    // ทำเครื่องหมายรายการปรับปรุงสะสมเดิมว่าเคลียร์ยอดแล้ว
+    adjustments.forEach((a) => {
+      if (!a.cleared && !a.isSystemClear) {
+        a.cleared = true;
+        a.clearedAt = nowIso;
+      }
+    });
+
+    // บันทึก Log การบันทึกยอดสุทธิเป็นเงินในธนาคาร
+    adjustments.unshift({
+      id: "ADJ-RECON-" + Date.now(),
+      type: "recon_apply",
+      amount: newBalance,
+      note: `บันทึกยอดสุทธิจากการกระทบยอด (${targetDate}) เป็นยอดเงินในธนาคาร (ยอดรับเข้า ฿${Number(todayCollections || 0).toLocaleString()})`,
+      dateStr: targetDate,
+      createdAt: nowIso,
+      cleared: false,
+      isSystemClear: true
+    });
+
+    data.baseBalance = newBalance;
+    data.adjustments = adjustments;
+    if (!data.reconciledDates || typeof data.reconciledDates !== "object") {
+      data.reconciledDates = {};
+    }
+    data.reconciledDates[targetDate] = {
+      reconciledAmount: newBalance,
+      savedAt: nowIso,
+      baseBefore: Number(baseBefore) || 0,
+      todayCollections: Number(todayCollections) || 0
+    };
+
+    await this.saveBankReconciliationData(data);
+    return { newBalance, reconciledRecord: data.reconciledDates[targetDate] };
+  }
+
+  // ยกเลิกการบันทึกยอดสุทธิของวันที่เลือก (คืนค่ากลับเป็นยอดก่อนหน้า)
+  async undoReconciledDate(dateStr) {
+    const data = this.getBankReconciliationData();
+    if (!data.reconciledDates || !data.reconciledDates[dateStr]) return false;
+
+    const record = data.reconciledDates[dateStr];
+    const prevBase = Number(record.baseBefore) || 0;
+    delete data.reconciledDates[dateStr];
+
+    data.baseBalance = prevBase;
+    if (Array.isArray(data.adjustments)) {
+      data.adjustments = data.adjustments.filter(
+        (a) => !(a.type === "recon_apply" && a.dateStr === dateStr)
+      );
+    }
+
+    await this.saveBankReconciliationData(data);
+    return true;
+  }
+
+  // เปิด/ปิด การซิงค์ยอดสุทธิเป็นเงินในธนาคารอัตโนมัติ
+  async setAutoSyncReconciled(enabled) {
+    const data = this.getBankReconciliationData();
+    data.autoSyncReconciled = !!enabled;
+    await this.saveBankReconciliationData(data);
+    return data.autoSyncReconciled;
   }
 
   // --- REALTIME OBSERVER SUBSCRIBERS ---

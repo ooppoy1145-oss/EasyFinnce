@@ -1733,7 +1733,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const reconData = window.easyFinanceDB.getBankReconciliationData ? window.easyFinanceDB.getBankReconciliationData() : { baseBalance: 0, adjustments: [] };
       const bankBase = Number(reconData.baseBalance) || 0;
       const totalNetAdj = (reconData.adjustments || []).reduce((sum, a) => {
-        if (a.cleared || a.isSystemClear || a.type === "clear") return sum;
+        if (a.cleared || a.isSystemClear || a.type === "clear" || a.type === "recon_apply") return sum;
         const amt = Number(a.amount) || 0;
         return a.type === "deduct" ? sum - amt : sum + amt;
       }, 0);
@@ -5059,7 +5059,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let totalDeducted = 0;
     let activeCount = 0;
     allAdjustments.forEach((a) => {
-      if (a.cleared || a.isSystemClear || a.type === "clear") return;
+      if (a.cleared || a.isSystemClear || a.type === "clear" || a.type === "recon_apply") return;
       const amt = Number(a.amount) || 0;
       if (a.type === "deduct") totalDeducted += amt;
       else totalAdded += amt;
@@ -5111,10 +5111,84 @@ document.addEventListener("DOMContentLoaded", () => {
     renderStatsCounters();
   };
 
-  window.renderBankReconciliation = function (filterDateStr = null) {
-    const targetDate = filterDateStr || getLocalDateStr();
+  // บันทึกยอดบวกแล้วคงเหลือสุทธิเป็นยอดเงินในธนาคารทันที (หรือเพิ่มให้อัตโนมัติ)
+  window.applyReconciledToBankBalance = async function (showConfirm = true) {
+    const datePicker = document.getElementById("bankReconDatePicker");
+    const targetDate = datePicker && datePicker.value ? datePicker.value : getLocalDateStr();
     const reconData = window.easyFinanceDB.getBankReconciliationData ? window.easyFinanceDB.getBankReconciliationData() : { baseBalance: 0, adjustments: [] };
     const bankBase = Number(reconData.baseBalance) || 0;
+    const allAdjustments = Array.isArray(reconData.adjustments) ? reconData.adjustments : [];
+
+    let totalAdded = 0;
+    let totalDeducted = 0;
+    allAdjustments.forEach((a) => {
+      if (a.cleared || a.isSystemClear || a.type === "clear" || a.type === "recon_apply") return;
+      const amt = Number(a.amount) || 0;
+      if (a.type === "deduct") totalDeducted += amt;
+      else totalAdded += amt;
+    });
+
+    const currentBankBalance = Math.max(0, bankBase + totalAdded - totalDeducted);
+
+    const allHistory = window.easyFinanceDB.getAllDailyAllCategoriesHistory ? window.easyFinanceDB.getAllDailyAllCategoriesHistory() : [];
+    const dateCollections = allHistory.filter((h) => (h.dateStr && h.dateStr === targetDate) || (h.paidAt && h.paidAt.includes(targetDate)));
+    const todayTotalAmount = dateCollections.reduce((sum, h) => sum + (Number(h.amount) || 0), 0);
+
+    const totalReconciled = currentBankBalance + todayTotalAmount;
+
+    if (showConfirm) {
+      const confirmMsg =
+        `ยืนยันนำ "ยอดบวกแล้วคงเหลือสุทธิ" ฿${totalReconciled.toLocaleString()} มาบันทึกเป็นยอดเงินในธนาคารใช่หรือไม่?\n\n` +
+        `• ยอดเงินในธนาคารจะกลายเป็น: ฿${totalReconciled.toLocaleString()}\n` +
+        `• รวมยอดรับของวันที่ ${formatDateThai(targetDate)} (฿${todayTotalAmount.toLocaleString()}) และหักยอดโอนออกเรียบร้อยแล้ว\n` +
+        `• ระบบจะยกยอดนี้เป็นยอดตั้งต้นเงินในธนาคาร และบันทึกประวัติกระทบยอดทันที`;
+
+      if (!confirm(confirmMsg)) return;
+    }
+
+    await window.easyFinanceDB.applyReconciledBankBalance({
+      dateStr: targetDate,
+      reconciledAmount: totalReconciled,
+      baseBefore: currentBankBalance,
+      todayCollections: todayTotalAmount
+    });
+
+    showAdminToast(`บันทึกยอดสุทธิ ฿${totalReconciled.toLocaleString()} เป็นเงินในธนาคารเรียบร้อยแล้ว!`, "success");
+    renderBankReconciliation(targetDate);
+    renderStatsCounters();
+  };
+
+  // ยกเลิกการบันทึกยอดสุทธิของวันที่เลือก (คืนค่ากลับเป็นยอดเดิม)
+  window.promptUndoReconciledBankBalance = async function () {
+    const datePicker = document.getElementById("bankReconDatePicker");
+    const targetDate = datePicker && datePicker.value ? datePicker.value : getLocalDateStr();
+    if (!confirm(`คุณต้องการยกเลิกการบันทึกยอดสุทธิของวันที่ ${formatDateThai(targetDate)} และคืนค่าเงินในธนาคารกลับเป็นยอดเดิมใช่หรือไม่?`)) return;
+
+    await window.easyFinanceDB.undoReconciledDate(targetDate);
+    showAdminToast(`ยกเลิกการบันทึกยอดสุทธิของวันที่ ${formatDateThai(targetDate)} เรียบร้อยแล้ว`, "info");
+    renderBankReconciliation(targetDate);
+    renderStatsCounters();
+  };
+
+  // เปิด/ปิด การซิงค์ยอดสุทธิเป็นเงินในธนาคารอัตโนมัติ
+  window.onBankReconAutoSyncToggle = async function (checked) {
+    await window.easyFinanceDB.setAutoSyncReconciled(checked);
+    if (checked) {
+      showAdminToast("เปิดโหมดซิงค์ยอดสุทธิเป็นเงินในธนาคารอัตโนมัติแล้ว", "success");
+      applyReconciledToBankBalance(false);
+    } else {
+      showAdminToast("ปิดโหมดซิงค์อัตโนมัติแล้ว (สามารถกดปุ่มบันทึกเองได้ตลอดเวลา)", "info");
+      const datePicker = document.getElementById("bankReconDatePicker");
+      renderBankReconciliation(datePicker ? datePicker.value : getLocalDateStr());
+    }
+  };
+
+  window.renderBankReconciliation = function (filterDateStr = null) {
+    const targetDate = filterDateStr || getLocalDateStr();
+    const reconData = window.easyFinanceDB.getBankReconciliationData ? window.easyFinanceDB.getBankReconciliationData() : { baseBalance: 0, adjustments: [], reconciledDates: {}, autoSyncReconciled: false };
+    const bankBase = Number(reconData.baseBalance) || 0;
+    const reconciledInfo = reconData.reconciledDates ? reconData.reconciledDates[targetDate] : null;
+    const isReconciled = !!reconciledInfo;
 
     // Adjustments:
     const allAdjustments = Array.isArray(reconData.adjustments) ? reconData.adjustments : [];
@@ -5123,7 +5197,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let activeAdjustmentsCount = 0;
 
     allAdjustments.forEach((a) => {
-      if (a.cleared || a.isSystemClear || a.type === "clear") return;
+      if (a.cleared || a.isSystemClear || a.type === "clear" || a.type === "recon_apply") return;
       const amt = Number(a.amount) || 0;
       if (a.type === "deduct") totalDeducted += amt;
       else totalAdded += amt;
@@ -5229,13 +5303,53 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     }
 
-    // 4. Update Tab Badges
+    // 4. Update Reconciled Action Area (Button, Status Badge, Undo)
+    const btnApply = document.getElementById("btnApplyReconciledToBank");
+    const btnApplyLabel = document.getElementById("btnApplyReconciledLabel");
+    const btnUndo = document.getElementById("btnUndoReconciledBank");
+    const statusText = document.getElementById("bankReconReconciledStatusText");
+    const headerBadge = document.getElementById("bankReconHeaderBadge");
+    const autoSyncToggle = document.getElementById("bankReconAutoSyncToggle");
+
+    if (autoSyncToggle) {
+      autoSyncToggle.checked = !!reconData.autoSyncReconciled;
+    }
+
+    if (isReconciled) {
+      if (headerBadge) {
+        headerBadge.innerHTML = `<span class="status-badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.5); font-size: 0.78rem;"><i class="fa-solid fa-circle-check"></i> บันทึกเข้าเงินในธนาคารแล้ว</span>`;
+      }
+      if (statusText) {
+        statusText.innerHTML = `<span style="color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> บันทึกยอดสุทธิ ฿${reconciledInfo.reconciledAmount.toLocaleString()} เป็นเงินในธนาคารเรียบร้อยแล้ว</span>`;
+      }
+      if (btnApplyLabel) {
+        btnApplyLabel.textContent = `อัปเดตยอดสุทธิใหม่ (฿${totalReconciled.toLocaleString()})`;
+      }
+      if (btnUndo) {
+        btnUndo.style.display = "inline-flex";
+      }
+    } else {
+      if (headerBadge) {
+        headerBadge.innerHTML = `<span class="status-badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-size: 0.78rem;"><i class="fa-solid fa-hourglass-half"></i> ยังไม่บันทึกเข้าธนาคาร</span>`;
+      }
+      if (statusText) {
+        statusText.innerHTML = `<span style="color: var(--text-dim);"><i class="fa-solid fa-circle-info" style="color: #2dd4bf;"></i> คลิกปุ่มเพื่อนำยอดสุทธิ ฿${totalReconciled.toLocaleString()} ไปบันทึกเป็นเงินในธนาคาร</span>`;
+      }
+      if (btnApplyLabel) {
+        btnApplyLabel.textContent = `บันทึกยอดสุทธิ (฿${totalReconciled.toLocaleString()}) เป็นเงินในธนาคาร`;
+      }
+      if (btnUndo) {
+        btnUndo.style.display = "none";
+      }
+    }
+
+    // 5. Update Tab Badges
     const tabAdjBadge = document.getElementById("bankReconAdjTabBadge");
     const tabColBadge = document.getElementById("bankReconColTabBadge");
     if (tabAdjBadge) tabAdjBadge.textContent = `${allAdjustments.length} รายการ`;
     if (tabColBadge) tabColBadge.textContent = `${dateCollections.length} รายการ (฿${todayTotalAmount.toLocaleString()})`;
 
-    // 5. Update Adjustments Table with Filters and Notes
+    // 6. Update Adjustments Table with Filters and Notes
     const adjTableBody = document.getElementById("bankReconAdjustmentsTableBody");
     if (adjTableBody) {
       adjTableBody.innerHTML = "";
@@ -5262,7 +5376,8 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         displayAdjustments.forEach((a) => {
           const tr = document.createElement("tr");
-          const isSystemClear = a.isSystemClear || a.type === "clear";
+          const isReconApply = a.type === "recon_apply";
+          const isSystemClear = a.isSystemClear || a.type === "clear" || isReconApply;
           const isDeduct = a.type === "deduct";
           const isAdd = !isSystemClear && !isDeduct;
 
@@ -5271,7 +5386,11 @@ document.addEventListener("DOMContentLoaded", () => {
           let amountColor = "#34d399";
           let amountSign = "+";
 
-          if (isSystemClear) {
+          if (isReconApply) {
+            typeBadgeHtml = `<span class="status-badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.45);"><i class="fa-solid fa-cloud-arrow-up"></i> บันทึกยอดสุทธิ</span>`;
+            amountColor = "#34d399";
+            amountSign = "";
+          } else if (isSystemClear) {
             typeBadgeHtml = `<span class="status-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45);"><i class="fa-solid fa-arrows-rotate"></i> เคลียร์รอบ</span>`;
             amountColor = "#fbbf24";
             amountSign = "";
