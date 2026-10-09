@@ -54,6 +54,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const statTotalDailyAllCategories = document.getElementById("statTotalDailyAllCategories");
   const statDailyAllCategoriesSub = document.getElementById("statDailyAllCategoriesSub");
   const dailyAllCategoriesReportModal = document.getElementById("dailyAllCategoriesReportModal");
+  const cardStatBankReconciliation = document.getElementById("cardStatBankReconciliation");
+  const statLabelBankReconciliation = document.getElementById("statLabelBankReconciliation");
+  const statTotalBankReconciliation = document.getElementById("statTotalBankReconciliation");
+  const statBankReconciliationSub = document.getElementById("statBankReconciliationSub");
+  const bankReconciliationModal = document.getElementById("bankReconciliationModal");
   const addManualInstallmentModal = document.getElementById("addManualInstallmentModal");
   const editInstallmentModal = document.getElementById("editInstallmentModal");
 
@@ -1501,6 +1506,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (cardStatInterestCut) cardStatInterestCut.style.display = "none";
       if (cardStatDownPayment) cardStatDownPayment.style.display = "none";
       if (cardStatDailyAllCategories) cardStatDailyAllCategories.style.display = "none";
+      if (cardStatBankReconciliation) cardStatBankReconciliation.style.display = "none";
       const allBadDebts = window.easyFinanceDB.getBadDebts ? window.easyFinanceDB.getBadDebts() : [];
       let totalBadAmount = 0;
       let badDebtCount = 0;
@@ -1531,6 +1537,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cardStatInterestCut) cardStatInterestCut.style.display = "";
     if (cardStatDownPayment) cardStatDownPayment.style.display = "";
     if (cardStatDailyAllCategories) cardStatDailyAllCategories.style.display = "";
+    if (cardStatBankReconciliation) cardStatBankReconciliation.style.display = "";
 
     const contracts = window.easyFinanceDB.getContracts();
     let totalFinanced = 0;
@@ -1708,7 +1715,7 @@ document.addEventListener("DOMContentLoaded", () => {
         statDownPaymentSub.textContent = `เงินดาวน์ ${totalDownPaymentCount} รายการ (คลิกดูสรุปต่อวัน)`;
       }
 
-      // ช่องสรุปรวมต่อวัน (รวมยอดรับแล้วของทุกหมวดประจำวัน: รายวัน รายอาทิตย์ รายเดือน รถมอเตอร์ไซค์)
+      // ช่องสรุปรวมต่อวัน (รวมยอดรับแล้วของทุกหมวดประจำวัน: รายวัน รายอาทิตย์ รายเดือน รถมอเตอร์ไซค์ และตัดดอก)
       const allDailyCollected = window.easyFinanceDB.getAllDailyAllCategoriesHistory ? window.easyFinanceDB.getAllDailyAllCategoriesHistory() : [];
       const todayStr = getLocalDateStr();
       const todayCollectedList = allDailyCollected.filter((h) => (h.dateStr && h.dateStr === todayStr) || (h.paidAt && h.paidAt.includes(todayStr)));
@@ -1719,7 +1726,26 @@ document.addEventListener("DOMContentLoaded", () => {
         statTotalDailyAllCategories.classList.remove("masked-stat-text");
       }
       if (statDailyAllCategoriesSub) {
-        statDailyAllCategoriesSub.textContent = `รับแล้ววันนี้ 4 หมวด: ${todayCollectedList.length} รายการ (คลิกดูสรุปต่อวัน)`;
+        statDailyAllCategoriesSub.textContent = `รับแล้ววันนี้ 5 หมวด (รวมตัดดอก): ${todayCollectedList.length} รายการ (คลิกดูสรุปต่อวัน)`;
+      }
+
+      // ช่องเปรียบเทียบยอดในบัญชี (Bank Reconciliation: เงินในธนาคาร + ยอดรวมเข้ามาวันนี้ ยกเว้นเงินดาวน์)
+      const reconData = window.easyFinanceDB.getBankReconciliationData ? window.easyFinanceDB.getBankReconciliationData() : { baseBalance: 0, adjustments: [] };
+      const bankBase = Number(reconData.baseBalance) || 0;
+      const totalNetAdj = (reconData.adjustments || []).reduce((sum, a) => {
+        if (a.cleared || a.isSystemClear || a.type === "clear") return sum;
+        const amt = Number(a.amount) || 0;
+        return a.type === "deduct" ? sum - amt : sum + amt;
+      }, 0);
+      const currentBankBalance = Math.max(0, bankBase + totalNetAdj);
+      const totalReconciled = currentBankBalance + todayTotalAmount;
+
+      if (statTotalBankReconciliation) {
+        statTotalBankReconciliation.textContent = `฿${totalReconciled.toLocaleString()}`;
+        statTotalBankReconciliation.classList.remove("masked-stat-text");
+      }
+      if (statBankReconciliationSub) {
+        statBankReconciliationSub.textContent = `เงินธนาคาร ฿${currentBankBalance.toLocaleString()} + รับวันนี้ ฿${todayTotalAmount.toLocaleString()}`;
       }
 
       if (quickPillDaily) {
@@ -1782,6 +1808,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       if (statDailyAllCategoriesSub) {
         statDailyAllCategoriesSub.textContent = "เฉพาะสิทธิ์หัวหน้าเท่านั้น";
+      }
+
+      // ช่องเปรียบเทียบยอดในบัญชีปิดเป็น * สำหรับพนักงาน
+      if (statTotalBankReconciliation) {
+        statTotalBankReconciliation.textContent = "฿******";
+        statTotalBankReconciliation.classList.add("masked-stat-text");
+      }
+      if (statBankReconciliationSub) {
+        statBankReconciliationSub.textContent = "เฉพาะสิทธิ์หัวหน้าเท่านั้น";
       }
 
       // ช่องยอดรวมมอไซต์ปิดเป็น * สำหรับพนักงาน
@@ -4543,12 +4578,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const totalAmountFiltered = filteredList.reduce((sum, h) => sum + (Number(h.amount) || 0), 0);
     const totalAmountAll = allHistory.reduce((sum, h) => sum + (Number(h.amount) || 0), 0);
 
-    // คำนวณสรุป 4 หมวดหมู่ของวันที่เลือก
+    // คำนวณสรุป 5 หมวดหมู่ของวันที่เลือก (รายวัน / รายอาทิตย์ / รายเดือน / มอเตอร์ไซค์ / ตัดดอก - Requirement 5)
     const catTotals = {
       daily: { title: "หมวดรายวัน", amount: 0, count: 0, color: "#34d399", bg: "rgba(16, 185, 129, 0.15)", border: "rgba(16, 185, 129, 0.35)", icon: "fa-solid fa-clock" },
       weekly: { title: "หมวดรายอาทิตย์", amount: 0, count: 0, color: "#60a5fa", bg: "rgba(59, 130, 246, 0.15)", border: "rgba(59, 130, 246, 0.35)", icon: "fa-solid fa-calendar-week" },
       monthly: { title: "หมวดรายเดือน", amount: 0, count: 0, color: "#c084fc", bg: "rgba(168, 85, 247, 0.15)", border: "rgba(168, 85, 247, 0.35)", icon: "fa-solid fa-calendar-days" },
-      motorcycle: { title: "หมวดรถมอเตอร์ไซค์", amount: 0, count: 0, color: "#38bdf8", bg: "rgba(56, 189, 248, 0.15)", border: "rgba(56, 189, 248, 0.35)", icon: "fa-solid fa-motorcycle" }
+      motorcycle: { title: "หมวดรถมอเตอร์ไซค์", amount: 0, count: 0, color: "#38bdf8", bg: "rgba(56, 189, 248, 0.15)", border: "rgba(56, 189, 248, 0.35)", icon: "fa-solid fa-motorcycle" },
+      interest_cut: { title: "หมวดตัดดอก", amount: 0, count: 0, color: "#22d3ee", bg: "rgba(6, 182, 212, 0.15)", border: "rgba(6, 182, 212, 0.35)", icon: "fa-solid fa-percent" }
     };
 
     filteredList.forEach((item) => {
@@ -4561,8 +4597,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (titleEl) {
       titleEl.textContent = filterDateStr
-        ? `รายการรับชำระเงินทุกหมวดประจำวันที่ ${formatDateThai(filterDateStr)}`
-        : "รายการรับชำระเงินทุกหมวดทั้งหมด (ทุกวันสะสม)";
+        ? `รายการรับชำระเงินทุกหมวดประจำวันที่ ${formatDateThai(filterDateStr)} (รวมตัดดอก)`
+        : "รายการรับชำระเงินทุกหมวดทั้งหมด (ทุกวันสะสม รวมตัดดอก)";
     }
     if (countBadge) {
       countBadge.textContent = `${filteredList.length} รายการ (รวม ฿${totalAmountFiltered.toLocaleString()})`;
@@ -4646,6 +4682,22 @@ document.addEventListener("DOMContentLoaded", () => {
             </span>
           </div>
         </div>
+
+        <div class="cat-mini-summary-card" style="border-left: 3px solid ${catTotals.interest_cut.color};">
+          <div>
+            <div style="font-size: 0.78rem; color: var(--text-dim); display: flex; align-items: center; gap: 5px;">
+              <i class="${catTotals.interest_cut.icon}" style="color: ${catTotals.interest_cut.color};"></i> ${catTotals.interest_cut.title}
+            </div>
+            <div style="font-size: 1.15rem; font-weight: 700; color: ${catTotals.interest_cut.color}; margin-top: 2px;">
+              ฿${catTotals.interest_cut.amount.toLocaleString()}
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span class="status-badge badge-cat-interest-cut" style="font-size: 0.72rem;">
+              ${catTotals.interest_cut.count} รายการ
+            </span>
+          </div>
+        </div>
       `;
     }
 
@@ -4658,17 +4710,18 @@ document.addEventListener("DOMContentLoaded", () => {
           motorcycle: '<span class="status-badge badge-cat-motorcycle"><i class="fa-solid fa-motorcycle"></i> รถมอเตอร์ไซค์</span>',
           daily: '<span class="status-badge badge-cat-daily"><i class="fa-solid fa-clock"></i> รายวัน</span>',
           weekly: '<span class="status-badge badge-cat-weekly"><i class="fa-solid fa-calendar-week"></i> รายอาทิตย์</span>',
-          monthly: '<span class="status-badge badge-cat-monthly"><i class="fa-solid fa-calendar-days"></i> รายเดือน</span>'
+          monthly: '<span class="status-badge badge-cat-monthly"><i class="fa-solid fa-calendar-days"></i> รายเดือน</span>',
+          interest_cut: '<span class="status-badge badge-cat-interest-cut"><i class="fa-solid fa-percent"></i> ตัดดอก</span>'
         };
 
         filteredList.forEach((item) => {
           const tr = document.createElement("tr");
           tr.className = "tr-daily-category-item";
-          const badgeHtml = catBadges[item.category] || catBadges.daily;
+          const badgeHtml = catBadges[item.category] || (item.isDirectFine ? '<span class="status-badge" style="background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.3);">ค่าปรับล่าช้า</span>' : catBadges.daily);
 
           let instCol = item.isDirectFine
             ? '<span class="status-badge" style="background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.3);">ค่าปรับล่าช้า</span>'
-            : `งวดที่ ${item.installmentNo}`;
+            : (item.installmentNo || "-");
 
           if (item.fineAmount > 0 && !item.isDirectFine) {
             instCol += `<span style="font-size: 0.72rem; color: #fb923c; display: block;">+ ค่าปรับ ฿${Number(item.fineAmount).toLocaleString()}</span>`;
@@ -4731,6 +4784,8 @@ document.addEventListener("DOMContentLoaded", () => {
             monthlyCount: 0,
             motorcycleAmount: 0,
             motorcycleCount: 0,
+            interestCutAmount: 0,
+            interestCutCount: 0,
             clients: []
           };
         }
@@ -4750,6 +4805,9 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (h.category === "motorcycle") {
           grouped[d].motorcycleAmount += amt;
           grouped[d].motorcycleCount += 1;
+        } else if (h.category === "interest_cut") {
+          grouped[d].interestCutAmount += amt;
+          grouped[d].interestCutCount += 1;
         }
 
         if (h.contractName && !grouped[d].clients.includes(h.contractName)) {
@@ -4782,6 +4840,9 @@ document.addEventListener("DOMContentLoaded", () => {
           if (row.motorcycleAmount > 0) {
             catChips += `<span class="status-badge badge-cat-motorcycle" style="margin: 2px; font-size: 0.72rem;"><i class="fa-solid fa-motorcycle"></i> มอเตอร์ไซค์: ฿${row.motorcycleAmount.toLocaleString()} (${row.motorcycleCount})</span>`;
           }
+          if (row.interestCutAmount > 0) {
+            catChips += `<span class="status-badge badge-cat-interest-cut" style="margin: 2px; font-size: 0.72rem;"><i class="fa-solid fa-percent"></i> ตัดดอก: ฿${row.interestCutAmount.toLocaleString()} (${row.interestCutCount})</span>`;
+          }
 
           tr.innerHTML = `
             <td><strong>${formatDateThai(d)}</strong> <span style="font-size: 0.72rem; color: var(--text-dim);">(${d})</span></td>
@@ -4806,6 +4867,533 @@ document.addEventListener("DOMContentLoaded", () => {
       openDailyAllCategoriesReportModal();
     });
   }
+
+  // --- BANK RECONCILIATION REPORT HANDLERS (ช่องเปรียบเทียบยอดในบัญชี & กระทบยอดเงินธนาคาร) ---
+
+  let currentBankAdjFilterScope = "all"; // 'all', 'active', 'today'
+  let currentBankAdjSearchQuery = "";
+  let currentBankReconBottomTab = "adjustments"; // 'adjustments' or 'collections'
+
+  function formatDateTimeThai(isoStr) {
+    if (!isoStr) return "-";
+    try {
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) {
+        return formatDateThai(isoStr);
+      }
+      const months = [
+        "ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.",
+        "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."
+      ];
+      const day = d.getDate();
+      const month = months[d.getMonth()];
+      const year = d.getFullYear();
+      const hours = String(d.getHours()).padStart(2, "0");
+      const mins = String(d.getMinutes()).padStart(2, "0");
+      return `${day} ${month} ${year} (${hours}:${mins} น.)`;
+    } catch (e) {
+      return formatDateThai(isoStr);
+    }
+  }
+
+  if (cardStatBankReconciliation) {
+    cardStatBankReconciliation.addEventListener("click", () => {
+      openBankReconciliationModal();
+    });
+  }
+
+  window.openBankReconciliationModal = function () {
+    const datePicker = document.getElementById("bankReconDatePicker");
+    if (datePicker) {
+      datePicker.value = selectedDailyDate || getLocalDateStr();
+    }
+    setBankReconBottomTab(currentBankReconBottomTab || "adjustments");
+    renderBankReconciliation(datePicker ? datePicker.value : getLocalDateStr());
+    const modal = document.getElementById("bankReconciliationModal");
+    if (modal) modal.classList.add("active");
+  };
+
+  window.closeBankReconciliationModal = function () {
+    const modal = document.getElementById("bankReconciliationModal");
+    if (modal) modal.classList.remove("active");
+  };
+
+  window.onBankReconDateChange = function (dateVal) {
+    renderBankReconciliation(dateVal);
+  };
+
+  window.setBankReconDateToday = function () {
+    const today = getLocalDateStr();
+    const datePicker = document.getElementById("bankReconDatePicker");
+    if (datePicker) datePicker.value = today;
+    renderBankReconciliation(today);
+  };
+
+  window.setBankReconBottomTab = function (tabKey) {
+    currentBankReconBottomTab = tabKey;
+    const tabAdj = document.getElementById("tabContentBankAdjustments");
+    const tabCol = document.getElementById("tabContentBankCollections");
+    const btnAdj = document.getElementById("tabBtnBankReconAdjustments");
+    const btnCol = document.getElementById("tabBtnBankReconCollections");
+
+    if (tabKey === "collections") {
+      if (tabAdj) tabAdj.style.display = "none";
+      if (tabCol) tabCol.style.display = "block";
+      if (btnAdj) {
+        btnAdj.style.background = "rgba(255, 255, 255, 0.05)";
+        btnAdj.style.color = "#cbd5e1";
+        btnAdj.style.border = "1px solid rgba(255, 255, 255, 0.15)";
+      }
+      if (btnCol) {
+        btnCol.style.background = "rgba(168, 85, 247, 0.2)";
+        btnCol.style.color = "#c084fc";
+        btnCol.style.border = "1px solid rgba(168, 85, 247, 0.45)";
+      }
+    } else {
+      if (tabAdj) tabAdj.style.display = "block";
+      if (tabCol) tabCol.style.display = "none";
+      if (btnAdj) {
+        btnAdj.style.background = "rgba(20, 184, 166, 0.2)";
+        btnAdj.style.color = "#5eead4";
+        btnAdj.style.border = "1px solid rgba(20, 184, 166, 0.45)";
+      }
+      if (btnCol) {
+        btnCol.style.background = "rgba(255, 255, 255, 0.05)";
+        btnCol.style.color = "#cbd5e1";
+        btnCol.style.border = "1px solid rgba(255, 255, 255, 0.15)";
+      }
+    }
+  };
+
+  window.onBankAdjFilterChange = function (scope) {
+    currentBankAdjFilterScope = scope;
+    const datePicker = document.getElementById("bankReconDatePicker");
+    renderBankReconciliation(datePicker ? datePicker.value : getLocalDateStr());
+  };
+
+  window.onBankAdjSearchChange = function (query) {
+    currentBankAdjSearchQuery = (query || "").trim().toLowerCase();
+    const datePicker = document.getElementById("bankReconDatePicker");
+    renderBankReconciliation(datePicker ? datePicker.value : getLocalDateStr());
+  };
+
+  window.fillBankAdjNote = function (noteText) {
+    const noteInput = document.getElementById("bankAdjNoteInput");
+    if (!noteInput) return;
+    if (!noteInput.value.trim()) {
+      noteInput.value = noteText;
+    } else {
+      noteInput.value = noteInput.value.trim() + " " + noteText;
+    }
+    noteInput.focus();
+  };
+
+  window.submitBankAdjustment = async function (type) {
+    const amtInput = document.getElementById("bankAdjAmountInput");
+    const noteInput = document.getElementById("bankAdjNoteInput");
+    const datePicker = document.getElementById("bankReconDatePicker");
+    const amount = Number(amtInput ? amtInput.value : 0);
+
+    if (!amount || amount <= 0) {
+      alert("กรุณากรอกจำนวนเงินที่มากกว่า 0");
+      if (amtInput) amtInput.focus();
+      return;
+    }
+
+    const note = noteInput ? noteInput.value.trim() : "";
+    const dateStr = datePicker && datePicker.value ? datePicker.value : getLocalDateStr();
+
+    await window.easyFinanceDB.addBankAdjustment({
+      type,
+      amount,
+      note,
+      dateStr
+    });
+
+    if (amtInput) amtInput.value = "";
+    if (noteInput) noteInput.value = "";
+
+    showAdminToast(
+      type === "deduct"
+        ? `บันทึกลดยอดเงิน (โอนออก/ถอน) ฿${amount.toLocaleString()} เรียบร้อยแล้ว`
+        : `บันทึกเพิ่มยอดเงิน ฿${amount.toLocaleString()} เรียบร้อยแล้ว`,
+      "success"
+    );
+
+    renderBankReconciliation(dateStr);
+    renderStatsCounters();
+  };
+
+  window.deleteBankAdjustment = async function (adjId) {
+    if (!confirm("คุณต้องการลบรายการปรับปรุงยอดเงินนี้ใช่หรือไม่?")) return;
+    await window.easyFinanceDB.deleteBankAdjustment(adjId);
+    showAdminToast("ลบรายการปรับปรุงยอดเรียบร้อยแล้ว", "success");
+    const datePicker = document.getElementById("bankReconDatePicker");
+    renderBankReconciliation(datePicker ? datePicker.value : getLocalDateStr());
+    renderStatsCounters();
+  };
+
+  window.editBankAdjustmentNotePrompt = async function (adjId) {
+    const reconData = window.easyFinanceDB.getBankReconciliationData();
+    const adjustments = Array.isArray(reconData.adjustments) ? reconData.adjustments : [];
+    const item = adjustments.find((a) => a.id === adjId);
+    if (!item) return;
+
+    const currentNote = item.note || "";
+    const newNote = prompt("แก้ไขหมายเหตุ / รายละเอียด (เช่น โอนยอดออก บัญชี..., ค่าน้ำมัน):", currentNote);
+    if (newNote === null) return;
+
+    await window.easyFinanceDB.editBankAdjustmentNote(adjId, newNote.trim());
+    showAdminToast("อัปเดตหมายเหตุเรียบร้อยแล้ว", "success");
+    const datePicker = document.getElementById("bankReconDatePicker");
+    renderBankReconciliation(datePicker ? datePicker.value : getLocalDateStr());
+  };
+
+  // Requirement 1: เคลียร์ยอด ปรับเพิ่มสะสม ปรับลดสะสม (เริ่มรอบใหม่ โดยยกยอดปัจจุบันเป็นยอดตั้งต้น)
+  window.promptClearAccumulatedAdjustments = async function () {
+    const reconData = window.easyFinanceDB.getBankReconciliationData();
+    const bankBase = Number(reconData.baseBalance) || 0;
+    const allAdjustments = Array.isArray(reconData.adjustments) ? reconData.adjustments : [];
+
+    let totalAdded = 0;
+    let totalDeducted = 0;
+    let activeCount = 0;
+    allAdjustments.forEach((a) => {
+      if (a.cleared || a.isSystemClear || a.type === "clear") return;
+      const amt = Number(a.amount) || 0;
+      if (a.type === "deduct") totalDeducted += amt;
+      else totalAdded += amt;
+      activeCount++;
+    });
+
+    const currentBankBalance = Math.max(0, bankBase + totalAdded - totalDeducted);
+
+    const confirmMsg =
+      `ยืนยันการเคลียร์ยอดปรับเพิ่มสะสม (+฿${totalAdded.toLocaleString()}) และ ปรับลดสะสม (-฿${totalDeducted.toLocaleString()}) ใช่หรือไม่?\n\n` +
+      `• ยอดคงเหลือในธนาคารปัจจุบัน ฿${currentBankBalance.toLocaleString()} จะถูกยกเป็น "ยอดตั้งต้นรอบใหม่"\n` +
+      `• ยอดปรับเพิ่ม/ลดสะสมจะเริ่มนับรอบใหม่เป็น ฿0\n` +
+      `• ประวัติและหมายเหตุเดิม (${allAdjustments.length} รายการ) จะยังคงเก็บไว้ตรวจสอบย้อนหลังได้ตลอดเวลา`;
+
+    if (!confirm(confirmMsg)) return;
+
+    const res = await window.easyFinanceDB.clearBankAdjustmentsAccumulated();
+    showAdminToast(`เคลียร์ยอดสะสมเรียบร้อยแล้ว! ยกยอดคงเหลือ ฿${res.newBaseBalance.toLocaleString()} เป็นยอดตั้งต้นรอบใหม่`, "success");
+
+    const datePicker = document.getElementById("bankReconDatePicker");
+    renderBankReconciliation(datePicker ? datePicker.value : getLocalDateStr());
+    renderStatsCounters();
+  };
+
+  // ล้างประวัติทั้งหมด (หากต้องการลบประวัติเดิมทิ้งจริง)
+  window.promptClearAllBankAdjustmentsHistory = async function () {
+    if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างประวัติรายการปรับปรุงยอดเงินและหมายเหตุทั้งหมด?\n(ข้อมูลประวัติการโอนออก/เพิ่มเงินเดิมจะถูกลบทั้งหมด)")) return;
+    await window.easyFinanceDB.clearAllBankAdjustmentsHistory();
+    showAdminToast("ล้างประวัติรายการปรับปรุงยอดเงินทั้งหมดเรียบร้อยแล้ว", "success");
+    const datePicker = document.getElementById("bankReconDatePicker");
+    renderBankReconciliation(datePicker ? datePicker.value : getLocalDateStr());
+    renderStatsCounters();
+  };
+
+  window.promptSetBankBaseBalance = async function () {
+    const reconData = window.easyFinanceDB.getBankReconciliationData();
+    const currentBase = Number(reconData.baseBalance) || 0;
+    const input = prompt("กรุณาระบุยอดเงินในบัญชีธนาคารเริ่มต้น (บาท):", currentBase);
+    if (input === null) return;
+    const num = Number(input.replace(/,/g, "").trim());
+    if (isNaN(num) || num < 0) {
+      alert("กรุณากรอกตัวเลขจำนวนเงินที่ถูกต้อง");
+      return;
+    }
+    await window.easyFinanceDB.setBankBaseBalance(num);
+    showAdminToast(`กำหนดยอดเงินในบัญชีเริ่มต้นเป็น ฿${num.toLocaleString()} เรียบร้อยแล้ว`, "success");
+    const datePicker = document.getElementById("bankReconDatePicker");
+    renderBankReconciliation(datePicker ? datePicker.value : getLocalDateStr());
+    renderStatsCounters();
+  };
+
+  window.renderBankReconciliation = function (filterDateStr = null) {
+    const targetDate = filterDateStr || getLocalDateStr();
+    const reconData = window.easyFinanceDB.getBankReconciliationData ? window.easyFinanceDB.getBankReconciliationData() : { baseBalance: 0, adjustments: [] };
+    const bankBase = Number(reconData.baseBalance) || 0;
+
+    // Adjustments:
+    const allAdjustments = Array.isArray(reconData.adjustments) ? reconData.adjustments : [];
+    let totalAdded = 0;
+    let totalDeducted = 0;
+    let activeAdjustmentsCount = 0;
+
+    allAdjustments.forEach((a) => {
+      if (a.cleared || a.isSystemClear || a.type === "clear") return;
+      const amt = Number(a.amount) || 0;
+      if (a.type === "deduct") totalDeducted += amt;
+      else totalAdded += amt;
+      activeAdjustmentsCount++;
+    });
+
+    const currentBankBalance = Math.max(0, bankBase + totalAdded - totalDeducted);
+
+    // Adjustments of the selected date:
+    const dateAdjustments = allAdjustments.filter((a) => a.dateStr === targetDate || (a.createdAt && a.createdAt.slice(0, 10) === targetDate));
+
+    // Today's collections from all categories (including interest cuts, excluding down payment)
+    const allHistory = window.easyFinanceDB.getAllDailyAllCategoriesHistory ? window.easyFinanceDB.getAllDailyAllCategoriesHistory() : [];
+    const dateCollections = allHistory.filter((h) => (h.dateStr && h.dateStr === targetDate) || (h.paidAt && h.paidAt.includes(targetDate)));
+    const todayTotalAmount = dateCollections.reduce((sum, h) => sum + (Number(h.amount) || 0), 0);
+
+    // Sum Reconciled (กระทบยอด: เงินในธนาคาร + ยอดรับวันนี้)
+    const totalReconciled = currentBankBalance + todayTotalAmount;
+
+    // 1. Update Card 1: เงินในธนาคาร
+    const baseLabelEl = document.getElementById("bankReconBaseLabel");
+    const bankBalEl = document.getElementById("bankReconCurrentBalance");
+    const adjSummEl = document.getElementById("bankReconAdjustmentsSummary");
+    if (baseLabelEl) baseLabelEl.textContent = `ยอดตั้งต้น: ฿${bankBase.toLocaleString()}`;
+    if (bankBalEl) bankBalEl.textContent = `฿${currentBankBalance.toLocaleString()}`;
+    if (adjSummEl) {
+      adjSummEl.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
+          <span>ปรับเพิ่มสะสม: <strong style="color: #34d399;">+฿${totalAdded.toLocaleString()}</strong></span>
+          <span>ปรับลดสะสม: <strong style="color: #f87171;">-฿${totalDeducted.toLocaleString()}</strong></span>
+          <span>รอบนี้: <strong>${activeAdjustmentsCount} รายการ</strong></span>
+        </div>
+      `;
+    }
+
+    // 2. Update Card 2: ยอดรวมของวันนั้น (ยกเว้นเงินดาวน์)
+    const todayCountEl = document.getElementById("bankReconTodayCountBadge");
+    const todayTotalEl = document.getElementById("bankReconTodayTotalAmount");
+    const catBadgesContainer = document.getElementById("bankReconCategoryBadges");
+    if (todayCountEl) todayCountEl.textContent = `${dateCollections.length} รายการ`;
+    if (todayTotalEl) todayTotalEl.textContent = `฿${todayTotalAmount.toLocaleString()}`;
+
+    // Breakdown for category chips:
+    const catMap = {
+      daily: { title: "รายวัน", amount: 0, count: 0, color: "#34d399" },
+      weekly: { title: "รายอาทิตย์", amount: 0, count: 0, color: "#60a5fa" },
+      monthly: { title: "รายเดือน", amount: 0, count: 0, color: "#c084fc" },
+      motorcycle: { title: "มอเตอร์ไซค์", amount: 0, count: 0, color: "#38bdf8" },
+      interest_cut: { title: "ตัดดอก", amount: 0, count: 0, color: "#22d3ee" },
+      fine: { title: "ค่าปรับ", amount: 0, count: 0, color: "#fb923c" }
+    };
+    dateCollections.forEach((item) => {
+      if (item.isDirectFine || (item.fineAmount > 0 && item.baseAmount === 0)) {
+        catMap.fine.amount += Number(item.amount) || 0;
+        catMap.fine.count++;
+      } else if (item.category === "interest_cut") {
+        catMap.interest_cut.amount += Number(item.amount) || 0;
+        catMap.interest_cut.count++;
+      } else if (catMap[item.category]) {
+        catMap[item.category].amount += Number(item.amount) || 0;
+        catMap[item.category].count++;
+      }
+    });
+
+    if (catBadgesContainer) {
+      let chipsHtml = "";
+      Object.values(catMap).forEach((c) => {
+        if (c.amount > 0) {
+          chipsHtml += `
+            <span class="status-badge" style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15); font-size: 0.72rem; color: ${c.color};">
+              ${c.title}: ฿${c.amount.toLocaleString()} (${c.count})
+            </span>
+          `;
+        }
+      });
+      catBadgesContainer.innerHTML = chipsHtml || `<span style="font-size: 0.75rem; color: var(--text-dim);">ไม่มีรายการรับชำระในวันนี้</span>`;
+    }
+
+    // 3. Update Equation Cards: กระทบยอด
+    const eqBankEl = document.getElementById("eqBankAmount");
+    const eqTodayEl = document.getElementById("eqTodayAmount");
+    const eqTotalEl = document.getElementById("eqTotalReconciledAmount");
+    if (eqBankEl) eqBankEl.textContent = `฿${currentBankBalance.toLocaleString()}`;
+    if (eqTodayEl) eqTodayEl.textContent = `฿${todayTotalAmount.toLocaleString()}`;
+    if (eqTotalEl) eqTotalEl.textContent = `฿${totalReconciled.toLocaleString()}`;
+
+    // Top Summary Badges
+    const sumBadges = document.getElementById("bankReconSummaryBadges");
+    if (sumBadges) {
+      sumBadges.innerHTML = `
+        <div style="background: rgba(20, 184, 166, 0.15); border: 1px solid rgba(20, 184, 166, 0.4); border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; color: #5eead4; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-building-columns"></i>
+          <span>เงินในธนาคาร: <strong>฿${currentBankBalance.toLocaleString()}</strong></span>
+        </div>
+        <div style="background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; color: #c084fc; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-calendar-day"></i>
+          <span>รับเข้าวันที่เลือก: <strong>฿${todayTotalAmount.toLocaleString()}</strong> (${dateCollections.length} รายการ)</span>
+        </div>
+        <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 8px; padding: 6px 12px; font-size: 0.82rem; color: #34d399; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-calculator"></i>
+          <span>บวกแล้วคงเหลือสุทธิ: <strong>฿${totalReconciled.toLocaleString()}</strong></span>
+        </div>
+      `;
+    }
+
+    // 4. Update Tab Badges
+    const tabAdjBadge = document.getElementById("bankReconAdjTabBadge");
+    const tabColBadge = document.getElementById("bankReconColTabBadge");
+    if (tabAdjBadge) tabAdjBadge.textContent = `${allAdjustments.length} รายการ`;
+    if (tabColBadge) tabColBadge.textContent = `${dateCollections.length} รายการ (฿${todayTotalAmount.toLocaleString()})`;
+
+    // 5. Update Adjustments Table with Filters and Notes
+    const adjTableBody = document.getElementById("bankReconAdjustmentsTableBody");
+    if (adjTableBody) {
+      adjTableBody.innerHTML = "";
+
+      // Filter Adjustments based on Scope and Search:
+      let displayAdjustments = [...allAdjustments];
+
+      if (currentBankAdjFilterScope === "active") {
+        displayAdjustments = displayAdjustments.filter((a) => !a.cleared && !a.isSystemClear);
+      } else if (currentBankAdjFilterScope === "today") {
+        displayAdjustments = displayAdjustments.filter((a) => a.dateStr === targetDate || (a.createdAt && a.createdAt.slice(0, 10) === targetDate));
+      }
+
+      if (currentBankAdjSearchQuery) {
+        displayAdjustments = displayAdjustments.filter((a) => {
+          const noteText = (a.note || "").toLowerCase();
+          const amtStr = String(a.amount || "");
+          return noteText.includes(currentBankAdjSearchQuery) || amtStr.includes(currentBankAdjSearchQuery);
+        });
+      }
+
+      if (displayAdjustments.length === 0) {
+        adjTableBody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-dim); padding: 22px;">ไม่พบรายการปรับปรุงยอดเงินตามเงื่อนไขที่เลือก</td></tr>`;
+      } else {
+        displayAdjustments.forEach((a) => {
+          const tr = document.createElement("tr");
+          const isSystemClear = a.isSystemClear || a.type === "clear";
+          const isDeduct = a.type === "deduct";
+          const isAdd = !isSystemClear && !isDeduct;
+
+          // Type Badge
+          let typeBadgeHtml = "";
+          let amountColor = "#34d399";
+          let amountSign = "+";
+
+          if (isSystemClear) {
+            typeBadgeHtml = `<span class="status-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45);"><i class="fa-solid fa-arrows-rotate"></i> เคลียร์รอบ</span>`;
+            amountColor = "#fbbf24";
+            amountSign = "";
+          } else if (isDeduct) {
+            typeBadgeHtml = `<span class="status-badge" style="background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);"><i class="fa-solid fa-arrow-trend-down"></i> ลดยอดเงิน (โอนออก)</span>`;
+            amountColor = "#f87171";
+            amountSign = "-";
+          } else {
+            typeBadgeHtml = `<span class="status-badge" style="background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);"><i class="fa-solid fa-arrow-trend-up"></i> เพิ่มยอดเงิน</span>`;
+            amountColor = "#34d399";
+            amountSign = "+";
+          }
+
+          // Round Status Badge
+          let roundStatusBadge = "";
+          if (isSystemClear) {
+            roundStatusBadge = `<span class="status-badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-size: 0.72rem;">จุดเริ่มรอบ</span>`;
+          } else if (a.cleared) {
+            roundStatusBadge = `<span class="status-badge" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8; font-size: 0.72rem;"><i class="fa-solid fa-check-double"></i> เคลียร์แล้ว</span>`;
+          } else {
+            roundStatusBadge = `<span class="status-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; font-size: 0.72rem;"><i class="fa-solid fa-play"></i> รอบปัจจุบัน</span>`;
+          }
+
+          // Note & Details (โอนออก/หมายเหตุ) with inline Edit button
+          const noteTextHtml = a.note ? `<span style="color: #e2e8f0; font-weight: 500;">${a.note}</span>` : `<span style="color: var(--text-dim); font-style: italic;">ไม่มีหมายเหตุ</span>`;
+          const editNoteBtn = !isSystemClear
+            ? `<button type="button" class="btn-table-action" onclick="editBankAdjustmentNotePrompt('${a.id}')" title="แก้ไขหมายเหตุ / รายละเอียด (กันลืม)"
+                style="padding: 2px 7px; font-size: 0.72rem; margin-left: 6px; color: #5eead4; background: rgba(20, 184, 166, 0.15); border: 1px solid rgba(20, 184, 166, 0.35); border-radius: 4px;">
+                <i class="fa-solid fa-pen"></i> แก้ไข
+              </button>`
+            : "";
+
+          tr.innerHTML = `
+            <td style="font-size: 0.82rem; color: #cbd5e1;">
+              ${formatDateTimeThai(a.createdAt || a.dateStr)}
+            </td>
+            <td style="text-align: center;">${typeBadgeHtml}</td>
+            <td style="font-size: 0.85rem;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                <div>${noteTextHtml}</div>
+                ${editNoteBtn}
+              </div>
+            </td>
+            <td style="text-align: right; font-weight: 700; color: ${amountColor}; font-size: 0.95rem;">
+              ${amountSign}฿${Number(a.amount || 0).toLocaleString()}
+            </td>
+            <td style="text-align: center;">${roundStatusBadge}</td>
+            <td style="text-align: center;">
+              <button type="button" class="btn-table-action" onclick="deleteBankAdjustment('${a.id}')"
+                style="padding: 4px 8px; font-size: 0.72rem; color: #f87171; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3);">
+                <i class="fa-solid fa-trash-can"></i> ลบ
+              </button>
+            </td>
+          `;
+          adjTableBody.appendChild(tr);
+        });
+      }
+    }
+
+    // 6. Update Today's Collections Table
+    const colTableBody = document.getElementById("bankReconCollectionsTableBody");
+    const colBadge = document.getElementById("bankReconCollectionsCountBadge");
+    const colTitle = document.getElementById("bankReconCollectionListTitle");
+    if (colTitle) {
+      colTitle.textContent = `รายการรับชำระเงินของวันที่ ${formatDateThai(targetDate)} (ยอดรวมทุกอย่าง ยกเว้นเงินดาวน์)`;
+    }
+    if (colBadge) {
+      colBadge.textContent = `${dateCollections.length} รายการ (รวม ฿${todayTotalAmount.toLocaleString()})`;
+    }
+    if (colTableBody) {
+      colTableBody.innerHTML = "";
+      if (dateCollections.length === 0) {
+        colTableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-dim); padding: 20px;">ไม่พบรายการรับชำระในวันที่ ${formatDateThai(targetDate)}</td></tr>`;
+      } else {
+        const catBadges = {
+          motorcycle: '<span class="status-badge badge-cat-motorcycle"><i class="fa-solid fa-motorcycle"></i> รถมอเตอร์ไซค์</span>',
+          daily: '<span class="status-badge badge-cat-daily"><i class="fa-solid fa-clock"></i> รายวัน</span>',
+          weekly: '<span class="status-badge badge-cat-weekly"><i class="fa-solid fa-calendar-week"></i> รายอาทิตย์</span>',
+          monthly: '<span class="status-badge badge-cat-monthly"><i class="fa-solid fa-calendar-days"></i> รายเดือน</span>',
+          interest_cut: '<span class="status-badge badge-cat-interest-cut"><i class="fa-solid fa-percent"></i> ตัดดอก</span>'
+        };
+
+        dateCollections.forEach((item) => {
+          const tr = document.createElement("tr");
+          const badgeHtml = catBadges[item.category] || (item.isDirectFine ? '<span class="status-badge" style="background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.3);">ค่าปรับล่าช้า</span>' : catBadges.daily);
+          const instCol = item.isDirectFine
+            ? '<span class="status-badge" style="background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.3);">ค่าปรับ</span>'
+            : (item.installmentNo || "-");
+
+          let slipBtn = "";
+          if (item.slipUrl) {
+            slipBtn = `
+              <button type="button" class="btn-table-action" onclick="viewSlip('${item.slipUrl}', 'สลิป ${item.contractName}')"
+                style="padding: 4px 8px; font-size: 0.75rem; color: #38bdf8; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); margin-left: 4px;">
+                <i class="fa-solid fa-image"></i> สลิป
+              </button>
+            `;
+          }
+
+          tr.innerHTML = `
+            <td>${item.paidAt ? formatDateTimeThai(item.paidAt) : (item.dateStr ? formatDateThai(item.dateStr) : "-")}</td>
+            <td>
+              <strong style="color: #fff;">${item.contractName}</strong>
+              <span style="font-size: 0.72rem; color: var(--text-dim); display: block;">รหัส: ${item.contractId} (${item.phone || "-"})</span>
+            </td>
+            <td>${item.itemFinanced || "-"}</td>
+            <td style="text-align: center;">${badgeHtml}</td>
+            <td>${instCol}</td>
+            <td style="text-align: right;"><strong style="color: #34d399; font-size: 0.95rem;">฿${Number(item.amount || 0).toLocaleString()}</strong></td>
+            <td style="text-align: center;">
+              <button type="button" class="btn-table-action" onclick="openContractDetails('${item.contractId}')"
+                style="padding: 4px 10px; font-size: 0.75rem; color: #c084fc; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3);">
+                <i class="fa-solid fa-eye"></i> ดูสัญญา
+              </button>
+              ${slipBtn}
+            </td>
+          `;
+          colTableBody.appendChild(tr);
+        });
+      }
+    }
+  };
 
   // --- DAILY LATE FINE REPORT HANDLERS (Requirement 1) ---
 
@@ -6713,6 +7301,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (dailyAllCategoriesModal && dailyAllCategoriesModal.classList.contains("active")) {
       const picker = document.getElementById("dailyAllCategoriesDatePicker");
       renderDailyAllCategoriesReport(picker && picker.value ? picker.value : null);
+    }
+    const bankReconModal = document.getElementById("bankReconciliationModal");
+    if (bankReconModal && bankReconModal.classList.contains("active")) {
+      const picker = document.getElementById("bankReconDatePicker");
+      renderBankReconciliation(picker && picker.value ? picker.value : null);
     }
 
     const allBadDebts = window.easyFinanceDB.getBadDebts ? window.easyFinanceDB.getBadDebts() : [];

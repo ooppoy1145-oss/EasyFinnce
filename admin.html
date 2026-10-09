@@ -322,6 +322,23 @@
               <i class="fa-solid fa-receipt"></i>
             </div>
           </div>
+
+          <!-- ช่องเปรียบเทียบยอดในบัญชี (Requirement: เพิ่มอีกช่องข้างๆ ช่องสรุปรวมต่อวัน คือช่องเปรียบเทียบยอดในบัญชี) -->
+          <div class="stat-counter-card" id="cardStatBankReconciliation" style="cursor: pointer;"
+            onclick="openBankReconciliationModal()" title="คลิกเพื่อเปรียบเทียบยอดในบัญชีธนาคารกับยอดรับประจำวัน">
+            <div class="stat-info">
+              <div class="stat-label" id="statLabelBankReconciliation" style="color: #14b8a6;">
+                <i class="fa-solid fa-scale-balanced"></i> ช่องเปรียบเทียบยอดในบัญชี
+              </div>
+              <div class="stat-val" id="statTotalBankReconciliation" style="color: #14b8a6;">฿0</div>
+              <div id="statBankReconciliationSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
+                กระทบยอดเงินในธนาคาร (คลิกดูสรุป)</div>
+            </div>
+            <div class="stat-icon-box" id="statIconBankReconciliation"
+              style="background: rgba(20, 184, 166, 0.15); color: #14b8a6; border: 1px solid rgba(20, 184, 166, 0.35);">
+              <i class="fa-solid fa-building-columns"></i>
+            </div>
+          </div>
         </div>
 
         <!-- Action Bar: Search, Dashboard Overview Button & Add Contract -->
@@ -1006,7 +1023,7 @@
       <div class="admin-modal-header" style="border-bottom: 1px solid rgba(168, 85, 247, 0.25);">
         <div class="admin-modal-title">
           <i class="fa-solid fa-calendar-check" style="color: #c084fc;"></i>
-          <span>สรุปรวมรับแล้วต่อวัน (รวมทั้ง รายวัน, รายอาทิตย์, รายเดือน, รถมอเตอร์ไซค์)</span>
+          <span>สรุปรวมรับแล้วต่อวัน (รวมทั้ง รายวัน, รายอาทิตย์, รายเดือน, รถมอเตอร์ไซค์, ตัดดอก)</span>
         </div>
         <button type="button" class="btn-close-modal" id="btnCloseDailyAllCategoriesModal"
           onclick="closeDailyAllCategoriesReportModal()">
@@ -1093,6 +1110,283 @@
             <!-- Dynamic Breakdown Rows -->
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL 3.17: BANK RECONCILIATION REPORT (ช่องเปรียบเทียบยอดในบัญชี & กระทบยอดเงินธนาคาร)
+       ==================================================================== -->
+  <div id="bankReconciliationModal" class="admin-modal-overlay">
+    <div class="admin-modal-card admin-modal-card-report" style="max-width: 1100px; width: 96%;">
+      <div class="admin-modal-header" style="border-bottom: 1px solid rgba(20, 184, 166, 0.3);">
+        <div class="admin-modal-title">
+          <i class="fa-solid fa-scale-balanced" style="color: #2dd4bf;"></i>
+          <span>เปรียบเทียบยอดในบัญชี (กระทบยอดเงินในธนาคารกับยอดรับประจำวัน)</span>
+        </div>
+        <button type="button" class="btn-close-modal" id="btnCloseBankReconModal"
+          onclick="closeBankReconciliationModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Controls & Date Filter -->
+      <div
+        style="background: rgba(20, 184, 166, 0.05); border: 1px solid rgba(20, 184, 166, 0.25); border-radius: var(--radius-md); padding: 14px; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <label style="font-size: 0.85rem; color: var(--text-dim); font-weight: 500;">
+              <i class="fa-solid fa-calendar-day" style="color: #2dd4bf;"></i> เลือกวันที่:
+            </label>
+            <input type="date" id="bankReconDatePicker"
+              style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(20, 184, 166, 0.35); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem;"
+              onchange="onBankReconDateChange(this.value)" />
+            <button type="button" class="btn-table-action" onclick="setBankReconDateToday()"
+              style="padding: 6px 12px; font-size: 0.8rem; background: rgba(20, 184, 166, 0.15); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.4);">
+              วันนี้
+            </button>
+          </div>
+          <div id="bankReconSummaryBadges" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <!-- Dynamic Badges -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. มีช่องเล็กๆด้านบน สำหรับกรอก เพิ่ม หรือ ลดยอดเงิน (Requirement 2) -->
+      <div class="bank-recon-adjust-bar"
+        style="background: linear-gradient(135deg, rgba(20, 184, 166, 0.1), rgba(15, 23, 42, 0.7)); border: 1px solid rgba(20, 184, 166, 0.35); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 18px;">
+        <div style="font-size: 0.86rem; font-weight: 600; color: #5eead4; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <span>
+            <i class="fa-solid fa-pen-to-square"></i> ช่องสำหรับกรอก เพิ่ม หรือ ลดยอดเงินในบัญชี
+          </span>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" class="btn-table-action" onclick="promptClearAccumulatedAdjustments()"
+              style="font-size: 0.78rem; padding: 4px 12px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);">
+              <i class="fa-solid fa-arrows-rotate"></i> เคลียร์ยอดสะสม (เริ่มรอบใหม่)
+            </button>
+            <button type="button" class="btn-table-action" onclick="promptSetBankBaseBalance()"
+              style="font-size: 0.78rem; padding: 4px 12px; background: rgba(255, 255, 255, 0.08); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.2);">
+              <i class="fa-solid fa-sliders"></i> กำหนดยอดเงินในบัญชีเริ่มต้น
+            </button>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 170px;">
+            <input type="number" id="bankAdjAmountInput" placeholder="กรอกจำนวนเงิน (บาท)" min="0" step="any"
+              style="width: 100%; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(20, 184, 166, 0.45); color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;" />
+          </div>
+          <div style="flex: 1.5; min-width: 220px;">
+            <input type="text" id="bankAdjNoteInput" placeholder="หมายเหตุ / รายละเอียด (เช่น โอนยอดออก บัญชี..., ถอนจ่ายค่าน้ำมัน)"
+              style="width: 100%; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(20, 184, 166, 0.45); color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;" />
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-table-action" onclick="submitBankAdjustment('add')"
+              style="background: rgba(16, 185, 129, 0.25); color: #34d399; border: 1px solid #10b981; padding: 8px 14px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-plus"></i> เพิ่มยอดเงิน
+            </button>
+            <button type="button" class="btn-table-action" onclick="submitBankAdjustment('deduct')"
+              style="background: rgba(239, 68, 68, 0.25); color: #f87171; border: 1px solid #ef4444; padding: 8px 14px; font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-minus"></i> ลดยอดเงิน
+            </button>
+          </div>
+        </div>
+        <!-- Quick Note Pills (คำแนะนำหมายเหตุด่วน กันลืม) -->
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; align-items: center;">
+          <span style="font-size: 0.74rem; color: var(--text-dim);"><i class="fa-solid fa-tag" style="color: #5eead4;"></i> หมายเหตุด่วน (คลิกเพื่อเติมข้อความ):</span>
+          <button type="button" class="btn-quick-note" onclick="fillBankAdjNote('โอนยอดออก')" style="font-size: 0.72rem; padding: 3px 8px; background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 4px; cursor: pointer;">
+            💸 โอนยอดออก
+          </button>
+          <button type="button" class="btn-quick-note" onclick="fillBankAdjNote('ถอนเงินสด')" style="font-size: 0.72rem; padding: 3px 8px; background: rgba(251, 146, 60, 0.15); color: #fdba74; border: 1px solid rgba(251, 146, 60, 0.35); border-radius: 4px; cursor: pointer;">
+            🏧 ถอนเงินสด
+          </button>
+          <button type="button" class="btn-quick-note" onclick="fillBankAdjNote('ฝากเงินสดเข้าบัญชี')" style="font-size: 0.72rem; padding: 3px 8px; background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 4px; cursor: pointer;">
+            💵 ฝากเงินสดเข้า
+          </button>
+          <button type="button" class="btn-quick-note" onclick="fillBankAdjNote('ค่าน้ำมัน / ค่าเดินทาง')" style="font-size: 0.72rem; padding: 3px 8px; background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 4px; cursor: pointer;">
+            ⛽ ค่าน้ำมัน/เดินทาง
+          </button>
+          <button type="button" class="btn-quick-note" onclick="fillBankAdjNote('ค่าใช้จ่ายสำนักงาน')" style="font-size: 0.72rem; padding: 3px 8px; background: rgba(168, 85, 247, 0.15); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.35); border-radius: 4px; cursor: pointer;">
+            🏢 ค่าใช้จ่ายสำนักงาน
+          </button>
+          <button type="button" class="btn-quick-note" onclick="fillBankAdjNote('ปรับยอดตรงสเตทเม้น')" style="font-size: 0.72rem; padding: 3px 8px; background: rgba(20, 184, 166, 0.15); color: #5eead4; border: 1px solid rgba(20, 184, 166, 0.35); border-radius: 4px; cursor: pointer;">
+            ⚖️ ปรับยอดตรงสเตทเม้น
+          </button>
+        </div>
+      </div>
+
+      <!-- 2 Boxes: 1.เงินในธนาคาร & 3.ยอดรวมของวันนั้นยอดรวมทุกอย่าง ยกเว้นเงินดาว -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; margin-bottom: 18px;">
+        <!-- Card 1: เงินในธนาคาร (Requirement 1) -->
+        <div class="bank-recon-card"
+          style="background: linear-gradient(135deg, rgba(20, 184, 166, 0.12), rgba(15, 23, 42, 0.8)); border: 1px solid rgba(20, 184, 166, 0.35); border-radius: var(--radius-md); padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 0.88rem; font-weight: 600; color: #5eead4;">
+                <i class="fa-solid fa-building-columns"></i> 1. เงินในธนาคาร
+              </span>
+              <span id="bankReconBaseLabel" style="font-size: 0.74rem; color: var(--text-dim);">ยอดตั้งต้น: ฿0</span>
+            </div>
+            <div id="bankReconCurrentBalance" style="font-size: 2rem; font-weight: 800; color: #2dd4bf; margin: 4px 0;">
+              ฿0
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; border-top: 1px dashed rgba(20, 184, 166, 0.25); padding-top: 8px; margin-top: 8px;">
+            <div id="bankReconAdjustmentsSummary" style="font-size: 0.78rem; color: var(--text-dim); flex: 1;">
+              <!-- Adjustments info -->
+            </div>
+            <button type="button" class="btn-table-action" onclick="promptClearAccumulatedAdjustments()" title="เคลียร์ยอดปรับเพิ่ม/ลดสะสม และยกยอดคงเหลือปัจจุบันเป็นยอดตั้งต้นใหม่"
+              style="font-size: 0.74rem; padding: 3px 9px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+              <i class="fa-solid fa-arrows-rotate"></i> เคลียร์ยอดสะสม
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 2: ยอดรวมของวันนั้น ยอดรวมทุกอย่าง ยกเว้นเงินดาว (Requirement 3) -->
+        <div class="bank-recon-card"
+          style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(15, 23, 42, 0.8)); border: 1px solid rgba(168, 85, 247, 0.35); border-radius: var(--radius-md); padding: 18px; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 0.88rem; font-weight: 600; color: #c084fc;">
+                <i class="fa-solid fa-receipt"></i> 2. ยอดรวมของวันนั้น (ยกเว้นเงินดาวน์)
+              </span>
+              <span id="bankReconTodayCountBadge" class="status-badge"
+                style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); font-size: 0.74rem;">0 รายการ</span>
+            </div>
+            <div id="bankReconTodayTotalAmount" style="font-size: 2rem; font-weight: 800; color: #c084fc; margin: 4px 0;">
+              ฿0
+            </div>
+          </div>
+          <div id="bankReconCategoryBadges" style="display: flex; gap: 4px; flex-wrap: wrap; border-top: 1px dashed rgba(168, 85, 247, 0.25); padding-top: 8px; margin-top: 8px;">
+            <!-- Category Chips -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: แสดง 2 ยอดแล้วกระทบกัน ให้มียอดแสดงว่ายอดรวมเข้ามาวันนี้ บวกแล้วคงเหลือเท่าไหร่ (Requirement 4) -->
+      <div class="bank-recon-summary-card"
+        style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)); border: 2px solid rgba(20, 184, 166, 0.5); border-radius: var(--radius-lg); padding: 20px 24px; margin-bottom: 22px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);">
+        <div style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-calculator" style="color: #2dd4bf;"></i>
+          <span>สรุปผลการกระทบยอด: ยอดรวมเข้ามาวันนี้ บวกแล้วคงเหลือเท่าไหร่</span>
+        </div>
+        <div class="bank-recon-equation-grid"
+          style="display: grid; grid-template-columns: 1fr auto 1fr auto 1.3fr; align-items: center; gap: 12px; text-align: center;">
+          <!-- 1. เงินในธนาคาร -->
+          <div style="background: rgba(20, 184, 166, 0.1); border: 1px solid rgba(20, 184, 166, 0.35); border-radius: 8px; padding: 14px 10px;">
+            <div style="font-size: 0.8rem; color: #5eead4; font-weight: 500;">เงินในธนาคาร</div>
+            <div id="eqBankAmount" style="font-size: 1.45rem; font-weight: 800; color: #2dd4bf; margin-top: 4px;">฿0</div>
+          </div>
+          <!-- เครื่องหมาย + -->
+          <div style="font-size: 1.8rem; font-weight: 800; color: #94a3b8;">+</div>
+          <!-- 2. ยอดรวมเข้ามาวันนี้ -->
+          <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.35); border-radius: 8px; padding: 14px 10px;">
+            <div style="font-size: 0.8rem; color: #c084fc; font-weight: 500;">ยอดรวมเข้ามาวันนี้ (ยกเว้นดาวน์)</div>
+            <div id="eqTodayAmount" style="font-size: 1.45rem; font-weight: 800; color: #c084fc; margin-top: 4px;">฿0</div>
+          </div>
+          <!-- เครื่องหมาย = -->
+          <div style="font-size: 1.8rem; font-weight: 800; color: #94a3b8;">=</div>
+          <!-- 3. บวกแล้วคงเหลือเท่าไหร่ -->
+          <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(20, 184, 166, 0.28)); border: 2px solid #10b981; border-radius: 8px; padding: 14px 10px; box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);">
+            <div style="font-size: 0.85rem; color: #6ee7b7; font-weight: 600;">บวกแล้วคงเหลือสุทธิ</div>
+            <div id="eqTotalReconciledAmount" style="font-size: 1.75rem; font-weight: 800; color: #34d399; margin-top: 4px;">฿0</div>
+          </div>
+        </div>
+        <div style="margin-top: 12px; font-size: 0.82rem; color: var(--text-dim); text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 10px;">
+          <i class="fa-solid fa-circle-info" style="color: #2dd4bf;"></i>
+          <span>แสดงการกระทบยอด: เงินในธนาคาร บวกกับ ยอดเงินทุกหมวดที่เก็บเข้ามาในระบบวันนี้ (รวมตัดดอก ไม่รวมเงินดาวน์)</span>
+        </div>
+      </div>
+
+      <!-- Bottom Section Tabs: 1. ประวัติการปรับปรุงยอด & หมายเหตุ (โอนออก/เพิ่มเงิน) | 2. รายการรับชำระเงินทุกหมวดประจำวัน -->
+      <div style="display: flex; gap: 8px; margin-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" id="tabBtnBankReconAdjustments" class="btn-table-action" onclick="setBankReconBottomTab('adjustments')"
+            style="font-size: 0.86rem; font-weight: 600; padding: 8px 14px; background: rgba(20, 184, 166, 0.2); color: #5eead4; border: 1px solid rgba(20, 184, 166, 0.45); border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>ประวัติการปรับปรุงยอด & หมายเหตุ (โอนออก/เพิ่มเงิน)</span>
+            <span id="bankReconAdjTabBadge" class="status-badge"
+              style="background: rgba(20, 184, 166, 0.25); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.45); font-size: 0.72rem;">0 รายการ</span>
+          </button>
+          <button type="button" id="tabBtnBankReconCollections" class="btn-table-action" onclick="setBankReconBottomTab('collections')"
+            style="font-size: 0.86rem; font-weight: 600; padding: 8px 14px; background: rgba(255, 255, 255, 0.05); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+            <i class="fa-solid fa-receipt"></i>
+            <span>รายการรับชำระประจำวัน (ยกเว้นเงินดาวน์)</span>
+            <span id="bankReconColTabBadge" class="status-badge"
+              style="background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4); font-size: 0.72rem;">0 รายการ</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab Content 1: ประวัติการเพิ่ม/ลดยอดเงินในบัญชี และหมายเหตุ/รายละเอียด (กันลืมโอนออก) -->
+      <div id="tabContentBankAdjustments" style="display: block; flex-shrink: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <label style="font-size: 0.8rem; color: var(--text-dim);">ตัวกรองรอบ:</label>
+            <select id="bankAdjFilterScope" onchange="onBankAdjFilterChange(this.value)"
+              style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(20, 184, 166, 0.35); color: #fff; padding: 4px 8px; border-radius: 5px; font-size: 0.8rem;">
+              <option value="all">แสดงประวัติทั้งหมด</option>
+              <option value="active">เฉพาะรอบปัจจุบัน (ยังไม่เคลียร์)</option>
+              <option value="today">เฉพาะวันที่เลือก</option>
+            </select>
+            <input type="text" id="bankAdjSearchNoteInput" placeholder="🔍 ค้นหาหมายเหตุ (เช่น โอนออก, ค่าน้ำมัน)..." oninput="onBankAdjSearchChange(this.value)"
+              style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; width: 220px;" />
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn-table-action" onclick="promptClearAccumulatedAdjustments()"
+              style="font-size: 0.75rem; padding: 4px 10px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);">
+              <i class="fa-solid fa-arrows-rotate"></i> เคลียร์ยอดสะสม
+            </button>
+            <button type="button" class="btn-table-action" onclick="promptClearAllBankAdjustmentsHistory()"
+              style="font-size: 0.75rem; padding: 4px 10px; background: rgba(239, 68, 68, 0.12); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">
+              <i class="fa-solid fa-trash-can"></i> ลบประวัติทั้งหมด
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive report-table-scroll-wrap" style="min-height: 280px; max-height: 440px; margin-bottom: 16px; overflow-y: auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th style="width: 160px;">วันและเวลา</th>
+                <th style="text-align: center; width: 130px;">ประเภท</th>
+                <th style="min-width: 200px;">รายละเอียด / หมายเหตุ (โอนออก/เพิ่มเงิน)</th>
+                <th style="text-align: right; width: 150px;">จำนวนเงิน (บาท)</th>
+                <th style="text-align: center; width: 110px;">สถานะรอบ</th>
+                <th style="text-align: center; width: 130px;">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="bankReconAdjustmentsTableBody">
+              <!-- Dynamic Rows -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab Content 2: ตารางรายการรับชำระเงินของวันนั้น (Today's Collections Table) -->
+      <div id="tabContentBankCollections" style="display: none; flex-shrink: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+          <span id="bankReconCollectionListTitle" style="font-size: 0.92rem; font-weight: 600; color: #fff;">รายการรับชำระเงินของวันที่เลือก (ยอดรวมทุกอย่าง ยกเว้นเงินดาวน์)</span>
+          <span id="bankReconCollectionsCountBadge" class="status-badge"
+            style="background: rgba(168, 85, 247, 0.18); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4);">0 รายการ</span>
+        </div>
+        <div class="table-responsive report-table-scroll-wrap" style="min-height: 280px; max-height: 440px; margin-bottom: 16px; overflow-y: auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>วันที่/เวลา</th>
+                <th>ลูกค้า</th>
+                <th>สิ่งที่ผ่อน</th>
+                <th style="text-align: center;">หมวดหมู่</th>
+                <th>งวด/ประเภท</th>
+                <th style="text-align: right;">ยอดเงิน (บาท)</th>
+                <th style="text-align: center;">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="bankReconCollectionsTableBody">
+              <!-- Dynamic Rows -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>

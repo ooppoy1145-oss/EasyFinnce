@@ -458,6 +458,9 @@ class EasyFinanceDatabase {
       if (!localStorage.getItem(this.storageKeyPrefix + "bank_api_settings")) {
         localStorage.setItem(this.storageKeyPrefix + "bank_api_settings", JSON.stringify(INITIAL_BANK_API_SETTINGS));
       }
+      if (!localStorage.getItem(this.storageKeyPrefix + "bank_reconciliation")) {
+        localStorage.setItem(this.storageKeyPrefix + "bank_reconciliation", JSON.stringify({ baseBalance: 0, adjustments: [] }));
+      }
     } else {
       // โหมด Local Offline (เฉพาะเมื่อไม่มี Firebase Key เท่านั้น)
       const isInitialized = localStorage.getItem(this.storageKeyPrefix + "initialized");
@@ -488,6 +491,13 @@ class EasyFinanceDatabase {
         localStorage.setItem(
           this.storageKeyPrefix + "bank_api_settings",
           JSON.stringify(INITIAL_BANK_API_SETTINGS)
+        );
+      }
+
+      if (!localStorage.getItem(this.storageKeyPrefix + "bank_reconciliation")) {
+        localStorage.setItem(
+          this.storageKeyPrefix + "bank_reconciliation",
+          JSON.stringify({ baseBalance: 0, adjustments: [] })
         );
       }
     }
@@ -667,6 +677,16 @@ class EasyFinanceDatabase {
       }
     }, (error) => {
       console.error("❌ Firestore bad_debts snapshot error:", error);
+    });
+
+    // 4. Listen to Bank Reconciliation (ซิงค์ข้อมูลกระทบยอดเงินในธนาคาร Real-time)
+    this.firestore.collection("settings").doc("bank_reconciliation").onSnapshot((doc) => {
+      if (doc.exists) {
+        localStorage.setItem(this.storageKeyPrefix + "bank_reconciliation", JSON.stringify(doc.data() || { baseBalance: 0, adjustments: [] }));
+        this.notifyListeners(false);
+      }
+    }, (error) => {
+      console.warn("Firestore bank_reconciliation snapshot warning:", error);
     });
   }
 
@@ -1521,6 +1541,35 @@ class EasyFinanceDatabase {
       }
     });
 
+    // 3. ดึงประวัติตัดดอกทั้งหมด (Interest Cut payments - Requirement 5: เอายอดตัดดอกมารวมด้วย)
+    const intCutList = this.getAllInterestCutHistory ? this.getAllInterestCutHistory() : [];
+    intCutList.forEach((h, idx) => {
+      const pDate = h.paidAt || h.createdAt || "";
+      const dateStr = h.dateStr || (pDate.length >= 10 ? pDate.slice(0, 10) : "");
+      const amt = Number(h.amount) || 0;
+      if (amt > 0) {
+        list.push({
+          id: h.id || ("INT-CUT-" + (h.contractId || idx) + "-" + (h.installmentNo || idx)),
+          contractId: h.contractId || "-",
+          contractName: h.contractName || "-",
+          phone: h.phone || "",
+          itemFinanced: h.itemFinanced || "-",
+          category: "interest_cut",
+          categoryLabel: "ตัดดอก",
+          installmentNo: h.installmentNo ? `งวด ${h.installmentNo} (ตัดดอก)` : "ตัดดอก",
+          amount: amt,
+          baseAmount: amt,
+          fineAmount: 0,
+          isInterestCut: true,
+          paidAt: pDate,
+          dateStr: dateStr,
+          slipUrl: h.slipUrl || null,
+          transactionRef: h.transactionRef || "-",
+          status: "paid"
+        });
+      }
+    });
+
     // เรียงจากวันที่ล่าสุดลงไป
     list.sort((a, b) => {
       const da = a.paidAt && a.paidAt !== "-" ? a.paidAt : (a.dateStr || "");
@@ -1773,6 +1822,144 @@ class EasyFinanceDatabase {
     }
 
     this.notifyListeners();
+    return true;
+  }
+
+  // --- BANK RECONCILIATION METHODS (เปรียบเทียบยอดในบัญชีธนาคาร & กระทบยอดประจำวัน) ---
+
+  getBankReconciliationData() {
+    try {
+      const data = localStorage.getItem(this.storageKeyPrefix + "bank_reconciliation");
+      return data ? JSON.parse(data) : { baseBalance: 0, adjustments: [] };
+    } catch (e) {
+      console.error("Error reading bank reconciliation data:", e);
+      return { baseBalance: 0, adjustments: [] };
+    }
+  }
+
+  async saveBankReconciliationData(data) {
+    const current = this.getBankReconciliationData();
+    const updated = {
+      baseBalance: Number(data.baseBalance !== undefined ? data.baseBalance : current.baseBalance) || 0,
+      adjustments: Array.isArray(data.adjustments) ? data.adjustments : (current.adjustments || []),
+      updatedAt: new Date().toISOString()
+    };
+
+    localStorage.setItem(
+      this.storageKeyPrefix + "bank_reconciliation",
+      JSON.stringify(updated)
+    );
+
+    if (this.isFirebaseConnected && this.firestore) {
+      try {
+        const clean = this.sanitizeForFirestore(updated);
+        await this.firestore.collection("settings").doc("bank_reconciliation").set(clean, { merge: true });
+      } catch (err) {
+        console.error("Firestore sync bank reconciliation error:", err);
+      }
+    }
+
+    this.notifyListeners();
+    return updated;
+  }
+
+  async setBankBaseBalance(amount) {
+    const data = this.getBankReconciliationData();
+    data.baseBalance = Math.max(0, Number(amount) || 0);
+    return await this.saveBankReconciliationData(data);
+  }
+
+  async addBankAdjustment({ type, amount, note, dateStr }) {
+    const data = this.getBankReconciliationData();
+    if (!Array.isArray(data.adjustments)) data.adjustments = [];
+
+    const newAdj = {
+      id: "ADJ-" + Date.now() + "-" + Math.floor(Math.random() * 1000),
+      type: type === "deduct" ? "deduct" : "add",
+      amount: Math.max(0, Number(amount) || 0),
+      note: (note || "").trim(),
+      dateStr: dateStr || new Date().toISOString().slice(0, 10),
+      createdAt: new Date().toISOString()
+    };
+
+    data.adjustments.unshift(newAdj);
+    await this.saveBankReconciliationData(data);
+    return newAdj;
+  }
+
+  async deleteBankAdjustment(adjId) {
+    const data = this.getBankReconciliationData();
+    if (Array.isArray(data.adjustments)) {
+      data.adjustments = data.adjustments.filter((a) => a.id !== adjId);
+      await this.saveBankReconciliationData(data);
+      return true;
+    }
+    return false;
+  }
+
+  // เคลียร์ยอดปรับเพิ่มสะสมและปรับลดสะสม (ยกยอดคงเหลือปัจจุบันเป็นยอดตั้งต้นใหม่ และเริ่มรอบนับใหม่)
+  async clearBankAdjustmentsAccumulated() {
+    const data = this.getBankReconciliationData();
+    const currentBase = Number(data.baseBalance) || 0;
+    const adjustments = Array.isArray(data.adjustments) ? data.adjustments : [];
+
+    let netActive = 0;
+    adjustments.forEach((a) => {
+      if (!a.cleared && !a.isSystemClear) {
+        const amt = Number(a.amount) || 0;
+        netActive += (a.type === "deduct" ? -amt : amt);
+      }
+    });
+
+    const newBaseBalance = Math.max(0, currentBase + netActive);
+    const nowIso = new Date().toISOString();
+
+    // ทำเครื่องหมายรายการเดิมว่าถูกเคลียร์ยอดแล้ว (คงประวัติไว้เพื่อตรวจสอบย้อนหลังได้ตลอด)
+    adjustments.forEach((a) => {
+      if (!a.cleared && !a.isSystemClear) {
+        a.cleared = true;
+        a.clearedAt = nowIso;
+      }
+    });
+
+    // บันทึก Log การเคลียร์ยอดลงในประวัติ
+    adjustments.unshift({
+      id: "ADJ-CLEAR-" + Date.now(),
+      type: "clear",
+      amount: newBaseBalance,
+      note: `เคลียร์ยอดสะสม (ยกยอดคงเหลือ ฿${newBaseBalance.toLocaleString()} เป็นยอดตั้งต้น)`,
+      dateStr: nowIso.slice(0, 10),
+      createdAt: nowIso,
+      cleared: false,
+      isSystemClear: true
+    });
+
+    data.baseBalance = newBaseBalance;
+    data.adjustments = adjustments;
+    await this.saveBankReconciliationData(data);
+    return { newBaseBalance, adjustments };
+  }
+
+  // แก้ไขหมายเหตุหรือรายละเอียดของรายการปรับปรุงยอด
+  async editBankAdjustmentNote(adjId, newNote) {
+    const data = this.getBankReconciliationData();
+    if (Array.isArray(data.adjustments)) {
+      const item = data.adjustments.find((a) => a.id === adjId);
+      if (item) {
+        item.note = (newNote || "").trim();
+        item.updatedAt = new Date().toISOString();
+        await this.saveBankReconciliationData(data);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // ล้างประวัติรายการปรับปรุงยอดทั้งหมด
+  async clearAllBankAdjustmentsHistory() {
+    const data = this.getBankReconciliationData();
+    data.adjustments = [];
+    await this.saveBankReconciliationData(data);
     return true;
   }
 
