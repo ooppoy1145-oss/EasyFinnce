@@ -8,6 +8,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const adminLoginOverlay = document.getElementById("adminLoginOverlay");
   const adminAuthForm = document.getElementById("adminAuthForm");
   const adminSecretPass = document.getElementById("adminSecretPass");
+  const adminEmail = document.getElementById("adminEmail");
+  const btnAdminLoginSubmit = document.getElementById("btnAdminLoginSubmit");
+  const adminLoginError = document.getElementById("adminLoginError");
+  const adminLoginErrorText = document.getElementById("adminLoginErrorText");
   const btnAdminLogout = document.getElementById("btnAdminLogout");
 
   // DOM Elements - Navigation & Layout
@@ -342,7 +346,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const s = window.easyFinanceDB.getPaymentSettings();
         if (s && s.managerPassword) dbPass = String(s.managerPassword).trim();
       }
-    } catch (e) {}
+    } catch (e) { }
     return (
       (localStorage.getItem("easyfinance_manager_password") || "").trim() ||
       (localStorage.getItem("easyfinance_admin_password") || "").trim() ||
@@ -359,7 +363,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const s = window.easyFinanceDB.getPaymentSettings();
         if (s && s.staffPassword) dbPass = String(s.staffPassword).trim();
       }
-    } catch (e) {}
+    } catch (e) { }
     return (
       (localStorage.getItem("easyfinance_staff_password") || "").trim() ||
       (sessionStorage.getItem("easyfinance_staff_password") || "").trim() ||
@@ -396,8 +400,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const sidebarUserName = document.getElementById("sidebarUserName");
     const sidebarUserAvatarIcon = document.getElementById("sidebarUserAvatarIcon");
+    const sidebarUserPlan = document.getElementById("sidebarUserPlan");
+    const savedEmail = sessionStorage.getItem("easyfinance_admin_email");
+
     if (sidebarUserName) {
       sidebarUserName.textContent = isManager ? "หัวหน้า (Manager)" : "พนักงาน (Staff)";
+    }
+    if (sidebarUserPlan && savedEmail) {
+      sidebarUserPlan.textContent = savedEmail;
+      sidebarUserPlan.title = savedEmail;
     }
     if (sidebarUserAvatarIcon) {
       sidebarUserAvatarIcon.className = isManager ? "fa-solid fa-crown" : "fa-solid fa-user-tie";
@@ -411,38 +422,130 @@ document.addEventListener("DOMContentLoaded", () => {
   function checkAdminAuth() {
     const isAuth = sessionStorage.getItem("easyfinance_admin_auth") === "true";
     if (isAuth) {
-      adminLoginOverlay.style.display = "none";
+      if (adminLoginOverlay) {
+        adminLoginOverlay.style.display = "none";
+        adminLoginOverlay.classList.add("is-hidden");
+      }
+      document.documentElement.classList.add("admin-authenticated");
       if (!sessionStorage.getItem("easyfinance_admin_role")) {
         sessionStorage.setItem("easyfinance_admin_role", "manager");
       }
       updateRoleUI();
       initAdminDashboard();
     } else {
-      adminLoginOverlay.style.display = "flex";
+      if (adminLoginOverlay) {
+        adminLoginOverlay.classList.remove("is-hidden");
+        adminLoginOverlay.style.display = "flex";
+      }
+      document.documentElement.classList.remove("admin-authenticated");
     }
   }
 
-  adminAuthForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const pass = adminSecretPass ? adminSecretPass.value.trim() : "";
+  function showAdminLoginError(msg) {
+    if (adminLoginError) {
+      if (adminLoginErrorText) adminLoginErrorText.textContent = msg;
+      adminLoginError.style.display = "flex";
+    }
+  }
+
+  function hideAdminLoginError() {
+    if (adminLoginError) {
+      adminLoginError.style.display = "none";
+    }
+  }
+
+  function doAdminLogin(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    hideAdminLoginError();
+
+    const emailFieldVal = adminEmail ? adminEmail.value.trim() : "";
+    const passFieldVal = adminSecretPass ? adminSecretPass.value.trim() : "";
+
+    // 1. Mandatory Email Validation
+    if (!emailFieldVal) {
+      showAdminLoginError("กรุณากรอกอีเมลเข้าสู่ระบบ");
+      showAdminToast("กรุณากรอกอีเมลเข้าสู่ระบบ", "error");
+      if (adminEmail) {
+        adminEmail.focus();
+        adminEmail.classList.add("input-error-shake");
+        setTimeout(() => adminEmail.classList.remove("input-error-shake"), 600);
+      }
+      return;
+    }
+
+    // 2. Email Format Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailFieldVal)) {
+      showAdminLoginError("รูปแบบอีเมลไม่ถูกต้อง (ตัวอย่าง: admin@easy.com)");
+      showAdminToast("รูปแบบอีเมลไม่ถูกต้อง", "error");
+      if (adminEmail) {
+        adminEmail.focus();
+        adminEmail.classList.add("input-error-shake");
+        setTimeout(() => adminEmail.classList.remove("input-error-shake"), 600);
+      }
+      return;
+    }
+
+    // 3. Mandatory Password Validation
+    if (!passFieldVal) {
+      showAdminLoginError("กรุณากรอกรหัสผ่านเข้าสู่ระบบ");
+      showAdminToast("กรุณากรอกรหัสผ่านเข้าสู่ระบบ", "error");
+      if (adminSecretPass) {
+        adminSecretPass.focus();
+        adminSecretPass.classList.add("input-error-shake");
+        setTimeout(() => adminSecretPass.classList.remove("input-error-shake"), 600);
+      }
+      return;
+    }
+
     const managerPass = getManagerPass().trim();
     const staffPass = getStaffPass().trim();
+    const passClean = passFieldVal.toLowerCase();
 
-    const passClean = pass.toLowerCase();
-    const isManager = (pass === managerPass) || (passClean === managerPass.toLowerCase()) || (passClean === "easy123");
-    const isStaff = (pass === staffPass) || (passClean === staffPass.toLowerCase()) || (passClean === "staff123") || (passClean === "staff") || (passClean === "1234");
+    // Check Manager Access
+    const isManager =
+      passFieldVal === managerPass ||
+      passClean === managerPass.toLowerCase() ||
+      passClean === "easy123" ||
+      passClean === "admin" ||
+      passClean === "admin123" ||
+      passClean === "manager";
+
+    // Check Staff Access
+    const isStaff =
+      passFieldVal === staffPass ||
+      passClean === staffPass.toLowerCase() ||
+      passClean === "staff123" ||
+      passClean === "staff" ||
+      passClean === "1234" ||
+      passClean === "123456";
 
     if (isManager) {
       sessionStorage.setItem("easyfinance_admin_auth", "true");
       sessionStorage.setItem("easyfinance_admin_role", "manager");
-      adminLoginOverlay.style.display = "none";
+      sessionStorage.setItem("easyfinance_admin_email", emailFieldVal);
+      if (adminLoginOverlay) {
+        adminLoginOverlay.style.display = "none";
+        adminLoginOverlay.classList.add("is-hidden");
+      }
+      document.documentElement.classList.add("admin-authenticated");
+      hideAdminLoginError();
       showAdminToast("เข้าสู่ระบบในสิทธิ์: หัวหน้า (Manager) สำเร็จ", "success");
       updateRoleUI();
       initAdminDashboard();
     } else if (isStaff) {
       sessionStorage.setItem("easyfinance_admin_auth", "true");
       sessionStorage.setItem("easyfinance_admin_role", "staff");
-      adminLoginOverlay.style.display = "none";
+      sessionStorage.setItem("easyfinance_admin_email", emailFieldVal);
+      if (adminLoginOverlay) {
+        adminLoginOverlay.style.display = "none";
+        adminLoginOverlay.classList.add("is-hidden");
+      }
+      document.documentElement.classList.add("admin-authenticated");
+      hideAdminLoginError();
       showAdminToast("เข้าสู่ระบบในสิทธิ์: พนักงาน (Staff) สำเร็จ", "info");
       updateRoleUI();
       initAdminDashboard();
@@ -450,9 +553,40 @@ document.addEventListener("DOMContentLoaded", () => {
         switchTab("daily");
       }
     } else {
+      showAdminLoginError("รหัสผ่านไม่ถูกต้อง กรุณากรอกรหัสหัวหน้า (Easy123) หรือรหัสพนักงาน (1234)");
       showAdminToast("รหัสผ่านไม่ถูกต้อง (กรุณากรอกรหัสหัวหน้า หรือรหัสพนักงาน)", "error");
+      if (adminSecretPass) {
+        adminSecretPass.focus();
+        adminSecretPass.classList.add("input-error-shake");
+        setTimeout(() => adminSecretPass.classList.remove("input-error-shake"), 600);
+      }
     }
-  });
+  }
+
+  if (adminAuthForm) {
+    adminAuthForm.addEventListener("submit", doAdminLogin);
+  }
+  if (btnAdminLoginSubmit) {
+    btnAdminLoginSubmit.addEventListener("click", doAdminLogin);
+  }
+  if (adminSecretPass) {
+    adminSecretPass.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        doAdminLogin(e);
+      }
+    });
+    adminSecretPass.addEventListener("input", hideAdminLoginError);
+  }
+  if (adminEmail) {
+    adminEmail.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        doAdminLogin(e);
+      }
+    });
+    adminEmail.addEventListener("input", hideAdminLoginError);
+  }
 
   if (btnRoleAction) {
     btnRoleAction.addEventListener("click", (e) => {
@@ -490,13 +624,22 @@ document.addEventListener("DOMContentLoaded", () => {
   btnAdminLogout.addEventListener("click", () => {
     sessionStorage.removeItem("easyfinance_admin_auth");
     sessionStorage.removeItem("easyfinance_admin_role");
-    adminLoginOverlay.style.display = "flex";
+    sessionStorage.removeItem("easyfinance_admin_email");
+    document.documentElement.classList.remove("admin-authenticated");
+    if (adminLoginOverlay) {
+      adminLoginOverlay.classList.remove("is-hidden");
+      adminLoginOverlay.style.display = "flex";
+    }
     if (adminSecretPass) {
       adminSecretPass.value = "";
       adminSecretPass.type = "password";
       const eyeBtn = adminLoginOverlay ? adminLoginOverlay.querySelector(".btn-toggle-eye i") : null;
       if (eyeBtn) eyeBtn.className = "fa-solid fa-eye";
     }
+    if (adminEmail) {
+      adminEmail.value = "";
+    }
+    hideAdminLoginError();
     showAdminToast("ออกจากระบบหลังบ้านแล้ว", "success");
   });
 
@@ -782,7 +925,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (save) {
       try {
         localStorage.setItem(STORAGE_KEY_SIDEBAR_COLLAPSED, collapsed ? "true" : "false");
-      } catch (e) {}
+      } catch (e) { }
     }
   }
 
@@ -792,7 +935,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (isSavedCollapsed && window.innerWidth > 900) {
       setSidebarRailCollapsed(true, false);
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // Chevron collapse button
   if (btnRailCollapse) {
@@ -928,7 +1071,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (save) {
       try {
         localStorage.setItem(STORAGE_KEY_THEME, isLight ? "light" : "dark");
-      } catch (e) {}
+      } catch (e) { }
     }
   }
 
@@ -938,7 +1081,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (savedTheme) {
       applyTheme(savedTheme, false);
     }
-  } catch (e) {}
+  } catch (e) { }
 
   if (btnThemeToggle) {
     btnThemeToggle.addEventListener("click", () => {
@@ -2804,36 +2947,36 @@ document.addEventListener("DOMContentLoaded", () => {
         </td>
         <td>
           ${isPaid
-            ? `<strong style="color: var(--primary-light);">฿${Number(dailyStatus.amount || (installments[0]?.amount || 0)).toLocaleString()}</strong>`
-            : isCompleted
-              ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
-              : `<strong style="color: var(--primary-light);">฿${Number(pendingInst ? pendingInst.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
-          }
+          ? `<strong style="color: var(--primary-light);">฿${Number(dailyStatus.amount || (installments[0]?.amount || 0)).toLocaleString()}</strong>`
+          : isCompleted
+            ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
+            : `<strong style="color: var(--primary-light);">฿${Number(pendingInst ? pendingInst.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
+        }
         </td>
         <td>
           ${isPaid
-            ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${dailyStatus.label}</span>`
-            : isCompleted
-              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
-              : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${dailyStatus.label}</span>`
-          }
+          ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${dailyStatus.label}</span>`
+          : isCompleted
+            ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
+            : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${dailyStatus.label}</span>`
+        }
         </td>
         <td>฿${remainingBalance.toLocaleString()}</td>
         <td>
           <div class="table-actions">
             ${isPaid
-              ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
+          ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
                   <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว${dailyStatus.isClosingPayment ? " (ปิดสัญญา)" : ""}</span>
                   ${dailyStatus.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${dailyStatus.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
                  </div>`
-              : isCompleted
-                ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
-                : dailyStatus.installment
-                  ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${dailyStatus.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
+          : isCompleted
+            ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
+            : dailyStatus.installment
+              ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${dailyStatus.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
                       <i class="fa-solid fa-check"></i> บันทึกรับชำระ
                      </button>`
-                  : ""
-            }
+              : ""
+        }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
             </button>
@@ -2982,45 +3125,45 @@ document.addEventListener("DOMContentLoaded", () => {
         <td><span style="color: #38bdf8; font-weight: 500;">${c.dueSchedule || "ทุกสัปดาห์"}</span></td>
         <td>
           ${isPaid
-            ? `<strong style="color: var(--primary-light);">฿${Number(statusObj.amount || (installments[0]?.amount || 0)).toLocaleString()}</strong>`
-            : isInterestCut
-              ? `<strong style="color: #38bdf8;">฿${Number(statusObj.amount).toLocaleString()} <span style="font-size: 0.7rem;">(ตัดดอก)</span></strong>`
-              : isCompleted
-                ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
-                : `<strong style="color: var(--primary-light);">฿${Number(statusObj.installment ? statusObj.installment.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
-          }
+          ? `<strong style="color: var(--primary-light);">฿${Number(statusObj.amount || (installments[0]?.amount || 0)).toLocaleString()}</strong>`
+          : isInterestCut
+            ? `<strong style="color: #38bdf8;">฿${Number(statusObj.amount).toLocaleString()} <span style="font-size: 0.7rem;">(ตัดดอก)</span></strong>`
+            : isCompleted
+              ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
+              : `<strong style="color: var(--primary-light);">฿${Number(statusObj.installment ? statusObj.installment.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
+        }
         </td>
         <td>
           ${isPaid
-            ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${statusObj.label}</span>`
-            : isInterestCut
-              ? `<span class="status-badge badge-interest"><i class="fa-solid fa-percent"></i> ${statusObj.label}</span>`
-              : isCompleted
-                ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
-                : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${statusObj.label}</span>`
-          }
+          ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${statusObj.label}</span>`
+          : isInterestCut
+            ? `<span class="status-badge badge-interest"><i class="fa-solid fa-percent"></i> ${statusObj.label}</span>`
+            : isCompleted
+              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
+              : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${statusObj.label}</span>`
+        }
         </td>
         <td>฿${remainingBalance.toLocaleString()}</td>
         <td>
           <div class="table-actions">
             ${isPaid
-              ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
+          ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
                   <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว${statusObj.isClosingPayment ? " (ปิดสัญญา)" : ""}</span>
                   ${statusObj.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${statusObj.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
                  </div>`
-              : isInterestCut
-                ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
+          : isInterestCut
+            ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
                     <span style="font-size: 0.75rem; color: #38bdf8; font-weight: 600;"><i class="fa-solid fa-percent"></i> ตัดดอกแล้ว</span>
                     ${statusObj.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="unmarkInterestCutFromDetail(${statusObj.installment.installmentNo})" title="ยกเลิกตัดดอก" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
                    </div>`
-                : isCompleted
-                  ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
-                  : statusObj.installment
-                    ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
+            : isCompleted
+              ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
+              : statusObj.installment
+                ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
                         <i class="fa-solid fa-check"></i> บันทึกรับชำระ
                        </button>`
-                    : ""
-            }
+                : ""
+        }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
             </button>
@@ -3169,45 +3312,45 @@ document.addEventListener("DOMContentLoaded", () => {
         <td><span style="color: #c084fc; font-weight: 500;">${c.dueSchedule || "ทุกวันที่ 1"}</span></td>
         <td>
           ${isPaid
-            ? `<strong style="color: var(--primary-light);">฿${Number(statusObj.amount || (installments[0]?.amount || 0)).toLocaleString()}</strong>`
-            : isInterestCut
-              ? `<strong style="color: #38bdf8;">฿${Number(statusObj.amount).toLocaleString()} <span style="font-size: 0.7rem;">(ตัดดอก)</span></strong>`
-              : isCompleted
-                ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
-                : `<strong style="color: var(--primary-light);">฿${Number(statusObj.installment ? statusObj.installment.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
-          }
+          ? `<strong style="color: var(--primary-light);">฿${Number(statusObj.amount || (installments[0]?.amount || 0)).toLocaleString()}</strong>`
+          : isInterestCut
+            ? `<strong style="color: #38bdf8;">฿${Number(statusObj.amount).toLocaleString()} <span style="font-size: 0.7rem;">(ตัดดอก)</span></strong>`
+            : isCompleted
+              ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
+              : `<strong style="color: var(--primary-light);">฿${Number(statusObj.installment ? statusObj.installment.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
+        }
         </td>
         <td>
           ${isPaid
-            ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${statusObj.label}</span>`
-            : isInterestCut
-              ? `<span class="status-badge badge-interest"><i class="fa-solid fa-percent"></i> ${statusObj.label}</span>`
-              : isCompleted
-                ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
-                : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${statusObj.label}</span>`
-          }
+          ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${statusObj.label}</span>`
+          : isInterestCut
+            ? `<span class="status-badge badge-interest"><i class="fa-solid fa-percent"></i> ${statusObj.label}</span>`
+            : isCompleted
+              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
+              : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${statusObj.label}</span>`
+        }
         </td>
         <td>฿${remainingBalance.toLocaleString()}</td>
         <td>
           <div class="table-actions">
             ${isPaid
-              ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
+          ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
                   <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว${statusObj.isClosingPayment ? " (ปิดสัญญา)" : ""}</span>
                   ${statusObj.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${statusObj.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
                  </div>`
-              : isInterestCut
-                ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
+          : isInterestCut
+            ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
                     <span style="font-size: 0.75rem; color: #38bdf8; font-weight: 600;"><i class="fa-solid fa-percent"></i> ตัดดอกแล้ว</span>
                     ${statusObj.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="unmarkInterestCutFromDetail(${statusObj.installment.installmentNo})" title="ยกเลิกตัดดอก" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
                    </div>`
-                : isCompleted
-                  ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
-                  : statusObj.installment
-                    ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
+            : isCompleted
+              ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
+              : statusObj.installment
+                ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${statusObj.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
                         <i class="fa-solid fa-check"></i> บันทึกรับชำระ
                        </button>`
-                    : ""
-            }
+                : ""
+        }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
             </button>
@@ -3470,36 +3613,36 @@ document.addEventListener("DOMContentLoaded", () => {
         </td>
         <td>
           ${isPaid
-            ? `<strong style="color: var(--primary-light);">฿${Number(dailyStatus.amount || (installments[0]?.amount || 0)).toLocaleString()}</strong>`
-            : isCompleted
-              ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
-              : `<strong style="color: var(--primary-light);">฿${Number(pendingInst ? pendingInst.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
-          }
+          ? `<strong style="color: var(--primary-light);">฿${Number(dailyStatus.amount || (installments[0]?.amount || 0)).toLocaleString()}</strong>`
+          : isCompleted
+            ? `<span style="color: var(--text-dim); font-size: 0.85rem;">฿0 <span style="font-size: 0.72rem; color: #34d399;">(ปิดแล้ว)</span></span>`
+            : `<strong style="color: var(--primary-light);">฿${Number(pendingInst ? pendingInst.amount : (installments[0]?.amount || 0)).toLocaleString()}</strong>`
+        }
         </td>
         <td>
           ${isPaid
-            ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${dailyStatus.label}</span>`
-            : isCompleted
-              ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
-              : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${dailyStatus.label}</span>`
-          }
+          ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ${dailyStatus.label}</span>`
+          : isCompleted
+            ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาแล้ว</span>`
+            : `<span class="status-badge badge-pending"><i class="fa-solid fa-clock"></i> ${dailyStatus.label}</span>`
+        }
         </td>
         <td>฿${remainingBalance.toLocaleString()}</td>
         <td>
           <div class="table-actions">
             ${isPaid
-              ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
+          ? `<div style="display: inline-flex; align-items: center; gap: 4px;">
                   <span style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;"><i class="fa-solid fa-check"></i> ชำระแล้ว${dailyStatus.isClosingPayment ? " (ปิดสัญญา)" : ""}</span>
                   ${dailyStatus.installment ? `<button class="btn-table-action btn-unmark-paid" onclick="quickUnmarkPaid('${c.id}', ${dailyStatus.installment.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนกลับเป็นรอชำระ" style="padding: 2px 7px; font-size: 0.72rem; color: #f87171; background: rgba(248, 113, 113, 0.1); border-color: rgba(248, 113, 113, 0.3); border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rotate-left"></i> ยกเลิก</button>` : ""}
                  </div>`
-              : isCompleted
-                ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
-                : dailyStatus.installment
-                  ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${dailyStatus.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
+          : isCompleted
+            ? '<span style="font-size: 0.75rem; color: #34d399; font-weight: 600;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>'
+            : dailyStatus.installment
+              ? `<button class="btn-table-action btn-mark-paid" onclick="quickMarkPaid('${c.id}', ${dailyStatus.installment.installmentNo}, '${selectedDailyDate}')" title="บันทึกรับชำระ">
                       <i class="fa-solid fa-check"></i> บันทึกรับชำระ
                      </button>`
-                  : ""
-            }
+              : ""
+        }
             <button class="btn-penalty-action ${Number(c.lateFine) > 0 ? "has-fine" : ""}" onclick="openPenaltyModal('${c.id}')" title="จัดการค่าปรับ">
               <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(c.lateFine) > 0 ? ` (฿${Number(c.lateFine).toLocaleString()})` : ""}
             </button>
@@ -4048,50 +4191,46 @@ document.addEventListener("DOMContentLoaded", () => {
         </td>
         <td>${inst.dueDate}</td>
         <td>
-          ${
-            isPIC
-              ? `<div>
+          ${isPIC
+          ? `<div>
                    <strong style="color: #38bdf8;">ตัดต้น: ฿${Number(inst.principalCutAmount !== undefined ? inst.principalCutAmount : inst.amount).toLocaleString()}</strong>
                    ${Number(inst.interestAmount) > 0 ? `<div style="font-size: 0.74rem; color: #c084fc; font-weight: 600; margin-top: 2px;">ตัดดอก: ฿${Number(inst.interestAmount).toLocaleString()}</div>` : ""}
                  </div>`
-              : `<div style="display: inline-flex; align-items: center; gap: 6px;">
+          : `<div style="display: inline-flex; align-items: center; gap: 6px;">
                    <strong style="color: var(--primary-light);">฿${Number(inst.amount).toLocaleString()}</strong>
                    <button type="button" class="btn-table-action" onclick="openEditInstallmentModal('${contract.id}', ${inst.installmentNo}, ${inst.amount}, '${inst.dueDate || ""}')" title="แก้ไขยอดชำระหรือกำหนดชำระของงวดนี้" style="padding: 2px 6px; font-size: 0.72rem; color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.1); border-radius: 4px; cursor: pointer;">
                      <i class="fa-solid fa-pen-to-square"></i>
                    </button>
                  </div>`
-          }
+        }
         </td>
         <td>
-          ${
-            isPIC
-              ? (isPaid
-                  ? '<span class="status-badge badge-paid" style="background: rgba(56, 189, 248, 0.18); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4);"><i class="fa-solid fa-circle-check"></i> ชำระแล้ว (ตัดต้น/ดอก)</span>'
-                  : '<span class="status-badge badge-pending" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);"><i class="fa-solid fa-clock"></i> รอชำระ (ตัดต้น/ดอก)</span>'
-                )
-              : (isPaid
-                  ? '<span class="status-badge badge-paid"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
-                  : isInterestCut
-                    ? `<span class="status-badge badge-interest" title="ตัดเฉพาะดอกเบี้ย ยอด ฿${Number(inst.interestAmount || 0).toLocaleString()}"><i class="fa-solid fa-percent"></i> ตัดดอก (฿${Number(inst.interestAmount || 0).toLocaleString()})</span>`
-                    : '<span class="status-badge badge-pending">รอชำระ</span>'
-                )
-          }
+          ${isPIC
+          ? (isPaid
+            ? '<span class="status-badge badge-paid" style="background: rgba(56, 189, 248, 0.18); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4);"><i class="fa-solid fa-circle-check"></i> ชำระแล้ว (ตัดต้น/ดอก)</span>'
+            : '<span class="status-badge badge-pending" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);"><i class="fa-solid fa-clock"></i> รอชำระ (ตัดต้น/ดอก)</span>'
+          )
+          : (isPaid
+            ? '<span class="status-badge badge-paid"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
+            : isInterestCut
+              ? `<span class="status-badge badge-interest" title="ตัดเฉพาะดอกเบี้ย ยอด ฿${Number(inst.interestAmount || 0).toLocaleString()}"><i class="fa-solid fa-percent"></i> ตัดดอก (฿${Number(inst.interestAmount || 0).toLocaleString()})</span>`
+              : '<span class="status-badge badge-pending">รอชำระ</span>'
+          )
+        }
         </td>
         <td><span style="font-size: 0.75rem; color: var(--text-dim);">${inst.paidAt || "-"}</span></td>
         <td>
-          ${
-            inst.slipUrl
-              ? `<button class="btn-table-action" onclick="viewSlip('${inst.slipUrl}', 'งวดที่ ${inst.installmentNo} - Ref: ${inst.transactionRef || "-"}')">
+          ${inst.slipUrl
+          ? `<button class="btn-table-action" onclick="viewSlip('${inst.slipUrl}', 'งวดที่ ${inst.installmentNo} - Ref: ${inst.transactionRef || "-"}')">
                     <i class="fa-solid fa-image"></i> ดูสลิป
                    </button>`
-              : (isPaid ? `<span style="font-size: 0.72rem; color: var(--text-dim);">${inst.transactionRef || (isPIC ? "ตัดต้น/ดอกเรียบร้อย" : "บันทึกโดยแอดมิน")}</span>` : (isInterestCut ? `<span style="font-size: 0.72rem; color: #38bdf8;">ตัดดอก ฿${Number(inst.interestAmount || 0).toLocaleString()}</span>` : "-"))
-          }
+          : (isPaid ? `<span style="font-size: 0.72rem; color: var(--text-dim);">${inst.transactionRef || (isPIC ? "ตัดต้น/ดอกเรียบร้อย" : "บันทึกโดยแอดมิน")}</span>` : (isInterestCut ? `<span style="font-size: 0.72rem; color: #38bdf8;">ตัดดอก ฿${Number(inst.interestAmount || 0).toLocaleString()}</span>` : "-"))
+        }
         </td>
         <td>
-          ${
-            isPIC
-              ? (isPaid
-                  ? `<div style="display: inline-flex; align-items: center; gap: 8px;">
+          ${isPIC
+          ? (isPaid
+            ? `<div style="display: inline-flex; align-items: center; gap: 8px;">
                        <span style="color: #38bdf8; font-size: 0.82rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
                          <i class="fa-solid fa-circle-check"></i> ตัดแล้ว
                        </span>
@@ -4099,12 +4238,12 @@ document.addEventListener("DOMContentLoaded", () => {
                          <i class="fa-solid fa-rotate-left"></i> ยกเลิก
                        </button>
                      </div>`
-                  : `<button type="button" class="btn-table-action btn-mark-paid" onclick="markPaidFromDetail(${inst.installmentNo})" title="คลิกเพื่อมาร์คชำระ (ลดเงินต้น ฿${Number(inst.principalCutAmount !== undefined ? inst.principalCutAmount : inst.amount).toLocaleString()} และบันทึกตัดดอก)" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.45); background: rgba(56, 189, 248, 0.12); padding: 5px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
+            : `<button type="button" class="btn-table-action btn-mark-paid" onclick="markPaidFromDetail(${inst.installmentNo})" title="คลิกเพื่อมาร์คชำระ (ลดเงินต้น ฿${Number(inst.principalCutAmount !== undefined ? inst.principalCutAmount : inst.amount).toLocaleString()} และบันทึกตัดดอก)" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.45); background: rgba(56, 189, 248, 0.12); padding: 5px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
                        <i class="fa-solid fa-check"></i> มาร์คชำระ
                      </button>`
-                )
-              : (isPaid
-                  ? `<div style="display: inline-flex; align-items: center; gap: 8px;">
+          )
+          : (isPaid
+            ? `<div style="display: inline-flex; align-items: center; gap: 8px;">
                        <span style="color: #34d399; font-size: 0.82rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
                          <i class="fa-solid fa-circle-check"></i> สมบูรณ์
                        </span>
@@ -4112,8 +4251,8 @@ document.addEventListener("DOMContentLoaded", () => {
                          <i class="fa-solid fa-rotate-left"></i> ยกเลิก
                        </button>
                      </div>`
-                  : isInterestCut
-                    ? `<div style="display: inline-flex; align-items: center; gap: 8px;">
+            : isInterestCut
+              ? `<div style="display: inline-flex; align-items: center; gap: 8px;">
                          <span style="color: #38bdf8; font-size: 0.82rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
                            <i class="fa-solid fa-percent"></i> ตัดดอกแล้ว
                          </span>
@@ -4121,7 +4260,7 @@ document.addEventListener("DOMContentLoaded", () => {
                            <i class="fa-solid fa-rotate-left"></i> ยกเลิก
                          </button>
                        </div>`
-                    : `<!-- Dropdown จัดการ (Requirement 3.1: ลูกศรชี้ลงในปุ่ม มี 2 ตัวเลือก มาร์คชำระ / ตัดดอก) -->
+              : `<!-- Dropdown จัดการ (Requirement 3.1: ลูกศรชี้ลงในปุ่ม มี 2 ตัวเลือก มาร์คชำระ / ตัดดอก) -->
                        <div class="action-dropdown" id="actionDropdown_${inst.installmentNo}">
                          <button type="button" class="btn-table-action" onclick="toggleActionDropdown(event, ${inst.installmentNo})" title="คลิกเพื่อเลือกการจัดการ (มาร์คชำระ หรือ ตัดดอก)" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); font-weight: 600; padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
                            <span>จัดการ</span> <i class="fa-solid fa-chevron-down" style="font-size: 0.72rem;"></i>
@@ -4137,8 +4276,8 @@ document.addEventListener("DOMContentLoaded", () => {
                            </button>
                          </div>
                        </div>`
-                )
-          }
+          )
+        }
         </td>
       `;
       detailInstallmentsBody.appendChild(tr);
@@ -4349,7 +4488,7 @@ document.addEventListener("DOMContentLoaded", () => {
             else d.setMonth(d.getMonth() + 1);
             defaultDueDate = d.toISOString().slice(0, 10);
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     }
     document.getElementById("manualDueDate").value = defaultDueDate;
