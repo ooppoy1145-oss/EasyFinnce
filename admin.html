@@ -16,6 +16,21 @@
   <!-- Admin Stylesheet -->
   <link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="styles.css">
+  <!-- Early script to avoid layout & theme flicker on page reload -->
+  <script>
+    (function () {
+      try {
+        const theme = localStorage.getItem('easyfinance_theme');
+        if (theme === 'light') {
+          document.documentElement.setAttribute('data-theme', 'light');
+          document.documentElement.classList.add('theme-light');
+        }
+        if (localStorage.getItem('easyfinance_sidebar_collapsed') === 'true' && window.innerWidth > 900) {
+          document.documentElement.classList.add('sidebar-init-collapsed');
+        }
+      } catch (e) { }
+    })();
+  </script>
 </head>
 
 <body>
@@ -76,87 +91,139 @@
 
     <!-- Sidebar -->
     <aside class="admin-sidebar" id="adminSidebar">
+      <!-- Top Brand Mark & Rail Collapse Chevron -->
       <div class="sidebar-brand">
-        <div class="sidebar-brand-icon has-img">
+        <div class="sidebar-brand-icon has-img" title="Easy Wealth Finance">
           <img src="images/logo.png" alt="Easy Wealth Finance">
         </div>
-        <div class="sidebar-brand-text">
+        <div class="sidebar-brand-text" data-label>
           <h2>Easy Wealth Finance</h2>
           <span>Admin Portal</span>
         </div>
+        <!-- Collapse Rail Button (Desktop) -->
+        <button type="button" class="btn-rail-collapse" id="btnRailCollapse" title="ย่อ / ขยายแถบข้าง (Collapse Rail)" aria-label="ย่อหรือขยายแถบเมนูข้าง">
+          <i class="fa-solid fa-chevron-left" id="railCollapseIcon"></i>
+        </button>
         <!-- Close / Back Button for iPad & Mobile (Requirement 2) -->
-        <button type="button" class="btn-close-sidebar" id="btnCloseSidebar" title="ย้อนกลับ / ปิดเมนู"
-          aria-label="ปิดเมนู">
+        <button type="button" class="btn-close-sidebar" id="btnCloseSidebar" title="ย้อนกลับ / ปิดเมนู" aria-label="ปิดเมนู">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <nav class="sidebar-menu">
-        <div class="menu-category-label">การติดตามยอดชำระ</div>
-        <a class="sidebar-item" data-tab="overview">
-          <i class="fa-solid fa-chart-pie"></i>
-          <span>สรุปแดชบอร์ด (Overview)</span>
-          <i class="fa-solid fa-lock" id="iconOverviewLock"
-            style="margin-left: auto; font-size: 0.72rem; color: #f59e0b; display: none;"
-            title="ต้องใช้รหัสหัวหน้า"></i>
-        </a>
-        <a class="sidebar-item active" data-tab="daily">
-          <i class="fa-solid fa-calendar-day"></i>
-          <span>สรุปรายวัน </span>
-        </a>
-        <a class="sidebar-item" data-tab="weekly">
-          <i class="fa-solid fa-calendar-week"></i>
-          <span>สรุปรายอาทิตย์ </span>
-        </a>
-        <a class="sidebar-item" data-tab="monthly">
-          <i class="fa-solid fa-calendar-days"></i>
-          <span>สรุปรายเดือน </span>
-        </a>
-        <a class="sidebar-item" data-tab="motorcycle" id="menuMotorcycle">
-          <i class="fa-solid fa-motorcycle" style="color: #38bdf8;"></i>
-          <span>หมวดรถมอไซต์ </span>
-          <span id="motorcycleCountBadge" class="tab-count-badge"
-            style="margin-left: auto; background: rgba(56, 189, 248, 0.2); color: #38bdf8; display: inline-flex;">0</span>
-        </a>
-        <a class="sidebar-item" data-tab="all">
-          <i class="fa-solid fa-file-contract"></i>
-          <span>สัญญาทั้งหมด </span>
-        </a>
-        <a class="sidebar-item" id="menuCustomerDb" onclick="openCustomerDatabaseModal()" style="cursor: pointer;">
-          <i class="fa-solid fa-address-book" style="color: #34d399;"></i>
-          <span>ฐานข้อมูลลูกค้า </span>
-          <span id="customerCountBadge" class="tab-count-badge"
-            style="margin-left: auto; background: rgba(16, 185, 129, 0.2); color: #34d399; display: inline-flex;">0</span>
-        </a>
-        <a class="sidebar-item" data-tab="bad_debt" id="menuBadDebt">
-          <i class="fa-solid fa-triangle-exclamation" style="color: #f87171;"></i>
-          <span>เช็คประวัติลูกค้า</span>
-          <span id="badDebtBadgeCount" class="tab-count-badge"
-            style="margin-left: auto; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); display: none;">0</span>
-        </a>
+      <!-- Quick Search Box -->
+      <div class="sidebar-search-container">
+        <div class="sidebar-search-box" title="ค้นหาเมนูในระบบ">
+          <button type="button" class="search-box-btn" id="btnSidebarSearchTrigger" title="ค้นหาเมนู" aria-label="ค้นหาเมนู">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          </button>
+          <input type="text" id="sidebarSearchInput" placeholder="ค้นหาเมนู..." data-label autocomplete="off" aria-label="ค้นหาเมนู">
+          <button type="button" class="btn-clear-search" id="btnClearSearch" title="ล้างการค้นหา" data-label aria-label="ล้างคำค้นหา">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
 
-        <div class="menu-category-label" style="margin-top: 16px;">การตั้งค่าระบบ</div>
-        <a class="sidebar-item" id="btnMenuQrSettings">
-          <i class="fa-solid fa-qrcode"></i>
-          <span>ตั้งค่า QR รับเงิน</span>
-        </a>
-        <a class="sidebar-item" id="btnMenuBankApi">
-          <i class="fa-solid fa-shield-halved"></i>
-          <span>ระบบตรวจสลิป (Bank API)</span>
-        </a>
-        <a class="sidebar-item" id="btnMenuPassSettings">
-          <i class="fa-solid fa-key" style="color: #f59e0b;"></i>
-          <span>ตั้งรหัสหัวหน้า / พนักงาน</span>
-          <span style="margin-left: auto; font-size: 0.7rem; color: #f59e0b; opacity: 0.85;"
-            title="ต้องใช้รหัสผ่านหัวหน้าเพื่อเข้า"><i class="fa-solid fa-lock"></i></span>
-        </a>
+      <nav class="sidebar-menu">
+        <!-- Group 1: Workspace -->
+        <div class="sidebar-group" id="groupWrapWorkspace">
+          <button type="button" class="sidebar-group-header" data-group="groupWorkspace" aria-expanded="true" title="Workspace (การติดตามยอดชำระ)">
+            <span class="group-title" data-label>Workspace</span>
+            <i class="fa-solid fa-chevron-down caret-icon" data-label></i>
+          </button>
+          <div class="sidebar-group-list" id="groupWorkspace">
+            <a class="sidebar-item" data-tab="overview" title="สรุปแดชบอร์ดภาพรวม (Overview)" data-tooltip="สรุปแดชบอร์ด">
+              <span class="sidebar-icon-glyph"><i class="fa-solid fa-chart-pie"></i></span>
+              <span class="sidebar-item-label" data-label>สรุปแดชบอร์ด (Overview)</span>
+              <i class="fa-solid fa-lock" id="iconOverviewLock" data-label
+                style="margin-left: auto; font-size: 0.72rem; color: #f59e0b; display: none;"
+                title="ต้องใช้รหัสหัวหน้า"></i>
+            </a>
+            <a class="sidebar-item active" data-tab="daily" title="สรุปรายวัน" data-tooltip="สรุปรายวัน">
+              <span class="sidebar-icon-glyph"><i class="fa-solid fa-calendar-day"></i></span>
+              <span class="sidebar-item-label" data-label>สรุปรายวัน</span>
+            </a>
+            <a class="sidebar-item" data-tab="weekly" title="สรุปรายอาทิตย์" data-tooltip="สรุปรายอาทิตย์">
+              <span class="sidebar-icon-glyph"><i class="fa-solid fa-calendar-week"></i></span>
+              <span class="sidebar-item-label" data-label>สรุปรายอาทิตย์</span>
+            </a>
+            <a class="sidebar-item" data-tab="monthly" title="สรุปรายเดือน" data-tooltip="สรุปรายเดือน">
+              <span class="sidebar-icon-glyph"><i class="fa-solid fa-calendar-days"></i></span>
+              <span class="sidebar-item-label" data-label>สรุปรายเดือน</span>
+            </a>
+            <a class="sidebar-item" data-tab="motorcycle" id="menuMotorcycle" title="หมวดรถมอไซต์" data-tooltip="หมวดรถมอไซต์">
+              <span class="sidebar-icon-glyph"><i class="fa-solid fa-motorcycle" style="color: #38bdf8;"></i></span>
+              <span class="sidebar-item-label" data-label>หมวดรถมอไซต์</span>
+              <span id="motorcycleCountBadge" class="tab-count-badge" data-label
+                style="margin-left: auto; background: rgba(56, 189, 248, 0.2); color: #38bdf8; display: inline-flex;">0</span>
+            </a>
+            <a class="sidebar-item" data-tab="all" title="สัญญาทั้งหมด" data-tooltip="สัญญาทั้งหมด">
+              <span class="sidebar-icon-glyph"><i class="fa-solid fa-file-contract"></i></span>
+              <span class="sidebar-item-label" data-label>สัญญาทั้งหมด</span>
+            </a>
+            <a class="sidebar-item" id="menuCustomerDb" onclick="openCustomerDatabaseModal()" style="cursor: pointer;" title="ฐานข้อมูลลูกค้า" data-tooltip="ฐานข้อมูลลูกค้า">
+              <span class="sidebar-icon-glyph"><i class="fa-solid fa-address-book" style="color: #34d399;"></i></span>
+              <span class="sidebar-item-label" data-label>ฐานข้อมูลลูกค้า</span>
+              <span id="customerCountBadge" class="tab-count-badge" data-label
+                style="margin-left: auto; background: rgba(16, 185, 129, 0.2); color: #34d399; display: inline-flex;">0</span>
+            </a>
+            <a class="sidebar-item" data-tab="bad_debt" id="menuBadDebt" title="เช็คประวัติลูกค้า" data-tooltip="เช็คประวัติลูกค้า">
+              <span class="sidebar-icon-glyph"><i class="fa-solid fa-triangle-exclamation" style="color: #f87171;"></i></span>
+              <span class="sidebar-item-label" data-label>เช็คประวัติลูกค้า</span>
+              <span id="badDebtBadgeCount" class="tab-count-badge" data-label
+                style="margin-left: auto; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); display: none;">0</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Group 2: Insights -->
+        <div class="sidebar-group" id="groupWrapInsights">
+          <button type="button" class="sidebar-group-header" data-group="groupInsights" aria-expanded="true" title="Insights (การตั้งค่าระบบ)">
+            <span class="group-title" data-label>Insights</span>
+            <i class="fa-solid fa-chevron-down caret-icon" data-label></i>
+          </button>
+          <div class="sidebar-group-list" id="groupInsights">
+            <a class="sidebar-item" id="btnMenuQrSettings" title="ตั้งค่า QR รับเงิน" data-tooltip="ตั้งค่า QR รับเงิน">
+              <span class="sidebar-icon-glyph"><i class="fa-solid fa-qrcode"></i></span>
+              <span class="sidebar-item-label" data-label>ตั้งค่า QR รับเงิน</span>
+            </a>
+            <a class="sidebar-item" id="btnMenuBankApi" title="ระบบตรวจสลิป (Bank API)" data-tooltip="ระบบตรวจสลิป Bank API">
+              <span class="sidebar-icon-glyph"><i class="fa-solid fa-shield-halved"></i></span>
+              <span class="sidebar-item-label" data-label>ระบบตรวจสลิป (Bank API)</span>
+            </a>
+            <a class="sidebar-item" id="btnMenuPassSettings" title="ตั้งรหัสหัวหน้า / พนักงาน" data-tooltip="ตั้งรหัสผ่าน">
+              <span class="sidebar-icon-glyph"><i class="fa-solid fa-key" style="color: #f59e0b;"></i></span>
+              <span class="sidebar-item-label" data-label>ตั้งรหัสหัวหน้า / พนักงาน</span>
+              <span data-label style="margin-left: auto; font-size: 0.7rem; color: #f59e0b; opacity: 0.85;"
+                title="ต้องใช้รหัสผ่านหัวหน้าเพื่อเข้า"><i class="fa-solid fa-lock"></i></span>
+            </a>
+            <a href="index.html" target="_blank" class="sidebar-item client-portal-link" title="เปิดดูหน้าบ้านลูกค้า" data-tooltip="หน้าบ้านลูกค้า">
+              <span class="sidebar-icon-glyph"><i class="fa-solid fa-mobile-screen"></i></span>
+              <span class="sidebar-item-label" data-label>เปิดดูหน้าบ้านลูกค้า</span>
+              <i class="fa-solid fa-arrow-up-right-from-square" data-label style="margin-left: auto; font-size: 0.7rem; opacity: 0.6;"></i>
+            </a>
+            <!-- Theme Toggle Item in Sidebar -->
+            <a class="sidebar-item" id="btnSidebarThemeToggle" title="สลับโหมดสี (สว่างขาว / มืด)" data-tooltip="สลับธีม ขาว/มืด" style="cursor: pointer;">
+              <span class="sidebar-icon-glyph"><i class="fa-solid fa-circle-half-stroke" style="color: #38bdf8;"></i></span>
+              <span class="sidebar-item-label" data-label id="sidebarThemeText">เปลี่ยนเป็นธีมสีขาว</span>
+            </a>
+          </div>
+        </div>
       </nav>
 
+      <!-- Pin User Chip to the Bottom -->
       <div class="sidebar-footer">
-        <a href="index.html" target="_blank" class="client-portal-link">
-          <i class="fa-solid fa-mobile-screen"></i>
-          <span>เปิดดูหน้าบ้านลูกค้า</span>
-        </a>
+        <div class="sidebar-user-chip" id="sidebarUserChip" title="ผู้ใช้ปัจจุบัน (คลิกเพื่อจัดการสิทธิ์/สลับโหมด)">
+          <div class="user-chip-avatar" id="sidebarUserAvatar">
+            <i class="fa-solid fa-crown" id="sidebarUserAvatarIcon"></i>
+          </div>
+          <div class="user-chip-info" data-label>
+            <div class="user-chip-name" id="sidebarUserName">หัวหน้า (Manager)</div>
+            <div class="user-chip-plan" id="sidebarUserPlan">Easy Wealth Finance</div>
+          </div>
+          <button type="button" class="user-chip-action" id="btnSidebarRoleAction" title="สลับสิทธิ์การใช้งาน" data-label aria-label="สลับสิทธิ์การใช้งาน">
+            <i class="fa-solid fa-arrow-right-arrow-left"></i>
+          </button>
+        </div>
       </div>
     </aside>
 
@@ -174,6 +241,13 @@
         </div>
 
         <div class="nav-right">
+          <!-- Theme Toggle Button (Dark / Light White) -->
+          <button type="button" id="btnThemeToggle" class="btn-theme-toggle" title="สลับโหมดสี (สว่างขาว / มืด)" aria-label="สลับโหมดสี ขาว/มืด">
+            <i class="fa-solid fa-sun" id="themeToggleIconSun" style="display: none; color: #f59e0b;"></i>
+            <i class="fa-solid fa-moon" id="themeToggleIconMoon" style="color: #38bdf8;"></i>
+            <span id="themeToggleText">โหมดสว่าง</span>
+          </button>
+
           <!-- Role Badge (Manager / Staff Indicator & Unlock) -->
           <div class="admin-role-badge manager" id="adminRoleBadge" title="คลิกเพื่อจัดการสิทธิ์">
             <i class="fa-solid fa-crown" id="roleBadgeIcon"></i>
@@ -522,7 +596,26 @@
       </div>
 
       <form id="contractForm">
-        <input type="hidden" id="formContractId">
+        <input type="hidden" id="formOriginalContractId">
+
+        <!-- Contract ID Field (Manual entry / Randomizer) -->
+        <div class="form-group-admin contract-id-group" style="margin-bottom: 16px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 12px 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <label class="form-label-admin" for="formContractId" style="margin-bottom: 0; font-weight: 600; color: var(--primary-light);">
+              <i class="fa-solid fa-hashtag"></i> รหัสสัญญา (Contract ID) *
+            </label>
+            <button type="button" class="btn-text-action" id="btnGenContractId" title="กดเพื่อสุ่มรหัสสัญญาใหม่" style="font-size: 0.78rem; color: var(--primary); background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 6px; padding: 4px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease;">
+              <i class="fa-solid fa-arrows-rotate"></i> <span>สุ่มรหัสสัญญา</span>
+            </button>
+          </div>
+          <div class="input-with-icon" style="position: relative;">
+            <i class="fa-solid fa-file-contract" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-dim);"></i>
+            <input type="text" id="formContractId" class="input-admin" style="padding-left: 42px; font-weight: 700; font-family: monospace; font-size: 0.95rem; letter-spacing: 0.5px;" placeholder="เช่น EF-2026-101 หรือพิมพ์รหัสสัญญาที่ต้องการ" required autocomplete="off">
+          </div>
+          <div style="font-size: 0.74rem; color: var(--text-dim); margin-top: 6px; line-height: 1.4;">
+            <i class="fa-solid fa-circle-info" style="color: var(--primary);"></i> สามารถพิมพ์รหัสสัญญาเองได้อิสระ หรือกดปุ่ม <strong>"สุ่มรหัสสัญญา"</strong> ด้านบน
+          </div>
+        </div>
 
         <h4
           style="font-size: 0.88rem; color: var(--primary-light); margin-bottom: 12px; border-bottom: 1px solid var(--admin-border); padding-bottom: 6px;">

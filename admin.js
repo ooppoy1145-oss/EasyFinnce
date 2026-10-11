@@ -112,6 +112,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const contractForm = document.getElementById("contractForm");
   const contractModalTitle = document.getElementById("contractModalTitle");
   const formContractId = document.getElementById("formContractId");
+  const formOriginalContractId = document.getElementById("formOriginalContractId");
+  const btnGenContractId = document.getElementById("btnGenContractId");
   const formEmailPrefix = document.getElementById("formEmailPrefix");
   const formEmail = document.getElementById("formEmail");
   const formPassword = document.getElementById("formPassword");
@@ -390,6 +392,15 @@ document.addEventListener("DOMContentLoaded", () => {
           btnRoleAction.title = "ใส่รหัสผ่านหัวหน้าเพื่อปลดล็อกยอดตัวเลข";
         }
       }
+    }
+
+    const sidebarUserName = document.getElementById("sidebarUserName");
+    const sidebarUserAvatarIcon = document.getElementById("sidebarUserAvatarIcon");
+    if (sidebarUserName) {
+      sidebarUserName.textContent = isManager ? "หัวหน้า (Manager)" : "พนักงาน (Staff)";
+    }
+    if (sidebarUserAvatarIcon) {
+      sidebarUserAvatarIcon.className = isManager ? "fa-solid fa-crown" : "fa-solid fa-user-tie";
     }
 
     if (iconOverviewLock) {
@@ -722,8 +733,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // Sidebar mobile toggle & close handlers (Requirement 2: เข้าผ่าน iPad หรือมือถือ มีปุ่มกดกลับ)
   if (btnSidebarToggle) {
     btnSidebarToggle.addEventListener("click", () => {
-      adminSidebar.classList.toggle("open");
-      if (sidebarBackdrop) sidebarBackdrop.classList.toggle("active", adminSidebar.classList.contains("open"));
+      if (window.innerWidth <= 900) {
+        adminSidebar.classList.toggle("open");
+        if (sidebarBackdrop) sidebarBackdrop.classList.toggle("active", adminSidebar.classList.contains("open"));
+      } else {
+        const isCollapsed = adminSidebar.classList.contains("collapsed");
+        setSidebarRailCollapsed(!isCollapsed, true);
+      }
     });
   }
 
@@ -738,6 +754,203 @@ document.addEventListener("DOMContentLoaded", () => {
     sidebarBackdrop.addEventListener("click", () => {
       adminSidebar.classList.remove("open");
       sidebarBackdrop.classList.remove("active");
+    });
+  }
+
+  // ==========================================================================
+  // SIDEBAR RAIL COLLAPSE & ACCORDION SYSTEM
+  // ==========================================================================
+  const btnRailCollapse = document.getElementById("btnRailCollapse");
+  const sidebarSearchInput = document.getElementById("sidebarSearchInput");
+  const btnClearSearch = document.getElementById("btnClearSearch");
+  const btnSidebarSearchTrigger = document.getElementById("btnSidebarSearchTrigger");
+  const sidebarGroupHeaders = document.querySelectorAll(".sidebar-group-header");
+  const allSidebarLinks = document.querySelectorAll(".sidebar-item");
+  const sidebarUserChip = document.getElementById("sidebarUserChip");
+  const btnSidebarRoleAction = document.getElementById("btnSidebarRoleAction");
+  const STORAGE_KEY_SIDEBAR_COLLAPSED = "easyfinance_sidebar_collapsed";
+
+  function setSidebarRailCollapsed(collapsed, save = true) {
+    if (!adminSidebar) return;
+    adminSidebar.classList.toggle("collapsed", collapsed);
+    adminSidebar.setAttribute("data-collapsed", collapsed ? "true" : "false");
+    document.documentElement.classList.toggle("sidebar-init-collapsed", collapsed);
+    if (btnRailCollapse) {
+      btnRailCollapse.setAttribute("aria-label", collapsed ? "ขยายแถบข้าง" : "ย่อแถบข้าง");
+      btnRailCollapse.title = collapsed ? "ขยายแถบข้าง (Expand Rail)" : "ย่อแถบข้าง (Collapse Rail)";
+    }
+    if (save) {
+      try {
+        localStorage.setItem(STORAGE_KEY_SIDEBAR_COLLAPSED, collapsed ? "true" : "false");
+      } catch (e) {}
+    }
+  }
+
+  // Restore rail width from localStorage
+  try {
+    const isSavedCollapsed = localStorage.getItem(STORAGE_KEY_SIDEBAR_COLLAPSED) === "true";
+    if (isSavedCollapsed && window.innerWidth > 900) {
+      setSidebarRailCollapsed(true, false);
+    }
+  } catch (e) {}
+
+  // Chevron collapse button
+  if (btnRailCollapse) {
+    btnRailCollapse.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const currentlyCollapsed = adminSidebar.classList.contains("collapsed");
+      setSidebarRailCollapsed(!currentlyCollapsed, true);
+    });
+  }
+
+  // Group Accordion Toggle (rotate caret & sync aria-expanded)
+  sidebarGroupHeaders.forEach((header) => {
+    header.addEventListener("click", () => {
+      const listId = header.getAttribute("data-group");
+      const targetList = document.getElementById(listId);
+      const parentGroup = header.closest(".sidebar-group");
+      const isExpanded = header.getAttribute("aria-expanded") === "true";
+
+      header.setAttribute("aria-expanded", isExpanded ? "false" : "true");
+      if (parentGroup) {
+        parentGroup.classList.toggle("collapsed", isExpanded);
+      }
+      if (targetList) {
+        targetList.classList.toggle("collapsed", isExpanded);
+      }
+    });
+  });
+
+  // Move active class to whichever link is clicked
+  allSidebarLinks.forEach((link) => {
+    link.addEventListener("click", () => {
+      allSidebarLinks.forEach((l) => l.classList.remove("active"));
+      link.classList.add("active");
+    });
+  });
+
+  // Search box filtering
+  if (btnSidebarSearchTrigger) {
+    btnSidebarSearchTrigger.addEventListener("click", () => {
+      if (adminSidebar.classList.contains("collapsed")) {
+        setSidebarRailCollapsed(false, true);
+        setTimeout(() => {
+          if (sidebarSearchInput) sidebarSearchInput.focus();
+        }, 150);
+      } else if (sidebarSearchInput) {
+        sidebarSearchInput.focus();
+      }
+    });
+  }
+
+  if (sidebarSearchInput) {
+    sidebarSearchInput.addEventListener("input", () => {
+      const query = sidebarSearchInput.value.trim().toLowerCase();
+      if (btnClearSearch) {
+        btnClearSearch.style.display = query ? "inline-flex" : "none";
+      }
+
+      const items = document.querySelectorAll(".sidebar-group-list .sidebar-item");
+      items.forEach((item) => {
+        const text = item.textContent.toLowerCase();
+        if (!query || text.includes(query)) {
+          item.style.display = "flex";
+        } else {
+          item.style.display = "none";
+        }
+      });
+
+      // Expand all groups during search so matching items are visible
+      if (query) {
+        document.querySelectorAll(".sidebar-group").forEach((group) => {
+          group.classList.remove("collapsed");
+          const header = group.querySelector(".sidebar-group-header");
+          if (header) header.setAttribute("aria-expanded", "true");
+          const list = group.querySelector(".sidebar-group-list");
+          if (list) list.classList.remove("collapsed");
+        });
+      }
+    });
+  }
+
+  if (btnClearSearch) {
+    btnClearSearch.addEventListener("click", () => {
+      if (sidebarSearchInput) {
+        sidebarSearchInput.value = "";
+        sidebarSearchInput.dispatchEvent(new Event("input"));
+        sidebarSearchInput.focus();
+      }
+    });
+  }
+
+  // Pinned User Chip role switch trigger
+  if (sidebarUserChip) {
+    sidebarUserChip.addEventListener("click", () => {
+      if (adminRoleBadge) adminRoleBadge.click();
+    });
+  }
+
+  if (btnSidebarRoleAction) {
+    btnSidebarRoleAction.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (adminRoleBadge) adminRoleBadge.click();
+    });
+  }
+
+  // ==========================================================================
+  // THEME SWITCHER (Dark <-> White Light Mode)
+  // ==========================================================================
+  const btnThemeToggle = document.getElementById("btnThemeToggle");
+  const btnSidebarThemeToggle = document.getElementById("btnSidebarThemeToggle");
+  const themeToggleText = document.getElementById("themeToggleText");
+  const themeToggleIconSun = document.getElementById("themeToggleIconSun");
+  const themeToggleIconMoon = document.getElementById("themeToggleIconMoon");
+  const sidebarThemeText = document.getElementById("sidebarThemeText");
+  const STORAGE_KEY_THEME = "easyfinance_theme";
+
+  function applyTheme(theme, save = true) {
+    const isLight = theme === "light";
+    document.documentElement.setAttribute("data-theme", isLight ? "light" : "dark");
+    document.documentElement.classList.toggle("theme-light", isLight);
+    document.body.classList.toggle("theme-light", isLight);
+
+    if (themeToggleText) {
+      themeToggleText.textContent = isLight ? "โหมดมืด" : "โหมดสว่าง";
+    }
+    if (themeToggleIconSun && themeToggleIconMoon) {
+      themeToggleIconSun.style.display = isLight ? "inline-block" : "none";
+      themeToggleIconMoon.style.display = isLight ? "none" : "inline-block";
+    }
+    if (sidebarThemeText) {
+      sidebarThemeText.textContent = isLight ? "เปลี่ยนเป็นธีมมืด" : "เปลี่ยนเป็นธีมสีขาว";
+    }
+
+    if (save) {
+      try {
+        localStorage.setItem(STORAGE_KEY_THEME, isLight ? "light" : "dark");
+      } catch (e) {}
+    }
+  }
+
+  // Restore saved theme on load
+  try {
+    const savedTheme = localStorage.getItem(STORAGE_KEY_THEME);
+    if (savedTheme) {
+      applyTheme(savedTheme, false);
+    }
+  } catch (e) {}
+
+  if (btnThemeToggle) {
+    btnThemeToggle.addEventListener("click", () => {
+      const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+      applyTheme(currentTheme === "light" ? "dark" : "light", true);
+    });
+  }
+
+  if (btnSidebarThemeToggle) {
+    btnSidebarThemeToggle.addEventListener("click", () => {
+      const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+      applyTheme(currentTheme === "light" ? "dark" : "light", true);
     });
   }
 
@@ -3434,7 +3647,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   btnOpenAddContract.addEventListener("click", () => {
     contractForm.reset();
-    formContractId.value = "";
     contractModalTitle.textContent = currentTab === "motorcycle"
       ? "เพิ่มสัญญาผ่อนรถมอเตอร์ไซค์ใหม่"
       : "เพิ่มสัญญาสินเชื่อ / ผ่อนชำระใหม่";
@@ -3455,9 +3667,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (formDownPaymentDate) formDownPaymentDate.value = getLocalDateStr();
     if (formFirstPaymentDate) formFirstPaymentDate.value = getLocalDateStr();
 
-    // สุ่มรหัสสัญญาใหม่
+    // สุ่มรหัสสัญญาเริ่มต้นให้ (สามารถลบพิมพ์เอง หรือกดสุ่มใหม่ได้)
     const randNo = Math.floor(100 + Math.random() * 900);
     const newId = `EF-${new Date().getFullYear()}-${randNo}`;
+    if (formContractId) formContractId.value = newId;
+    if (formOriginalContractId) formOriginalContractId.value = "";
+
     if (formEmailPrefix) {
       formEmailPrefix.value = "";
       formEmailPrefix.placeholder = `customer${randNo}`;
@@ -3467,6 +3682,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     contractModal.classList.add("active");
   });
+
+  // ปุ่มสุ่มรหัสสัญญาใหม่
+  if (btnGenContractId) {
+    btnGenContractId.addEventListener("click", () => {
+      const randNo = Math.floor(100 + Math.random() * 900);
+      const newId = `EF-${new Date().getFullYear()}-${randNo}`;
+      if (formContractId) {
+        formContractId.value = newId;
+        formContractId.focus();
+        showAdminToast(`สุ่มรหัสสัญญา: ${newId}`, "info");
+      }
+      if (formEmailPrefix && (!formEmailPrefix.value || formEmailPrefix.value.startsWith("customer"))) {
+        formEmailPrefix.value = `customer${randNo}`;
+      }
+    });
+  }
 
   if (btnCloseContractModal) {
     btnCloseContractModal.addEventListener("click", () => {
@@ -3483,7 +3714,24 @@ document.addEventListener("DOMContentLoaded", () => {
   contractForm.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const id = formContractId.value || `EF-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+    const id = formContractId ? formContractId.value.trim() : "";
+    if (!id) {
+      showAdminToast("กรุณากรอกรหัสสัญญา", "error");
+      if (formContractId) formContractId.focus();
+      return;
+    }
+
+    const oldContractId = formOriginalContractId ? formOriginalContractId.value.trim() : "";
+    // ป้องกันรหัสสัญญาซ้ำกับสัญญาอื่น
+    if (!oldContractId || oldContractId !== id) {
+      const duplicate = window.easyFinanceDB.getContractById(id);
+      if (duplicate && duplicate.id !== oldContractId) {
+        showAdminToast(`รหัสสัญญา "${id}" มีอยู่ในระบบแล้ว กรุณาใช้รหัสสัญญาอื่น`, "error");
+        if (formContractId) formContractId.focus();
+        return;
+      }
+    }
+
     let rawEmailPrefix = formEmailPrefix ? formEmailPrefix.value.trim() : "";
     rawEmailPrefix = rawEmailPrefix.replace(/@.*$/, "");
     const email = rawEmailPrefix ? `${rawEmailPrefix}@Easy.com` : (formEmail ? formEmail.value.trim() : "");
@@ -3528,7 +3776,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ตรวจสอบว่าเป็นสัญญาเดิมหรือสัญญาใหม่
-    const existing = window.easyFinanceDB.getContractById(id);
+    const existing = window.easyFinanceDB.getContractById(oldContractId || id);
     let installments = [];
 
     if (existing && existing.installments && existing.installments.length === totalInstallments) {
@@ -3598,6 +3846,11 @@ document.addEventListener("DOMContentLoaded", () => {
       installments
     };
 
+    // หากมีการแก้ไขรหัสสัญญาเดิม ให้ลบคีย์สัญญาเดิมออกก่อนบันทึกคีย์ใหม่
+    if (oldContractId && oldContractId !== id) {
+      await window.easyFinanceDB.deleteContract(oldContractId);
+    }
+
     await window.easyFinanceDB.saveContract(contractData);
     contractModal.classList.remove("active");
     showAdminToast(`บันทึกสัญญา ${id} เรียบร้อยแล้ว`, "success");
@@ -3612,7 +3865,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const contract = window.easyFinanceDB.getContractById(id);
     if (!contract) return;
 
-    formContractId.value = contract.id;
+    if (formContractId) formContractId.value = contract.id;
+    if (formOriginalContractId) formOriginalContractId.value = contract.id;
     if (formEmailPrefix) {
       const rawEmail = contract.email || "";
       const prefix = rawEmail.includes("@") ? rawEmail.split("@")[0] : rawEmail;

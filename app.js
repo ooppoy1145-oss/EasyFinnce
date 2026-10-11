@@ -854,6 +854,42 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
 
+  // THEME SWITCHER (Dark <-> Light White)
+  function applyClientTheme(theme, save = true) {
+    const isLight = theme === "light";
+    document.documentElement.setAttribute("data-theme", isLight ? "light" : "dark");
+    document.documentElement.classList.toggle("theme-light", isLight);
+    document.body.classList.toggle("theme-light", isLight);
+    if (save) {
+      try {
+        localStorage.setItem("easyfinance_theme", isLight ? "light" : "dark");
+      } catch (e) {}
+    }
+  }
+
+  function toggleClientTheme() {
+    const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+    applyClientTheme(currentTheme === "light" ? "dark" : "light", true);
+  }
+
+  const btnLoginThemeToggle = document.getElementById("btnLoginThemeToggle");
+  if (btnLoginThemeToggle) {
+    btnLoginThemeToggle.addEventListener("click", toggleClientTheme);
+  }
+
+  const btnClientThemeToggle = document.getElementById("btnClientThemeToggle");
+  if (btnClientThemeToggle) {
+    btnClientThemeToggle.addEventListener("click", toggleClientTheme);
+  }
+
+  // Restore saved theme
+  try {
+    const savedTheme = localStorage.getItem("easyfinance_theme");
+    if (savedTheme) {
+      applyClientTheme(savedTheme, false);
+    }
+  } catch (e) {}
+
   // Run on start
   checkSession();
 });
