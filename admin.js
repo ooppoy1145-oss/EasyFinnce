@@ -888,8 +888,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (btnCloseSidebar) {
     btnCloseSidebar.addEventListener("click", () => {
-      adminSidebar.classList.remove("open");
-      if (sidebarBackdrop) sidebarBackdrop.classList.remove("active");
+      if (window.innerWidth <= 900) {
+        adminSidebar.classList.remove("open");
+        if (sidebarBackdrop) sidebarBackdrop.classList.remove("active");
+      } else {
+        setSidebarRailCollapsed(true, true);
+      }
     });
   }
 
@@ -1041,7 +1045,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ==========================================================================
-  // THEME SWITCHER (Dark <-> White Light Mode)
+  // THEME SWITCHER (Dark Mode <-> Multi-Colored Light Mode)
   // ==========================================================================
   const btnThemeToggle = document.getElementById("btnThemeToggle");
   const btnSidebarThemeToggle = document.getElementById("btnSidebarThemeToggle");
@@ -1052,8 +1056,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const STORAGE_KEY_THEME = "easyfinance_theme";
 
   function applyTheme(theme, save = true) {
-    const isLight = theme === "light";
-    document.documentElement.setAttribute("data-theme", isLight ? "light" : "dark");
+    const isLight = theme === "light" || (theme && theme !== "dark");
+    const activeTheme = isLight ? "light" : "dark";
+
+    document.documentElement.setAttribute("data-theme", activeTheme);
     document.documentElement.classList.toggle("theme-light", isLight);
     document.body.classList.toggle("theme-light", isLight);
 
@@ -1065,12 +1071,12 @@ document.addEventListener("DOMContentLoaded", () => {
       themeToggleIconMoon.style.display = isLight ? "none" : "inline-block";
     }
     if (sidebarThemeText) {
-      sidebarThemeText.textContent = isLight ? "เปลี่ยนเป็นธีมมืด" : "เปลี่ยนเป็นธีมสีขาว";
+      sidebarThemeText.textContent = isLight ? "เปลี่ยนเป็นโหมดมืด" : "เปลี่ยนเป็นโหมดสว่าง";
     }
 
     if (save) {
       try {
-        localStorage.setItem(STORAGE_KEY_THEME, isLight ? "light" : "dark");
+        localStorage.setItem(STORAGE_KEY_THEME, activeTheme);
       } catch (e) { }
     }
   }
@@ -1080,8 +1086,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const savedTheme = localStorage.getItem(STORAGE_KEY_THEME);
     if (savedTheme) {
       applyTheme(savedTheme, false);
+    } else {
+      applyTheme("dark", false);
     }
-  } catch (e) { }
+  } catch (e) {
+    applyTheme("dark", false);
+  }
 
   if (btnThemeToggle) {
     btnThemeToggle.addEventListener("click", () => {

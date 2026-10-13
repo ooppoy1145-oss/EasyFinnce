@@ -557,39 +557,106 @@ html.sidebar-init-collapsed .admin-sidebar {
   display: block;
 }
 
-/* Rail Collapse Chevron Button */
-.btn-rail-collapse {
-  width: 28px;
-  height: 28px;
-  min-width: 28px;
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--admin-border);
-  color: var(--text-muted);
-  display: inline-flex;
+/* Sidebar Brand Actions Container */
+.sidebar-brand-actions {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  gap: 8px;
   margin-left: auto;
   flex-shrink: 0;
 }
 
+/* Rail Collapse Chevron Button (Desktop) */
+.btn-rail-collapse {
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+  color: #cbd5e1;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 9px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
 .btn-rail-collapse:hover {
-  background: rgba(16, 185, 129, 0.15);
-  color: #fff;
-  border-color: var(--admin-border-emerald);
-  transform: scale(1.05);
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.45) !important;
+  transform: scale(1.06);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.35), 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+.btn-rail-collapse:active {
+  transform: scale(0.92);
 }
 
 .btn-rail-collapse i {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
+  color: inherit;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
 }
 
 .admin-sidebar.collapsed .btn-rail-collapse i,
 html.sidebar-init-collapsed .admin-sidebar .btn-rail-collapse i {
   transform: rotate(180deg);
+}
+
+/* Redesigned Premium Glassmorphic Close/Slide Sidebar Button */
+.btn-close-sidebar {
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+  color: #cbd5e1;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  border-radius: 9px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.btn-close-sidebar:hover {
+  background: rgba(239, 68, 68, 0.22) !important;
+  color: #fca5a5 !important;
+  border-color: rgba(239, 68, 68, 0.45) !important;
+  transform: scale(1.06);
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.35), 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+.btn-close-sidebar:active {
+  transform: scale(0.92);
+}
+
+.btn-close-sidebar i {
+  font-size: 0.92rem;
+  color: inherit;
+  transition: transform 0.22s ease;
+  pointer-events: none;
+}
+
+.btn-close-sidebar:hover i {
+  transform: rotate(90deg);
 }
 
 /* Quick Search Box */
@@ -905,11 +972,22 @@ html.sidebar-init-collapsed .admin-sidebar .sidebar-brand {
   gap: 8px;
 }
 
+.admin-sidebar.collapsed .sidebar-brand-actions,
+html.sidebar-init-collapsed .admin-sidebar .sidebar-brand-actions {
+  margin: 0;
+  justify-content: center;
+}
+
+.admin-sidebar.collapsed .btn-close-sidebar,
+html.sidebar-init-collapsed .admin-sidebar .btn-close-sidebar {
+  display: none !important;
+}
+
 .admin-sidebar.collapsed .btn-rail-collapse,
 html.sidebar-init-collapsed .admin-sidebar .btn-rail-collapse {
   margin: 0;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
 }
 
 .admin-sidebar.collapsed .sidebar-search-container,
@@ -1051,14 +1129,33 @@ html.sidebar-init-collapsed .admin-sidebar .sidebar-user-chip {
 }
 
 .btn-sidebar-toggle {
-  display: none;
-  background: rgba(255, 255, 255, 0.05);
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--admin-border);
-  color: #fff;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-sm);
+  color: #cbd5e1;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
   cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: var(--transition);
+}
+
+.btn-sidebar-toggle:hover {
+  background: rgba(16, 185, 129, 0.18);
+  color: #10b981;
+  border-color: var(--admin-border-emerald);
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
+}
+
+.btn-sidebar-toggle:active {
+  transform: scale(0.94);
 }
 
 .nav-page-title h2 {
@@ -1111,20 +1208,39 @@ html.sidebar-init-collapsed .admin-sidebar .sidebar-user-chip {
   color: #fff;
 }
 
-/* Page Body Container */
+/* Page Body Container - Fullscreen Responsive for PC */
 .admin-container {
-  padding: 24px 28px 60px 28px;
+  padding: 24px 32px 60px 32px;
   display: flex;
   flex-direction: column;
   gap: 24px;
-  max-width: 1400px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  flex: 1;
 }
 
-/* Stats Counter Row */
+@media (min-width: 1440px) {
+  .admin-container {
+    padding: 26px 40px 70px 40px;
+    gap: 26px;
+  }
+}
+
+@media (min-width: 1800px) {
+  .admin-container {
+    padding: 28px 48px 80px 48px;
+    gap: 28px;
+  }
+}
+
+/* Stats Counter Row - Dynamic Auto-fit for Full Width */
 .stats-counter-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .stat-counter-card {
@@ -1735,7 +1851,7 @@ tr.tr-interest-cut {
 
 .admin-modal-card-report {
   width: 96% !important;
-  max-width: 1180px !important;
+  max-width: 1480px !important;
   height: 93vh !important;
   max-height: 95vh !important;
   min-height: 88vh !important;
@@ -1791,6 +1907,50 @@ tr.tr-interest-cut {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* Modal Close Button (Glassmorphic Modern Redesign) */
+.btn-close-modal {
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: #94a3b8 !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  min-height: 34px !important;
+  border-radius: 9px !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.btn-close-modal:hover {
+  background: rgba(239, 68, 68, 0.22) !important;
+  color: #fca5a5 !important;
+  border-color: rgba(239, 68, 68, 0.45) !important;
+  transform: scale(1.06) !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.35), 0 3px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.btn-close-modal:active {
+  transform: scale(0.92) !important;
+}
+
+.btn-close-modal i {
+  font-size: 0.95rem !important;
+  transition: transform 0.22s ease !important;
+  pointer-events: none;
+}
+
+.btn-close-modal:hover i {
+  transform: rotate(90deg) !important;
 }
 
 .form-grid-2 {
@@ -1861,32 +2021,65 @@ tr.tr-interest-cut {
 }
 
 /* Responsive adjustments (Mobile & iPad) */
+/* ==========================================================================
+   MOBILE & TABLET RESPONSIVE REORGANIZATION (max-width: 900px)
+   Enhanced Mobile-First Experience for iPhone & Android
+   ========================================================================== */
 @media (max-width: 900px) {
+  /* 1. Base Mobile Layout & Prevention of Horizontal Overflow */
+  html, body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+  }
+
+  .admin-layout {
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+
+  .admin-main {
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    flex: 1 1 auto !important;
+  }
+
+  /* 2. Sidebar Mobile Drawer */
   .admin-sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    height: 100vh;
-    z-index: 1000;
-    transform: translateX(-100%);
-    box-shadow: none;
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    z-index: 1000 !important;
+    transform: translateX(-100%) !important;
+    box-shadow: none !important;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    width: min(300px, 86vw) !important;
   }
 
   .admin-sidebar.open {
-    transform: translateX(0);
-    box-shadow: 10px 0 35px rgba(0, 0, 0, 0.75);
+    transform: translateX(0) !important;
+    box-shadow: 12px 0 40px rgba(0, 0, 0, 0.85) !important;
   }
 
   .btn-rail-collapse {
     display: none !important;
   }
 
+  .btn-close-sidebar {
+    display: inline-flex !important;
+    width: 36px !important;
+    height: 36px !important;
+  }
+
   .admin-sidebar,
   .admin-sidebar.collapsed,
   html.sidebar-init-collapsed .admin-sidebar {
-    width: 275px !important;
+    width: min(300px, 86vw) !important;
   }
 
   .admin-sidebar [data-label],
@@ -1905,16 +2098,17 @@ tr.tr-interest-cut {
   .admin-sidebar.collapsed .sidebar-item,
   html.sidebar-init-collapsed .admin-sidebar .sidebar-item {
     justify-content: flex-start !important;
-    padding: 10px 12px !important;
+    padding: 12px 14px !important;
     gap: 12px !important;
     margin: 0 !important;
+    min-height: 46px !important;
   }
 
   .admin-sidebar .sidebar-brand,
   .admin-sidebar.collapsed .sidebar-brand,
   html.sidebar-init-collapsed .admin-sidebar .sidebar-brand {
     flex-direction: row !important;
-    padding: 20px 16px !important;
+    padding: 16px 14px !important;
     justify-content: flex-start !important;
     gap: 12px !important;
   }
@@ -1922,14 +2116,14 @@ tr.tr-interest-cut {
   .admin-sidebar .sidebar-search-container,
   .admin-sidebar.collapsed .sidebar-search-container,
   html.sidebar-init-collapsed .admin-sidebar .sidebar-search-container {
-    padding: 12px 14px 4px 14px !important;
+    padding: 10px 14px 4px 14px !important;
   }
 
   .admin-sidebar .sidebar-search-box,
   .admin-sidebar.collapsed .sidebar-search-box,
   html.sidebar-init-collapsed .admin-sidebar .sidebar-search-box {
     justify-content: flex-start !important;
-    padding: 7px 11px !important;
+    padding: 8px 12px !important;
     background: rgba(255, 255, 255, 0.04) !important;
     border: 1px solid var(--admin-border) !important;
   }
@@ -1949,47 +2143,485 @@ tr.tr-interest-cut {
     background: rgba(255, 255, 255, 0.03) !important;
   }
 
-  .btn-close-sidebar {
-    display: inline-flex !important;
+  /* 3. Mobile Top Navbar - Single Clean Row */
+  .admin-navbar {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+    min-height: 56px !important;
+  }
+
+  .nav-left {
+    gap: 8px !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
   }
 
   .btn-sidebar-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: inline-flex !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    flex-shrink: 0 !important;
+    border-radius: 9px !important;
   }
 
+  .nav-page-title {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+
+  .nav-page-title h2 {
+    font-size: 0.95rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    line-height: 1.2 !important;
+  }
+
+  .nav-right {
+    gap: 6px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  /* Compact Theme Toggle Button (Icon only on mobile) */
+  .btn-theme-toggle {
+    padding: 0 !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    justify-content: center !important;
+    border-radius: 9px !important;
+  }
+
+  .btn-theme-toggle #themeToggleText {
+    display: none !important;
+  }
+
+  /* Role Badge on mobile */
+  .admin-role-badge {
+    padding: 4px 8px !important;
+    font-size: 0.72rem !important;
+    gap: 4px !important;
+    border-radius: 8px !important;
+  }
+
+  .admin-role-badge i {
+    font-size: 0.72rem !important;
+  }
+
+  /* Cloud Status Badge on mobile (Compact) */
+  .cloud-status-badge {
+    padding: 4px 8px !important;
+    font-size: 0.72rem !important;
+    gap: 4px !important;
+  }
+
+  .cloud-status-badge #cloudStatusText {
+    display: none !important;
+  }
+
+  /* Logout Button on mobile (Icon only) */
+  .btn-admin-logout {
+    padding: 0 !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    justify-content: center !important;
+    border-radius: 9px !important;
+  }
+
+  .btn-admin-logout span {
+    display: none !important;
+  }
+
+  /* 4. Mobile Page Body Container */
   .admin-container {
-    padding: 16px;
+    padding: 12px 12px 60px 12px !important;
+    gap: 14px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 5. Mobile Stats Counters - Clean 2-Column Responsive Grid */
+  .stats-counter-row {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .stat-counter-card {
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+    min-height: 68px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .stat-info {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+
+  .stat-info .stat-label {
+    font-size: 0.72rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .stat-info .stat-val {
+    font-size: 1.15rem !important;
+    margin-top: 2px !important;
+    line-height: 1.2 !important;
+  }
+
+  .stat-icon-box {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    font-size: 0.95rem !important;
+    border-radius: 8px !important;
+  }
+
+  /* Hide long verbose descriptions under stat cards on mobile */
+  #statLateFinesSub,
+  #statMotorcycleSub,
+  #statInterestCutSub,
+  #statDownPaymentSub,
+  #statDailyAllCategoriesSub,
+  #statBankReconciliationSub {
+    display: none !important;
+  }
+
+  /* 6. Action Bar Header & Buttons on Mobile */
+  .action-bar-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .search-filter-box {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .search-input-wrapper {
+    width: 100% !important;
+  }
+
+  .search-input-wrapper input {
+    width: 100% !important;
+    padding: 9px 12px 9px 36px !important;
+    font-size: 0.84rem !important;
+  }
+
+  .action-bar-btn-group,
+  .action-bar-header > div:last-child {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  #btnOpenAddContract,
+  #btnOpenAddBadDebt {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 12px !important;
+    font-size: 0.92rem !important;
+  }
+
+  #btnOpenCustomerDb,
+  #btnOpenDashboardOverview {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 9px 8px !important;
+    font-size: 0.8rem !important;
+  }
+
+  /* 7. Quick Summary Category Pills (Horizontal Touch Swipe Rail) */
+  .summary-pills-bar {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 8px !important;
+    padding: 2px 2px 6px 2px !important;
+    width: 100% !important;
+    scrollbar-width: none !important;
+  }
+
+  .summary-pills-bar::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .summary-pill-btn {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    padding: 6px 12px !important;
+    font-size: 0.78rem !important;
+    border-radius: 20px !important;
+    gap: 6px !important;
+  }
+
+  /* 8. Date / Period Filter Bar on Mobile */
+  .date-filter-bar {
+    padding: 12px 14px !important;
+    gap: 10px !important;
+    border-radius: 14px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .date-filter-main-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .date-filter-left {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .date-input-group {
+    width: 100% !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+
+  .date-filter-label {
+    font-size: 0.78rem !important;
+    white-space: nowrap !important;
+  }
+
+  .input-admin-date {
+    flex: 1 1 auto !important;
+    text-align: center !important;
+    padding: 6px 8px !important;
+    font-size: 0.82rem !important;
+  }
+
+  .date-quick-btns {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1.6fr 1fr !important;
+    gap: 5px !important;
+  }
+
+  .btn-date-quick {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 7px 4px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .date-daily-total-badge {
+    width: 100% !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    padding: 10px 12px !important;
+    box-sizing: border-box !important;
+  }
+
+  .daily-total-main {
+    display: flex !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+
+  .daily-total-amount {
+    font-size: 1.15rem !important;
+  }
+
+  .daily-total-details {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 5px !important;
+    width: 100% !important;
+  }
+
+  .daily-mini-chip {
+    font-size: 0.72rem !important;
+    padding: 2px 7px !important;
+  }
+
+  .date-filter-summary-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding-top: 8px !important;
+  }
+
+  .date-filter-summary {
+    font-size: 0.76rem !important;
+    width: 100% !important;
+  }
+
+  .date-filter-progress-wrap {
+    width: 100% !important;
+    justify-content: space-between !important;
+    padding: 5px 10px !important;
+    box-sizing: border-box !important;
+  }
+
+  .progress-bar-track {
+    flex: 1 1 auto !important;
+    margin: 0 8px !important;
+  }
+
+  /* 9. Dynamic Sub-Tabs Navigation (Horizontal Scroll Rail on Mobile) */
+  .admin-tab-nav {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 6px !important;
+    padding: 2px 2px 6px 2px !important;
+    width: 100% !important;
+    scrollbar-width: none !important;
+  }
+
+  .admin-tab-nav::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .tab-sub-btn {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    padding: 7px 12px !important;
+    font-size: 0.8rem !important;
+  }
+
+  /* 10. Dashboard Overview 3 Big Cards on Mobile */
+  .overview-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  .overview-summary-card {
+    padding: 16px !important;
+    border-radius: 16px !important;
+  }
+
+  /* 11. Data Table Card & Touch-Scrollable Table */
+  .data-table-card {
+    border-radius: 14px !important;
+    width: 100% !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .table-responsive {
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding-bottom: 6px !important;
+  }
+
+  table.admin-table th,
+  table.admin-table td {
+    padding: 9px 11px !important;
+    font-size: 0.8rem !important;
+    white-space: nowrap !important;
+  }
+
+  /* 12. Modals on Mobile */
+  .admin-modal-overlay {
+    padding: 8px !important;
+  }
+
+  .admin-modal-card {
+    padding: 18px 14px !important;
+    border-radius: 18px !important;
+    max-height: 94vh !important;
+    max-height: 94dvh !important;
+    width: 100% !important;
+  }
+
+  .admin-modal-header {
+    margin-bottom: 14px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .admin-modal-title {
+    font-size: 1.05rem !important;
   }
 
   .form-grid-2 {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .modal-action-buttons {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .btn-styled-submit,
+  .btn-styled-cancel {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 11px !important;
+  }
+
+  .admin-modal-card-report {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 94vh !important;
+    height: 94dvh !important;
+    max-height: 94dvh !important;
+    padding: 16px 12px !important;
+  }
+
+  .report-breakdown-scroll,
+  .report-daily-scroll {
+    max-height: 320px !important;
   }
 }
 
-/* Close Sidebar Button for iPad & Mobile (Requirement 2) */
-.btn-close-sidebar {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #cbd5e1;
-  cursor: pointer;
-  margin-left: auto;
-  font-size: 1rem;
-  transition: all 0.2s ease;
+/* Specific Extra Small Mobile Devices (<= 480px) */
+@media (max-width: 480px) {
+  .admin-navbar {
+    padding: 8px 10px !important;
+  }
+
+  .nav-page-title h2 {
+    font-size: 0.88rem !important;
+    max-width: 130px !important;
+  }
+
+  .stats-counter-row {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  .stat-counter-card {
+    padding: 8px 10px !important;
+  }
+
+  .stat-info .stat-val {
+    font-size: 1.05rem !important;
+  }
+
+  .stat-icon-box {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    font-size: 0.85rem !important;
+  }
 }
 
-.btn-close-sidebar:hover {
-  background: rgba(239, 68, 68, 0.25);
-  color: #f87171;
-  border-color: rgba(239, 68, 68, 0.4);
-}
+/* Sidebar close button styling is unified and enhanced in main section */
 
 /* Sidebar Mobile Backdrop (Requirement 2) */
 .sidebar-backdrop {
@@ -3727,7 +4359,7 @@ table.admin-table td .btn-group-tight {
 }
 
 /* ==========================================================================
-   LIGHT MODE / WHITE THEME STYLES (ธีมสีขาว)
+   MULTI-COLORED LIGHT MODE (โหมดสว่างรวมสี: ขาว, ส้ม, เหลือง, เขียว, ฟ้า, น้ำเงิน)
    ========================================================================== */
 .btn-theme-toggle {
   display: inline-flex;
@@ -3747,7 +4379,7 @@ table.admin-table td .btn-group-tight {
 
 .btn-theme-toggle:hover {
   background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.22);
   transform: translateY(-1px);
 }
 
@@ -3760,7 +4392,7 @@ table.admin-table td .btn-group-tight {
   transform: rotate(20deg);
 }
 
-/* Light Theme Variables and Base Rules */
+/* Light Theme Variables and Base Rules (ส้ม เหลือง ฟ้า) */
 [data-theme="light"],
 html.theme-light,
 body.theme-light {
@@ -3768,29 +4400,218 @@ body.theme-light {
   --admin-sidebar-bg: #ffffff;
   --admin-card-bg: #ffffff;
   --admin-border: #e2e8f0;
-  --admin-border-emerald: rgba(16, 185, 129, 0.4);
+  --admin-border-emerald: rgba(249, 115, 22, 0.35);
 
-  --primary: #10b981;
-  --primary-hover: #059669;
-  --primary-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  --secondary: #2563eb;
-  --warning: #d97706;
-  --danger: #dc2626;
+  --primary: #f97316; /* ส้ม */
+  --primary-hover: #ea580c;
+  --primary-gradient: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  --secondary: #0284c7; /* ฟ้า */
+  --warning: #f59e0b; /* เหลือง */
+  --danger: #ef4444;
 
   --text-main: #0f172a;
   --text-muted: #475569;
   --text-dim: #64748b;
-  --primary-light: #059669;
+  --primary-light: #ea580c;
 }
 
+/* 1. ขาว (White Background Canvas with Orange, Yellow, Blue accents) */
 [data-theme="light"] body,
 html.theme-light body,
 body.theme-light {
   background-color: #f8fafc !important;
   color: #0f172a !important;
   background-image:
-    radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.06) 0%, transparent 40%),
-    radial-gradient(circle at 85% 85%, rgba(59, 130, 246, 0.05) 0%, transparent 40%) !important;
+    radial-gradient(circle at 10% 12%, rgba(14, 165, 233, 0.10) 0%, transparent 40%), /* ฟ้า */
+    radial-gradient(circle at 90% 16%, rgba(249, 115, 22, 0.10) 0%, transparent 40%), /* ส้ม */
+    radial-gradient(circle at 50% 88%, rgba(245, 158, 11, 0.08) 0%, transparent 45%) !important; /* เหลือง */
+}
+
+/* ==========================================================================
+   2. ACTION BUTTONS: ส้ม, ฟ้า, เหลือง ในโหมดสว่าง (Orange, Sky Blue, Yellow)
+   ========================================================================== */
+/* ปุ่มส้ม: + เพิ่มสัญญาใหม่ (Rich Orange Button) */
+[data-theme="light"] #btnOpenAddContract,
+html.theme-light #btnOpenAddContract,
+[data-theme="light"] .btn-primary-action,
+html.theme-light .btn-primary-action {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.4) !important;
+}
+
+[data-theme="light"] #btnOpenAddContract:hover,
+html.theme-light #btnOpenAddContract:hover,
+[data-theme="light"] .btn-primary-action:hover,
+html.theme-light .btn-primary-action:hover {
+  background: linear-gradient(135deg, #fb923c 0%, #f97316 100%) !important;
+  box-shadow: 0 6px 20px rgba(249, 115, 22, 0.55) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ปุ่มฟ้า: ฐานข้อมูลลูกค้า (Rich Sky Blue Button) */
+[data-theme="light"] #btnOpenCustomerDb,
+html.theme-light #btnOpenCustomerDb {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid #0284c7 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 15px rgba(2, 132, 199, 0.35) !important;
+}
+
+[data-theme="light"] #btnOpenCustomerDb:hover,
+html.theme-light #btnOpenCustomerDb:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%) !important;
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.5) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ปุ่มเหลือง/ทอง: สรุปแดชบอร์ด (Rich Amber Yellow Button) */
+[data-theme="light"] #btnOpenDashboardOverview,
+html.theme-light #btnOpenDashboardOverview {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid #f59e0b !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35) !important;
+}
+
+[data-theme="light"] #btnOpenDashboardOverview:hover,
+html.theme-light #btnOpenDashboardOverview:hover {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* ==========================================================================
+   3. STATS ICONS & ACCENTS: เขียว, ฟ้า, เหลือง, น้ำเงิน, ส้ม
+   ========================================================================== */
+/* ส้ม: การ์ดยอดรวมค่าปรับ */
+[data-theme="light"] #cardStatLateFines,
+html.theme-light #cardStatLateFines {
+  border-color: rgba(249, 115, 22, 0.35) !important;
+  background: #fffaf5 !important;
+}
+
+[data-theme="light"] #statLabelLateFines,
+html.theme-light #statLabelLateFines,
+[data-theme="light"] #statTotalLateFines,
+html.theme-light #statTotalLateFines {
+  color: #ea580c !important;
+}
+
+[data-theme="light"] #statIconLateFines,
+html.theme-light #statIconLateFines {
+  background: #fff7ed !important;
+  color: #ea580c !important;
+  border: 1px solid rgba(234, 88, 12, 0.35) !important;
+}
+
+/* ฟ้า: การ์ดยอดรวมมอไซต์ */
+[data-theme="light"] #cardStatMotorcycle,
+html.theme-light #cardStatMotorcycle {
+  border-color: rgba(2, 132, 199, 0.35) !important;
+  background: #f5faff !important;
+}
+
+[data-theme="light"] #statLabelMotorcycle,
+html.theme-light #statLabelMotorcycle,
+[data-theme="light"] #statTotalMotorcycle,
+html.theme-light #statTotalMotorcycle {
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] #statIconMotorcycle,
+html.theme-light #statIconMotorcycle {
+  background: #f0f9ff !important;
+  color: #0284c7 !important;
+  border: 1px solid rgba(2, 132, 199, 0.35) !important;
+}
+
+/* ฟ้าคราม: การ์ดยอดรวมตัดดอก */
+[data-theme="light"] #cardStatInterestCut,
+html.theme-light #cardStatInterestCut {
+  border-color: rgba(8, 145, 178, 0.35) !important;
+  background: #f6fcfe !important;
+}
+
+[data-theme="light"] #statLabelInterestCut,
+html.theme-light #statLabelInterestCut,
+[data-theme="light"] #statTotalInterestCut,
+html.theme-light #statTotalInterestCut {
+  color: #0891b2 !important;
+}
+
+[data-theme="light"] #statIconInterestCut,
+html.theme-light #statIconInterestCut {
+  background: #ecfeff !important;
+  color: #0891b2 !important;
+  border: 1px solid rgba(8, 145, 178, 0.35) !important;
+}
+
+/* เหลือง: การ์ดช่องรวมเงินดาวน์ */
+[data-theme="light"] #cardStatDownPayment,
+html.theme-light #cardStatDownPayment {
+  border-color: rgba(202, 138, 4, 0.35) !important;
+  background: #fefdf6 !important;
+}
+
+[data-theme="light"] #statLabelDownPayment,
+html.theme-light #statLabelDownPayment,
+[data-theme="light"] #statTotalDownPayment,
+html.theme-light #statTotalDownPayment {
+  color: #ca8a04 !important;
+}
+
+[data-theme="light"] #statIconDownPayment,
+html.theme-light #statIconDownPayment {
+  background: #fefce8 !important;
+  color: #ca8a04 !important;
+  border: 1px solid rgba(202, 138, 4, 0.35) !important;
+}
+
+/* น้ำเงิน / ม่วง: การ์ดช่องสรุปรวมต่อวัน */
+[data-theme="light"] #cardStatDailyAllCategories,
+html.theme-light #cardStatDailyAllCategories {
+  border-color: rgba(124, 58, 237, 0.35) !important;
+  background: #faf8ff !important;
+}
+
+[data-theme="light"] #statLabelDailyAllCategories,
+html.theme-light #statLabelDailyAllCategories,
+[data-theme="light"] #statTotalDailyAllCategories,
+html.theme-light #statTotalDailyAllCategories {
+  color: #7c3aed !important;
+}
+
+[data-theme="light"] #statIconDailyAllCategories,
+html.theme-light #statIconDailyAllCategories {
+  background: #f5f3ff !important;
+  color: #7c3aed !important;
+  border: 1px solid rgba(124, 58, 237, 0.35) !important;
+}
+
+/* เขียว: การ์ดช่องเปรียบเทียบยอดในบัญชี */
+[data-theme="light"] #cardStatBankReconciliation,
+html.theme-light #cardStatBankReconciliation {
+  border-color: rgba(13, 148, 136, 0.35) !important;
+  background: #f4fbf9 !important;
+}
+
+[data-theme="light"] #statLabelBankReconciliation,
+html.theme-light #statLabelBankReconciliation,
+[data-theme="light"] #statTotalBankReconciliation,
+html.theme-light #statTotalBankReconciliation {
+  color: #0d9488 !important;
+}
+
+[data-theme="light"] #statIconBankReconciliation,
+html.theme-light #statIconBankReconciliation {
+  background: #f0fdfa !important;
+  color: #0d9488 !important;
+  border: 1px solid rgba(13, 148, 136, 0.35) !important;
 }
 
 /* ==========================================================================
@@ -3815,21 +4636,46 @@ html.theme-light .sidebar-brand-text h2 {
 
 [data-theme="light"] .sidebar-brand-text span,
 html.theme-light .sidebar-brand-text span {
-  color: #059669 !important;
+  color: #ea580c !important;
 }
 
 [data-theme="light"] .btn-rail-collapse,
-html.theme-light .btn-rail-collapse {
+html.theme-light .btn-rail-collapse,
+[data-theme="light"] .btn-close-sidebar,
+html.theme-light .btn-close-sidebar {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .btn-rail-collapse:hover,
+html.theme-light .btn-rail-collapse:hover {
+  background: #fff7ed !important;
+  color: #ea580c !important;
+  border-color: #fdba74 !important;
+}
+
+[data-theme="light"] .btn-close-sidebar:hover,
+html.theme-light .btn-close-sidebar:hover {
+  background: #fee2e2 !important;
+  color: #ef4444 !important;
+  border-color: #fca5a5 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.2) !important;
+}
+
+[data-theme="light"] .btn-sidebar-toggle,
+html.theme-light .btn-sidebar-toggle {
   background: #f1f5f9 !important;
   border-color: #cbd5e1 !important;
   color: #475569 !important;
 }
 
-[data-theme="light"] .btn-rail-collapse:hover,
-html.theme-light .btn-rail-collapse:hover {
-  background: rgba(16, 185, 129, 0.12) !important;
-  color: #059669 !important;
-  border-color: #10b981 !important;
+[data-theme="light"] .btn-sidebar-toggle:hover,
+html.theme-light .btn-sidebar-toggle:hover {
+  background: #fff7ed !important;
+  color: #ea580c !important;
+  border-color: #fdba74 !important;
 }
 
 [data-theme="light"] .sidebar-search-box,
@@ -3851,8 +4697,8 @@ html.theme-light .sidebar-search-box input::placeholder {
 [data-theme="light"] .sidebar-search-box:focus-within,
 html.theme-light .sidebar-search-box:focus-within {
   background: #ffffff !important;
-  border-color: #10b981 !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15) !important;
 }
 
 [data-theme="light"] .sidebar-group-header,
@@ -3879,10 +4725,10 @@ html.theme-light .sidebar-item:hover {
 
 [data-theme="light"] .sidebar-item.active,
 html.theme-light .sidebar-item.active {
-  background: rgba(16, 185, 129, 0.12) !important;
-  color: #047857 !important;
-  border-color: rgba(16, 185, 129, 0.35) !important;
-  box-shadow: inset 3.5px 0 0 #10b981 !important;
+  background: #fff7ed !important;
+  color: #c2410c !important;
+  border-color: #fdba74 !important;
+  box-shadow: inset 3.5px 0 0 #f97316 !important;
 }
 
 [data-theme="light"] .sidebar-footer,
@@ -3911,7 +4757,7 @@ html.theme-light .user-chip-name {
 
 [data-theme="light"] .user-chip-plan,
 html.theme-light .user-chip-plan {
-  color: #059669 !important;
+  color: #0284c7 !important;
 }
 
 [data-theme="light"] .user-chip-action,
@@ -3991,9 +4837,9 @@ html.theme-light .btn-role-action {
 
 [data-theme="light"] .cloud-status-badge,
 html.theme-light .cloud-status-badge {
-  background: #ecfdf5 !important;
-  border-color: rgba(16, 185, 129, 0.35) !important;
-  color: #047857 !important;
+  background: #f0f9ff !important;
+  border-color: #bae6fd !important;
+  color: #0284c7 !important;
 }
 
 [data-theme="light"] .cloud-status-badge.offline,
@@ -4050,8 +4896,8 @@ html.theme-light .search-input-wrapper input {
 
 [data-theme="light"] .search-input-wrapper input:focus,
 html.theme-light .search-input-wrapper input:focus {
-  border-color: #10b981 !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15) !important;
 }
 
 [data-theme="light"] .search-input-wrapper i,
@@ -4082,14 +4928,28 @@ html.theme-light .summary-pill-btn .pill-val {
 
 [data-theme="light"] .summary-pill-btn.active,
 html.theme-light .summary-pill-btn.active {
-  background: #ecfdf5 !important;
-  border-color: rgba(16, 185, 129, 0.45) !important;
-  color: #047857 !important;
+  background: #fff7ed !important;
+  border-color: rgba(249, 115, 22, 0.45) !important;
+  color: #ea580c !important;
 }
 
 [data-theme="light"] .summary-pill-btn.active .pill-val,
 html.theme-light .summary-pill-btn.active .pill-val {
-  color: #065f46 !important;
+  color: #c2410c !important;
+}
+
+[data-theme="light"] .summary-pill-btn#pillWeeklyBtn.active,
+html.theme-light .summary-pill-btn#pillWeeklyBtn.active {
+  background: #f0f9ff !important;
+  border-color: rgba(2, 132, 199, 0.6) !important;
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .summary-pill-btn#pillMonthlyBtn.active,
+html.theme-light .summary-pill-btn#pillMonthlyBtn.active {
+  background: #eff6ff !important;
+  border-color: rgba(37, 99, 235, 0.6) !important;
+  color: #1e40af !important;
 }
 
 [data-theme="light"] .summary-pill-btn#pillMotorcycleBtn.active,
@@ -4104,6 +4964,13 @@ html.theme-light .summary-pill-btn#pillLateFineBtn.active {
   background: #fff7ed !important;
   border-color: rgba(251, 146, 60, 0.6) !important;
   color: #c2410c !important;
+}
+
+[data-theme="light"] .summary-pill-btn#pillDownPaymentBtn.active,
+html.theme-light .summary-pill-btn#pillDownPaymentBtn.active {
+  background: #fefce8 !important;
+  border-color: rgba(202, 138, 4, 0.6) !important;
+  color: #854d0e !important;
 }
 
 /* Category Filter Sub-Tabs */
@@ -4125,9 +4992,9 @@ html.theme-light .tab-btn:hover {
 
 [data-theme="light"] .tab-btn.active,
 html.theme-light .tab-btn.active {
-  color: #047857 !important;
-  background: #ecfdf5 !important;
-  border-bottom: 2px solid #059669 !important;
+  color: #ea580c !important;
+  background: #fff7ed !important;
+  border-bottom: 2px solid #f97316 !important;
 }
 
 [data-theme="light"] .tab-count-badge,
@@ -4138,7 +5005,7 @@ html.theme-light .tab-count-badge {
 
 [data-theme="light"] .tab-btn.active .tab-count-badge,
 html.theme-light .tab-btn.active .tab-count-badge {
-  background: #059669 !important;
+  background: #f97316 !important;
   color: #ffffff !important;
 }
 
@@ -4173,8 +5040,8 @@ html.theme-light .input-admin-date {
 [data-theme="light"] .input-admin-date:focus,
 html.theme-light .input-admin-date:focus {
   background: #ffffff !important;
-  border-color: #10b981 !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15) !important;
 }
 
 [data-theme="light"] .btn-date-quick,
@@ -4192,9 +5059,9 @@ html.theme-light .btn-date-quick:hover {
 
 [data-theme="light"] .btn-date-quick.active,
 html.theme-light .btn-date-quick.active {
-  background: #ecfdf5 !important;
-  border-color: #10b981 !important;
-  color: #047857 !important;
+  background: #fff7ed !important;
+  border-color: #f97316 !important;
+  color: #ea580c !important;
   font-weight: 700 !important;
 }
 
@@ -4221,30 +5088,30 @@ html.theme-light .progress-bar-track {
 
 [data-theme="light"] .progress-pct-text,
 html.theme-light .progress-pct-text {
-  color: #059669 !important;
+  color: #0284c7 !important;
 }
 
 [data-theme="light"] .date-daily-total-badge,
 html.theme-light .date-daily-total-badge {
-  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%) !important;
-  border: 1px solid rgba(16, 185, 129, 0.35) !important;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.08) !important;
+  background: linear-gradient(135deg, #fff7ed 0%, #fffbeb 50%, #f0f9ff 100%) !important;
+  border: 1px solid rgba(249, 115, 22, 0.35) !important;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.1) !important;
 }
 
 [data-theme="light"] .daily-total-label,
 html.theme-light .daily-total-label {
-  color: #065f46 !important;
+  color: #ea580c !important;
 }
 
 [data-theme="light"] .daily-total-amount,
 html.theme-light .daily-total-amount {
-  color: #047857 !important;
+  color: #c2410c !important;
   text-shadow: none !important;
 }
 
 [data-theme="light"] .daily-total-details,
 html.theme-light .daily-total-details {
-  border-left-color: rgba(16, 185, 129, 0.25) !important;
+  border-left-color: rgba(249, 115, 22, 0.25) !important;
 }
 
 /* ==========================================================================
@@ -4435,8 +5302,8 @@ html.theme-light .input-admin:focus,
 [data-theme="light"] .styled-form-input:focus,
 html.theme-light .styled-form-input:focus {
   background: #ffffff !important;
-  border-color: #10b981 !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+  border-color: #f97316 !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15) !important;
 }
 
 [data-theme="light"] .contract-id-input-wrap,
@@ -4452,15 +5319,15 @@ html.theme-light #formContractId {
 
 [data-theme="light"] #btnGenContractId,
 html.theme-light #btnGenContractId {
-  background: #f1f5f9 !important;
+  background: #fff7ed !important;
   border-left: 1px solid #cbd5e1 !important;
-  color: #059669 !important;
+  color: #ea580c !important;
 }
 
 [data-theme="light"] #btnGenContractId:hover,
 html.theme-light #btnGenContractId:hover {
-  background: #e2e8f0 !important;
-  color: #047857 !important;
+  background: #fed7aa !important;
+  color: #9a3412 !important;
 }
 
 [data-theme="light"] .email-input-group,
@@ -4531,13 +5398,17 @@ html.theme-light .btn-styled-cancel:hover {
 [data-theme="light"] .btn-close-modal,
 html.theme-light .btn-close-modal {
   background: #f1f5f9 !important;
-  color: #475569 !important;
+  border-color: #cbd5e1 !important;
+  color: #64748b !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
 }
 
 [data-theme="light"] .btn-close-modal:hover,
 html.theme-light .btn-close-modal:hover {
-  background: #e2e8f0 !important;
-  color: #0f172a !important;
+  background: #fee2e2 !important;
+  color: #ef4444 !important;
+  border-color: #fca5a5 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.2) !important;
 }
 
 /* ==========================================================================

@@ -18,7 +18,8 @@
   <script>
     (function () {
       try {
-        if (localStorage.getItem('easyfinance_theme') === 'light') {
+        const savedTheme = localStorage.getItem('easyfinance_theme');
+        if (savedTheme && savedTheme !== 'dark') {
           document.documentElement.setAttribute('data-theme', 'light');
           document.documentElement.classList.add('theme-light');
         }

@@ -27,7 +27,7 @@
     (function () {
       try {
         const theme = localStorage.getItem('easyfinance_theme');
-        if (theme === 'light') {
+        if (theme && theme !== 'dark') {
           document.documentElement.setAttribute('data-theme', 'light');
           document.documentElement.classList.add('theme-light');
         }
@@ -167,16 +167,17 @@
           <h2>Easy Wealth Finance</h2>
           <span>Admin Portal</span>
         </div>
-        <!-- Collapse Rail Button (Desktop) -->
-        <button type="button" class="btn-rail-collapse" id="btnRailCollapse" title="ย่อ / ขยายแถบข้าง (Collapse Rail)"
-          aria-label="ย่อหรือขยายแถบเมนูข้าง">
-          <i class="fa-solid fa-chevron-left" id="railCollapseIcon"></i>
-        </button>
-        <!-- Close / Back Button for iPad & Mobile (Requirement 2) -->
-        <button type="button" class="btn-close-sidebar" id="btnCloseSidebar" title="ย้อนกลับ / ปิดเมนู"
-          aria-label="ปิดเมนู">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
+        <!-- Sidebar Actions: Rail Collapse & Slide Close Button -->
+        <div class="sidebar-brand-actions">
+          <button type="button" class="btn-rail-collapse" id="btnRailCollapse" title="ย่อ / ขยายแถบข้าง (Collapse Rail)"
+            aria-label="ย่อหรือขยายแถบเมนูข้าง">
+            <i class="fa-solid fa-chevron-left" id="railCollapseIcon"></i>
+          </button>
+          <button type="button" class="btn-close-sidebar" id="btnCloseSidebar" title="สไลด์ปิดแถบข้าง / ย้อนกลับ"
+            aria-label="ปิดเมนูแถบข้าง">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
       </div>
 
       <!-- Quick Search Box -->
@@ -286,10 +287,10 @@
             </a>
             <!-- Theme Toggle Item in Sidebar -->
             <a class="sidebar-item" id="btnSidebarThemeToggle" title="สลับโหมดสี (สว่างขาว / มืด)"
-              data-tooltip="สลับธีม ขาว/มืด" style="cursor: pointer;">
-              <span class="sidebar-icon-glyph"><i class="fa-solid fa-circle-half-stroke"
+              data-tooltip="สลับโหมด ขาว/มืด" style="cursor: pointer;">
+              <span class="sidebar-icon-glyph"><i class="fa-solid fa-circle-half-stroke" id="sidebarThemeIcon"
                   style="color: #38bdf8;"></i></span>
-              <span class="sidebar-item-label" data-label id="sidebarThemeText">เปลี่ยนเป็นธีมสีขาว</span>
+              <span class="sidebar-item-label" data-label id="sidebarThemeText">เปลี่ยนเป็นโหมดสว่าง</span>
             </a>
           </div>
         </div>
@@ -511,7 +512,7 @@
             </div>
           </div>
 
-          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <div class="action-bar-btn-group" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
             <button id="btnOpenCustomerDb" type="button" class="btn-table-action" onclick="openCustomerDatabaseModal()"
               style="padding: 10px 16px; font-size: 0.88rem; background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.35); color: #34d399; font-weight: 600; cursor: pointer;">
               <i class="fa-solid fa-address-book"></i>
