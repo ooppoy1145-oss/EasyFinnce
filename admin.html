@@ -848,7 +848,7 @@
               <i class="fa-solid fa-calendar-day"></i> กำหนดวันที่เริ่มจ่าย (งวดที่ 1) *
             </label>
             <input type="date" id="formFirstPaymentDate" class="input-admin" required
-              style="border-color: rgba(56, 189, 248, 0.45); font-weight: 600; color: #fff;">
+              style="border-color: rgba(56, 189, 248, 0.45); font-weight: 600; color: var(--text-main);">
             <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 4px;">
               * ระบบจะรันวันที่ของงวดถัดไปให้อัตโนมัติและแสดงผลตามที่กำหนดไปหน้าลูกค้า
             </div>
@@ -984,7 +984,7 @@
 
       <div
         style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-        <h4 style="font-size: 0.95rem; font-weight: 600; color: #fff; margin: 0;">
+        <h4 style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin: 0;">
           รายการงวดการชำระเงินทั้งหมด
         </h4>
         <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
@@ -1046,14 +1046,14 @@
               <i class="fa-solid fa-calendar-day" style="color: #38bdf8;"></i> เลือกวันที่:
             </label>
             <input type="date" id="interestCutDatePicker"
-              style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--admin-border); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem;"
+              style="background: rgba(15, 23, 42, 0.8); border: 1px solid var(--admin-border); color: var(--text-main); padding: 6px 10px; border-radius: 6px; font-size: 0.85rem;"
               onchange="onInterestCutDateChange(this.value)" />
             <button type="button" class="btn-table-action" onclick="setInterestCutDateToday()"
               style="padding: 6px 12px; font-size: 0.8rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
               วันนี้
             </button>
             <button type="button" class="btn-table-action" onclick="showAllInterestCuts()"
-              style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.08); color: #fff; border: 1px solid var(--admin-border);">
+              style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.08); color: var(--text-main); border: 1px solid var(--admin-border);">
               แสดงทั้งหมด
             </button>
           </div>
@@ -1065,7 +1065,7 @@
 
       <!-- Table 1: รายการตัดดอกของวันที่เลือก -->
       <h4
-        style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+        style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
         <span id="interestCutListTitle">รายการลูกค้าที่ตัดดอกประจำวัน</span>
         <span id="interestCutCountBadge" class="status-badge badge-interest">0 รายการ</span>
       </h4>
@@ -1089,7 +1089,7 @@
 
       <!-- Table 2: สรุปแยกตามวัน (Daily Breakdown) -->
       <h4
-        style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+        style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
         <i class="fa-solid fa-chart-line" style="color: #38bdf8;"></i> สรุปยอดตัดดอกแยกตามวัน (ภาพรวมทุกวัน)
       </h4>
       <div class="table-responsive report-table-scroll-wrap report-breakdown-scroll">
@@ -1136,14 +1136,14 @@
               <i class="fa-solid fa-calendar-day" style="color: #34d399;"></i> เลือกวันที่:
             </label>
             <input type="date" id="downPaymentDatePicker"
-              style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(16, 185, 129, 0.35); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem;"
+              style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(16, 185, 129, 0.35); color: var(--text-main); padding: 6px 10px; border-radius: 6px; font-size: 0.85rem;"
               onchange="onDownPaymentDateChange(this.value)" />
             <button type="button" class="btn-table-action" onclick="setDownPaymentDateToday()"
               style="padding: 6px 12px; font-size: 0.8rem; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">
               วันนี้
             </button>
             <button type="button" class="btn-table-action" onclick="showAllDownPayments()"
-              style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.08); color: #fff; border: 1px solid var(--admin-border);">
+              style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.08); color: var(--text-main); border: 1px solid var(--admin-border);">
               แสดงทั้งหมด
             </button>
           </div>
@@ -1155,7 +1155,7 @@
 
       <!-- Table 1: รายการเงินดาวน์ของวันที่เลือก -->
       <h4
-        style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+        style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
         <span id="downPaymentListTitle">รายการลูกค้าที่ชำระเงินดาวน์ประจำวัน</span>
         <span id="downPaymentCountBadge" class="status-badge"
           style="background: rgba(16, 185, 129, 0.18); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);">0
@@ -1181,7 +1181,7 @@
 
       <!-- Table 2: สรุปแยกตามวัน (Daily Breakdown) -->
       <h4
-        style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+        style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
         <i class="fa-solid fa-chart-line" style="color: #34d399;"></i> สรุปยอดเงินดาวน์แยกตามวัน (ภาพรวมทุกวัน)
       </h4>
       <div class="table-responsive report-table-scroll-wrap report-breakdown-scroll">
@@ -1228,14 +1228,14 @@
               <i class="fa-solid fa-calendar-day" style="color: #c084fc;"></i> เลือกวันที่:
             </label>
             <input type="date" id="dailyAllCategoriesDatePicker"
-              style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(168, 85, 247, 0.35); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem;"
+              style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(168, 85, 247, 0.35); color: var(--text-main); padding: 6px 10px; border-radius: 6px; font-size: 0.85rem;"
               onchange="onDailyAllCategoriesDateChange(this.value)" />
             <button type="button" class="btn-table-action" onclick="setDailyAllCategoriesDateToday()"
               style="padding: 6px 12px; font-size: 0.8rem; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4);">
               วันนี้
             </button>
             <button type="button" class="btn-table-action" onclick="showAllDailyCategoriesPayments()"
-              style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.08); color: #fff; border: 1px solid var(--admin-border);">
+              style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.08); color: var(--text-main); border: 1px solid var(--admin-border);">
               แสดงทั้งหมด
             </button>
           </div>
@@ -1253,7 +1253,7 @@
 
       <!-- Table 1: รายการรับชำระของวันที่เลือก (ระบุที่มาของแต่ละยอดชัดเจน) -->
       <h4
-        style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+        style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
         <span id="dailyAllCategoriesListTitle">รายการรับชำระเงินทุกหมวดประจำวัน</span>
         <span id="dailyAllCategoriesCountBadge" class="status-badge"
           style="background: rgba(168, 85, 247, 0.18); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4);">0
@@ -1280,7 +1280,7 @@
 
       <!-- Table 2: สรุปแยกตามวัน (Daily Breakdown - ภาพรวมทุกวัน) -->
       <h4
-        style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+        style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
         <i class="fa-solid fa-chart-line" style="color: #c084fc;"></i> สรุปยอดรับแล้วแยกตามวัน (ภาพรวมทุกวัน -
         แจกแจงที่มารายวัน, รายอาทิตย์, รายเดือน, รถมอเตอร์ไซค์)
       </h4>
@@ -1329,7 +1329,7 @@
               <i class="fa-solid fa-calendar-day" style="color: #2dd4bf;"></i> เลือกวันที่:
             </label>
             <input type="date" id="bankReconDatePicker"
-              style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(20, 184, 166, 0.35); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem;"
+              style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(20, 184, 166, 0.35); color: var(--text-main); padding: 6px 10px; border-radius: 6px; font-size: 0.85rem;"
               onchange="onBankReconDateChange(this.value)" />
             <button type="button" class="btn-table-action" onclick="setBankReconDateToday()"
               style="padding: 6px 12px; font-size: 0.8rem; background: rgba(20, 184, 166, 0.15); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.4);">
@@ -1375,12 +1375,12 @@
         <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <div style="flex: 1; min-width: 170px;">
             <input type="number" id="bankAdjAmountInput" placeholder="กรอกจำนวนเงิน (บาท)" min="0" step="any"
-              style="width: 100%; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(20, 184, 166, 0.45); color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;" />
+              style="width: 100%; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(20, 184, 166, 0.45); color: var(--text-main); padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;" />
           </div>
           <div style="flex: 1.5; min-width: 220px;">
             <input type="text" id="bankAdjNoteInput"
               placeholder="หมายเหตุ / รายละเอียด (เช่น โอนยอดออก บัญชี..., ถอนจ่ายค่าน้ำมัน)"
-              style="width: 100%; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(20, 184, 166, 0.45); color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;" />
+              style="width: 100%; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(20, 184, 166, 0.45); color: var(--text-main); padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;" />
           </div>
           <div style="display: flex; gap: 8px;">
             <button type="button" class="btn-table-action" onclick="submitBankAdjustment('add')"
@@ -1489,7 +1489,7 @@
       <div class="bank-recon-summary-card"
         style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)); border: 2px solid rgba(20, 184, 166, 0.5); border-radius: var(--radius-lg); padding: 20px 24px; margin-bottom: 22px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);">
         <div
-          style="font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          style="font-size: 0.95rem; font-weight: 700; color: var(--text-main); margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
           <div style="display: flex; align-items: center; gap: 8px;">
             <i class="fa-solid fa-calculator" style="color: #2dd4bf;"></i>
             <span>สรุปผลการกระทบยอด: ยอดรวมเข้ามาวันนี้ บวกแล้วคงเหลือเท่าไหร่</span>
@@ -1581,14 +1581,14 @@
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <label style="font-size: 0.8rem; color: var(--text-dim);">ตัวกรองรอบ:</label>
             <select id="bankAdjFilterScope" onchange="onBankAdjFilterChange(this.value)"
-              style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(20, 184, 166, 0.35); color: #fff; padding: 4px 8px; border-radius: 5px; font-size: 0.8rem;">
+              style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(20, 184, 166, 0.35); color: var(--text-main); padding: 4px 8px; border-radius: 5px; font-size: 0.8rem;">
               <option value="all">แสดงประวัติทั้งหมด</option>
               <option value="active">เฉพาะรอบปัจจุบัน (ยังไม่เคลียร์)</option>
               <option value="today">เฉพาะวันที่เลือก</option>
             </select>
             <input type="text" id="bankAdjSearchNoteInput" placeholder="🔍 ค้นหาหมายเหตุ (เช่น โอนออก, ค่าน้ำมัน)..."
               oninput="onBankAdjSearchChange(this.value)"
-              style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; width: 220px;" />
+              style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.15); color: var(--text-main); padding: 4px 10px; border-radius: 5px; font-size: 0.8rem; width: 220px;" />
           </div>
           <div style="display: flex; gap: 6px;">
             <button type="button" class="btn-table-action" onclick="promptClearAccumulatedAdjustments()"
@@ -1627,7 +1627,7 @@
         <div
           style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
           <span id="bankReconCollectionListTitle"
-            style="font-size: 0.92rem; font-weight: 600; color: #fff;">รายการรับชำระเงินของวันที่เลือก (ยอดรวมทุกอย่าง
+            style="font-size: 0.92rem; font-weight: 600; color: var(--text-main);">รายการรับชำระเงินของวันที่เลือก (ยอดรวมทุกอย่าง
             ยกเว้นเงินดาวน์)</span>
           <span id="bankReconCollectionsCountBadge" class="status-badge"
             style="background: rgba(168, 85, 247, 0.18); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4);">0
@@ -1680,14 +1680,14 @@
               <i class="fa-solid fa-calendar-day" style="color: #fb923c;"></i> เลือกวันที่:
             </label>
             <input type="date" id="lateFineDatePicker"
-              style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(251, 146, 60, 0.35); color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.85rem;"
+              style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(251, 146, 60, 0.35); color: var(--text-main); padding: 6px 10px; border-radius: 6px; font-size: 0.85rem;"
               onchange="onLateFineDateChange(this.value)" />
             <button type="button" class="btn-table-action" onclick="setLateFineDateToday()"
               style="padding: 6px 12px; font-size: 0.8rem; background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.4);">
               วันนี้
             </button>
             <button type="button" class="btn-table-action" onclick="showAllLateFines()"
-              style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.08); color: #fff; border: 1px solid var(--admin-border);">
+              style="padding: 6px 12px; font-size: 0.8rem; background: rgba(255, 255, 255, 0.08); color: var(--text-main); border: 1px solid var(--admin-border);">
               แสดงทั้งหมด
             </button>
           </div>
@@ -1699,7 +1699,7 @@
 
       <!-- Table 1: รายการค่าปรับของวันที่เลือก -->
       <h4
-        style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+        style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
         <span id="lateFineListTitle">รายการลูกค้าที่ถูกปรับประจำวัน</span>
         <span id="lateFineCountBadge" class="status-badge"
           style="background: rgba(251, 146, 60, 0.18); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.4);">0
@@ -1726,7 +1726,7 @@
 
       <!-- Table 2: สรุปแยกตามวัน (Daily Breakdown) -->
       <h4
-        style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+        style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
         <i class="fa-solid fa-chart-line" style="color: #fb923c;"></i> สรุปยอดค่าปรับแยกตามวัน (ภาพรวมทุกวัน)
       </h4>
       <div class="table-responsive report-table-scroll-wrap report-breakdown-scroll">
@@ -1759,7 +1759,7 @@
             <i class="fa-solid fa-plus-circle"></i>
           </div>
           <div>
-            <div style="font-size: 1.05rem; font-weight: 700; color: #fff;">คีย์เพิ่มงวดแมนนวล</div>
+            <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);">คีย์เพิ่มงวดแมนนวล</div>
             <div style="font-size: 0.72rem; color: var(--text-dim); font-weight: 400;">
               เพิ่มงวดใหม่หรือกำหนดการชำระพิเศษเฉพาะสัญญา</div>
           </div>
@@ -1833,7 +1833,7 @@
             <i class="fa-solid fa-pen-to-square"></i>
           </div>
           <div>
-            <div style="font-size: 1.05rem; font-weight: 700; color: #fff;" id="editInstallmentModalTitle">แก้ไขงวดชำระ
+            <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);" id="editInstallmentModalTitle">แก้ไขงวดชำระ
             </div>
             <div style="font-size: 0.72rem; color: var(--text-dim); font-weight: 400;">
               ปรับแก้ยอดเงินหรือวันกำหนดชำระของงวดนี้</div>
@@ -1900,7 +1900,7 @@
             <i class="fa-solid fa-scale-balanced"></i>
           </div>
           <div>
-            <div style="font-size: 1.05rem; font-weight: 700; color: #fff;">เพิ่มงวด ตัดต้น / ตัดดอก</div>
+            <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-main);">เพิ่มงวด ตัดต้น / ตัดดอก</div>
             <div style="font-size: 0.72rem; color: var(--text-dim); font-weight: 400;">
               บันทึกตัดเงินต้นและดอกเบี้ยพิเศษแบบแยกสัดส่วน</div>
           </div>
@@ -2030,7 +2030,7 @@
         <div class="form-group-admin">
           <label class="remember-label" style="margin-top: 6px;">
             <input type="checkbox" id="formAutoApprove" checked>
-            <span style="font-size: 0.85rem; color: #fff;">ตัดงวดในระบบอัตโนมัติเมื่อยอดเงินและบัญชีถูกต้อง 100%</span>
+            <span style="font-size: 0.85rem; color: var(--text-main);">ตัดงวดในระบบอัตโนมัติเมื่อยอดเงินและบัญชีถูกต้อง 100%</span>
           </label>
         </div>
 

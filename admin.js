@@ -2952,7 +2952,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </td>
         <td>
-          <span style="color: #fff; font-weight: 500;">${c.itemFinanced || "-"}</span>
+          <span class="item-financed-title" style="font-weight: 600;">${c.itemFinanced || "-"}</span>
           <div style="font-size: 0.72rem; color: var(--text-dim);">${c.dueSchedule || "ทุกวัน"}</div>
         </td>
         <td>
@@ -3129,7 +3129,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </td>
         <td>
-          <span style="color: #fff; font-weight: 500;">${c.itemFinanced || "-"}</span>
+          <span class="item-financed-title" style="font-weight: 600;">${c.itemFinanced || "-"}</span>
           <div style="font-size: 0.72rem; color: var(--text-dim);">${c.dueSchedule || "ทุกสัปดาห์"}</div>
         </td>
         <td><span style="color: #38bdf8; font-weight: 500;">${c.dueSchedule || "ทุกสัปดาห์"}</span></td>
@@ -3316,7 +3316,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </td>
         <td>
-          <span style="color: #fff; font-weight: 500;">${c.itemFinanced || "-"}</span>
+          <span class="item-financed-title" style="font-weight: 600;">${c.itemFinanced || "-"}</span>
           <div style="font-size: 0.72rem; color: var(--text-dim);">${c.dueSchedule || "ทุกสิ้นเดือน"}</div>
         </td>
         <td><span style="color: #c084fc; font-weight: 500;">${c.dueSchedule || "ทุกวันที่ 1"}</span></td>
@@ -3429,12 +3429,12 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>
           <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 3px;">
             ${freqLabels[c.paymentFrequency] || ""}
-            <span style="color: #fff; font-weight: 500;">${c.itemFinanced || "-"}</span>
+            <span class="item-financed-title" style="font-weight: 600;">${c.itemFinanced || "-"}</span>
           </div>
           <div style="font-size: 0.72rem; color: var(--text-dim);">${c.dueSchedule || "-"}</div>
         </td>
         <td>
-          <strong style="color: #fff;">฿${(Number(c.totalAmount || 0) + Number(c.downPayment || 0)).toLocaleString()}</strong>
+          <strong class="total-amount-title">฿${(Number(c.totalAmount || 0) + Number(c.downPayment || 0)).toLocaleString()}</strong>
           ${Number(c.downPayment) > 0 ? `<div style="font-size: 0.72rem; color: #38bdf8;">(ดาวน์ ฿${Number(c.downPayment).toLocaleString()} + ผ่อน ฿${Number(c.totalAmount).toLocaleString()})</div>` : ""}
         </td>
         <td>
@@ -3575,7 +3575,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div style="font-size: 2.2rem; color: #38bdf8; margin-bottom: 10px;">
               <i class="fa-solid fa-motorcycle"></i>
             </div>
-            <div style="font-weight: 600; color: #fff; font-size: 1rem; margin-bottom: 6px;">
+            <div style="font-weight: 600; color: var(--text-main); font-size: 1rem; margin-bottom: 6px;">
               ไม่พบรายการสัญญารถมอเตอร์ไซค์ (${currentSubFilter === "fine" ? `ที่มีค่าปรับ (${dateDisplay})` : currentSubFilter === "paid" ? `ที่จ่ายแล้ว (${dateDisplay})` : currentSubFilter === "pending" ? `ที่ค้างจ่าย (${dateDisplay})` : "ทั้งหมด"})
             </div>
             <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
@@ -3618,7 +3618,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         </td>
         <td>
-          <span style="color: #fff; font-weight: 500;">${c.itemFinanced || "-"}</span>
+          <span class="item-financed-title" style="font-weight: 600;">${c.itemFinanced || "-"}</span>
           <div style="font-size: 0.72rem; color: var(--text-dim);">${c.dueSchedule || "ทุกวัน"}</div>
         </td>
         <td>
@@ -3714,7 +3714,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </td>
         <td>
           <div class="customer-info">
-            <div class="name" style="font-weight: 600; color: #fff; font-size: 0.92rem;">${b.name}</div>
+            <div class="name" style="font-weight: 600; color: var(--text-main); font-size: 0.92rem;">${b.name}</div>
             <div style="margin-top: 4px;">
               <span class="id-card-pill"><i class="fa-regular fa-id-card"></i> ${b.idCard || "-"}</span>
             </div>
@@ -4162,7 +4162,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <label for="detailInterestCutInput" style="font-size: 0.78rem; color: #38bdf8; font-weight: 600; white-space: nowrap;">
             <i class="fa-solid fa-percent"></i> ยอดตัดดอก (บาท):
           </label>
-          <input type="number" id="detailInterestCutInput" value="${contract.interestCutAmount !== undefined && contract.interestCutAmount !== null ? contract.interestCutAmount : ""}" placeholder="ระบุยอดตัดดอก" min="0" step="any" style="width: 105px; background: #0f172a; color: #fff; border: 1px solid rgba(56, 189, 248, 0.5); border-radius: 4px; padding: 3px 6px; font-size: 0.82rem; font-weight: 600;" onchange="saveContractInterestCutAmount('${contract.id}', this.value)" />
+          <input type="number" id="detailInterestCutInput" value="${contract.interestCutAmount !== undefined && contract.interestCutAmount !== null ? contract.interestCutAmount : ""}" placeholder="ระบุยอดตัดดอก" min="0" step="any" style="width: 105px; background: var(--admin-card-bg, #0f172a); color: var(--text-main); border: 1.5px solid rgba(56, 189, 248, 0.5); border-radius: 4px; padding: 3px 6px; font-size: 0.82rem; font-weight: 600;" onchange="saveContractInterestCutAmount('${contract.id}', this.value)" />
           <button type="button" class="btn-table-action" onclick="saveContractInterestCutAmount('${contract.id}', document.getElementById('detailInterestCutInput').value)" style="padding: 3px 8px; font-size: 0.75rem; background: #0284c7; color: #fff; border: none; border-radius: 4px; cursor: pointer;">
             บันทึก
           </button>
@@ -4196,7 +4196,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       tr.innerHTML = `
         <td>
-          <strong style="color: #fff;">งวดที่ ${inst.installmentNo}</strong>
+          <strong style="color: var(--text-main);">งวดที่ ${inst.installmentNo}</strong>
           ${isPIC ? '<span style="font-size: 0.72rem; color: #38bdf8; display: block; font-weight: 500;"><i class="fa-solid fa-scale-balanced"></i> ตัดต้น/ดอก</span>' : ""}
         </td>
         <td>${inst.dueDate}</td>
@@ -4418,7 +4418,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const bannerText = document.getElementById("picContractBannerText");
     if (bannerText) {
-      bannerText.innerHTML = `สัญญา: <strong style="color: #fff;">${contract.id}</strong> - ${contract.name} (${contract.itemFinanced || "ทั่วไป"})`;
+      bannerText.innerHTML = `สัญญา: <strong style="color: var(--text-main);">${contract.id}</strong> - ${contract.name} (${contract.itemFinanced || "ทั่วไป"})`;
     }
 
     document.getElementById("picContractId").value = targetId;
@@ -4476,7 +4476,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const bannerText = document.getElementById("manualContractBannerText");
     if (bannerText) {
-      bannerText.innerHTML = `สัญญา: <strong style="color: #fff;">${contract.id}</strong> - ${contract.name} (${contract.itemFinanced || "ทั่วไป"})`;
+      bannerText.innerHTML = `สัญญา: <strong style="color: var(--text-main);">${contract.id}</strong> - ${contract.name} (${contract.itemFinanced || "ทั่วไป"})`;
     }
 
     const nextInstNo = (contract.installments && contract.installments.length > 0)
@@ -4550,8 +4550,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const bannerText = document.getElementById("editContractBannerText");
     if (bannerText) {
       bannerText.innerHTML = contract
-        ? `สัญญา: <strong style="color: #fff;">${contract.id}</strong> - ${contract.name} (งวดที่ ${installmentNo})`
-        : `สัญญา: <strong style="color: #fff;">${contractId}</strong> (งวดที่ ${installmentNo})`;
+        ? `สัญญา: <strong style="color: var(--text-main);">${contract.id}</strong> - ${contract.name} (งวดที่ ${installmentNo})`
+        : `สัญญา: <strong style="color: var(--text-main);">${contractId}</strong> (งวดที่ ${installmentNo})`;
     }
 
     document.getElementById("editContractId").value = contractId;
@@ -4695,7 +4695,7 @@ document.addEventListener("DOMContentLoaded", () => {
           tr.innerHTML = `
             <td>${item.paidAt || item.dateStr || "-"}</td>
             <td>
-              <strong style="color: #fff;">${item.contractName}</strong>
+              <strong style="color: var(--text-main);">${item.contractName}</strong>
               <span style="font-size: 0.72rem; color: var(--text-dim); display: block;">รหัส: ${item.contractId} (${item.phone || "-"})</span>
             </td>
             <td>${item.itemFinanced || "-"}</td>
@@ -4860,7 +4860,7 @@ document.addEventListener("DOMContentLoaded", () => {
           tr.innerHTML = `
             <td>${item.paidAt ? formatDateThai(item.paidAt) : "-"}</td>
             <td>
-              <strong style="color: #fff;">${item.contractName}</strong>
+              <strong style="color: var(--text-main);">${item.contractName}</strong>
               <span style="font-size: 0.72rem; color: var(--text-dim); display: block;">รหัส: ${item.contractId} (${item.phone || "-"})</span>
             </td>
             <td>${item.itemFinanced || "-"}</td>
@@ -5147,7 +5147,7 @@ document.addEventListener("DOMContentLoaded", () => {
           tr.innerHTML = `
             <td>${item.paidAt ? formatDateThai(item.paidAt) : (item.dateStr ? formatDateThai(item.dateStr) : "-")}</td>
             <td>
-              <strong style="color: #fff;">${item.contractName}</strong>
+              <strong style="color: var(--text-main);">${item.contractName}</strong>
               <span style="font-size: 0.72rem; color: var(--text-dim); display: block;">รหัส: ${item.contractId} (${item.phone || "-"})</span>
             </td>
             <td>${item.itemFinanced || "-"}</td>
@@ -5896,7 +5896,7 @@ document.addEventListener("DOMContentLoaded", () => {
           tr.innerHTML = `
             <td>${item.paidAt ? formatDateTimeThai(item.paidAt) : (item.dateStr ? formatDateThai(item.dateStr) : "-")}</td>
             <td>
-              <strong style="color: #fff;">${item.contractName}</strong>
+              <strong style="color: var(--text-main);">${item.contractName}</strong>
               <span style="font-size: 0.72rem; color: var(--text-dim); display: block;">รหัส: ${item.contractId} (${item.phone || "-"})</span>
             </td>
             <td>${item.itemFinanced || "-"}</td>
@@ -6005,12 +6005,12 @@ document.addEventListener("DOMContentLoaded", () => {
           tr.innerHTML = `
             <td>${item.paidAt && item.paidAt !== "-" ? item.paidAt : (item.dateStr ? formatDateThai(item.dateStr) : "-")}</td>
             <td>
-              <strong style="color: #fff;">${item.contractName}</strong>
+              <strong style="color: var(--text-main);">${item.contractName}</strong>
               <span style="font-size: 0.72rem; color: var(--text-dim); display: block;">รหัส: ${item.contractId} (${item.phone || "-"})</span>
             </td>
             <td>${item.itemFinanced || "-"}</td>
             <td>
-              <span style="font-size: 0.82rem; color: #cbd5e1;">${item.reason || (item.installmentNo !== "-" ? `งวดที่ ${item.installmentNo}` : "ค่าปรับล่าช้า")}</span>
+              <span style="font-size: 0.82rem; color: var(--text-muted);">${item.reason || (item.installmentNo !== "-" ? `งวดที่ ${item.installmentNo}` : "ค่าปรับล่าช้า")}</span>
             </td>
             <td style="text-align: right;"><strong style="color: #fb923c; font-size: 0.95rem;">฿${Number(item.amount || 0).toLocaleString()}</strong></td>
             <td style="text-align: center;">
@@ -6585,7 +6585,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="customer-cell">
             <img class="customer-thumb" src="${cust.avatar}" alt="${cust.name}" onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'">
             <div class="customer-info">
-              <div class="name" style="font-weight: 600; color: #fff;">${cust.name}</div>
+              <div class="name" style="font-weight: 600;">${cust.name}</div>
               <div class="sub" style="font-size: 0.75rem; color: var(--text-dim);">${cust.email !== "-" ? cust.email : cust.key}</div>
             </div>
           </div>
@@ -6695,7 +6695,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <tr>
               <td style="font-weight: 600;">งวดที่ ${inst.installmentNo}</td>
               <td>${formatDateThai(inst.dueDate)}</td>
-              <td><strong style="color: #fff;">฿${(Number(inst.amount) || 0).toLocaleString()}</strong></td>
+              <td><strong class="inst-amount-val">฿${(Number(inst.amount) || 0).toLocaleString()}</strong></td>
               <td>
                 ${isPaid
               ? `<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ชำระแล้ว</span>`
@@ -6750,13 +6750,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     <i class="fa-solid fa-file-pdf"></i> พิมพ์ / PDF สัญญานี้
                   </button>
                 </div>
-                <div style="font-size: 0.88rem; color: #fff; margin-top: 4px; font-weight: 500;">
+                <div style="font-size: 0.88rem; color: var(--text-main); margin-top: 4px; font-weight: 500;">
                   <i class="fa-solid fa-box" style="color: var(--primary); margin-right: 4px;"></i> สิ่งที่ผ่อน: <strong>${c.itemFinanced || "-"}</strong>
                 </div>
               </div>
               <div style="text-align: right;">
                 <div style="font-size: 0.82rem; color: var(--text-muted);">ยอดเงินรวม (รวมดาวน์) / คงค้างรอเก็บ</div>
-                <div style="font-size: 1rem; font-weight: 700; color: #fff;">
+                <div style="font-size: 1rem; font-weight: 700; color: var(--text-main);">
                   ฿${(Number(c.totalAmount || 0) + Number(c.downPayment || 0)).toLocaleString()} <span style="font-size: 0.82rem; color: #fbbf24;">(คงค้าง ฿${remainingBal.toLocaleString()})</span>
                 </div>
               </div>
@@ -6810,7 +6810,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> ปิดสัญญาเรียบร้อย</span>
                 <span style="font-size: 0.8rem; color: var(--text-dim);">${c.paymentFrequency === "daily" ? "รายวัน" : c.paymentFrequency === "weekly" ? "รายอาทิตย์" : "รายเดือน"}</span>
               </div>
-              <div style="font-size: 0.85rem; color: #fff; margin-top: 3px;">
+              <div style="font-size: 0.85rem; color: var(--text-main); margin-top: 3px;">
                 สิ่งที่ผ่อน: <strong>${c.itemFinanced || "-"}</strong> (ครบทั้งหมด ${installments.length} งวด)
               </div>
             </div>
@@ -6872,7 +6872,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <img src="${customer.avatar}" alt="${customer.name}" style="width: 76px; height: 76px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.3);" onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'">
           <div style="flex: 1; min-width: 220px;">
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-              <h2 style="font-size: 1.4rem; font-weight: 700; color: #fff; margin: 0;">${customer.name}</h2>
+              <h2 style="font-size: 1.4rem; font-weight: 700; color: var(--text-main); margin: 0;">${customer.name}</h2>
               ${customer.hasBadDebt ? '<span class="status-badge" style="background: rgba(239,68,68,0.25); color: #f87171;"><i class="fa-solid fa-triangle-exclamation"></i> ติดแบล็กลิสต์</span>' : '<span class="status-badge badge-paid"><i class="fa-solid fa-circle-check"></i> สถานะปกติ</span>'}
             </div>
             <div style="font-size: 0.85rem; color: var(--text-dim); margin-top: 4px;">
@@ -6885,7 +6885,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <!-- 3.3.1 ชื่อ-นามสกุล -->
           <div class="dossier-info-field">
             <span class="dossier-field-label"><i class="fa-solid fa-user"></i> 3.3.1 ชื่อ - นามสกุล:</span>
-            <div class="dossier-field-value" style="color: #fff; font-weight: 600;">
+            <div class="dossier-field-value" style="font-weight: 600;">
               ${customer.name}
               <button type="button" class="btn-copy-chip" onclick="copyToClipboard('${customer.name}')" title="คัดลอก"><i class="fa-solid fa-copy"></i> คัดลอก</button>
             </div>
@@ -6912,7 +6912,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <!-- 3.3.4 ที่อยู่ -->
           <div class="dossier-info-field" style="grid-column: 1 / -1;">
             <span class="dossier-field-label"><i class="fa-solid fa-location-dot"></i> 3.3.4 ที่อยู่ปัจจุบัน:</span>
-            <div class="dossier-field-value" style="color: #e2e8f0; line-height: 1.5;">
+            <div class="dossier-field-value" style="color: var(--text-main); line-height: 1.5;">
               ${customer.address}
               ${customer.address !== "-" ? `<button type="button" class="btn-copy-chip" onclick="copyToClipboard('${customer.address}')" title="คัดลอกที่อยู่"><i class="fa-solid fa-copy"></i> คัดลอก</button>` : ""}
             </div>

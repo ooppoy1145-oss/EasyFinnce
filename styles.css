@@ -2062,3 +2062,55 @@ html.theme-light #officerModal div[style*="border-radius: 50%"] {
   color: #ea580c !important;
   border: 1px solid #fdba74 !important;
 }
+
+/* ==========================================================================
+   CLIENT PORTAL - LIGHT MODE CONTRAST GUARD (ตัวหนังสือมองเห็นชัดเจน 100%)
+   ========================================================================== */
+[data-theme="light"] h1, [data-theme="light"] h2, [data-theme="light"] h3,
+[data-theme="light"] h4, [data-theme="light"] h5, [data-theme="light"] h6,
+html.theme-light h1, html.theme-light h2, html.theme-light h3,
+html.theme-light h4, html.theme-light h5, html.theme-light h6 {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] p,
+html.theme-light p {
+  color: #334155;
+}
+
+[data-theme="light"] label,
+html.theme-light label {
+  color: #334155 !important;
+}
+
+/* Guard: ตัวหนังสือในปุ่ม Action หลักยังคงเป็นสีขาวสวยงาม */
+[data-theme="light"] .btn-primary,
+[data-theme="light"] .btn-primary *,
+[data-theme="light"] .btn-pay-now,
+[data-theme="light"] .btn-pay-now *,
+[data-theme="light"] .btn-login-submit,
+[data-theme="light"] .btn-login-submit *,
+[data-theme="light"] .btn-verify-slip,
+[data-theme="light"] .btn-verify-slip *,
+html.theme-light .btn-primary,
+html.theme-light .btn-primary *,
+html.theme-light .btn-pay-now,
+html.theme-light .btn-pay-now *,
+html.theme-light .btn-login-submit,
+html.theme-light .btn-login-submit *,
+html.theme-light .btn-verify-slip,
+html.theme-light .btn-verify-slip * {
+  color: #ffffff !important;
+}
+
+/* ป้องกันตัวหนังสือสีขาวลอยในโหมดสว่าง */
+[data-theme="light"] *:not(button):not(button *):not(.btn-primary *):not(.btn-pay-now *):not(.btn-login-submit *):not(.btn-verify-slip *):not(.inst-no-badge)[style*="color: #fff"],
+[data-theme="light"] *:not(button):not(button *):not(.btn-primary *):not(.btn-pay-now *):not(.btn-login-submit *):not(.btn-verify-slip *):not(.inst-no-badge)[style*="color:#fff"],
+[data-theme="light"] *:not(button):not(button *):not(.btn-primary *):not(.btn-pay-now *):not(.btn-login-submit *):not(.btn-verify-slip *):not(.inst-no-badge)[style*="color: #ffffff"],
+[data-theme="light"] *:not(button):not(button *):not(.btn-primary *):not(.btn-pay-now *):not(.btn-login-submit *):not(.btn-verify-slip *):not(.inst-no-badge)[style*="color:#ffffff"],
+html.theme-light *:not(button):not(button *):not(.btn-primary *):not(.btn-pay-now *):not(.btn-login-submit *):not(.btn-verify-slip *):not(.inst-no-badge)[style*="color: #fff"],
+html.theme-light *:not(button):not(button *):not(.btn-primary *):not(.btn-pay-now *):not(.btn-login-submit *):not(.btn-verify-slip *):not(.inst-no-badge)[style*="color:#fff"],
+html.theme-light *:not(button):not(button *):not(.btn-primary *):not(.btn-pay-now *):not(.btn-login-submit *):not(.btn-verify-slip *):not(.inst-no-badge)[style*="color: #ffffff"],
+html.theme-light *:not(button):not(button *):not(.btn-primary *):not(.btn-pay-now *):not(.btn-login-submit *):not(.btn-verify-slip *):not(.inst-no-badge)[style*="color:#ffffff"] {
+  color: #0f172a !important;
+}
