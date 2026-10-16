@@ -18,11 +18,9 @@
   <script>
     (function () {
       try {
-        const savedTheme = localStorage.getItem('easyfinance_theme');
-        if (savedTheme && savedTheme !== 'dark') {
-          document.documentElement.setAttribute('data-theme', 'light');
-          document.documentElement.classList.add('theme-light');
-        }
+        // Enforce dark mode for customer portal
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.documentElement.classList.remove('theme-light');
       } catch (e) { }
     })();
   </script>
@@ -36,9 +34,6 @@
          1. LOGIN VIEW (ไม่มีปุ่มทดสอบ / ไม่มี LINE LOGIN ตามข้อกำหนด)
          ==================================================================== -->
     <section id="loginSection" class="login-view-wrapper" style="position: relative;">
-      <button id="btnLoginThemeToggle" class="btn-icon-theme" title="สลับโหมดสี (สว่าง / มืด)" style="position: absolute; top: 18px; right: 18px; width: 36px; height: 36px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: var(--transition);">
-        <i class="fa-solid fa-circle-half-stroke" style="color: var(--primary);"></i>
-      </button>
       <div class="login-brand-header">
         <div class="login-logo-circle has-img">
           <img src="images/logo.png" alt="Easy Wealth Finance">
@@ -109,9 +104,6 @@
         </div>
 
         <div class="user-profile-header">
-          <button id="btnClientThemeToggle" class="btn-icon-theme" title="สลับโหมดสี (สว่าง / มืด)" style="width: 36px; height: 36px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: var(--transition);">
-            <i class="fa-solid fa-circle-half-stroke" style="color: var(--primary);"></i>
-          </button>
           <div class="avatar-wrapper">
             <img id="userAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
               alt="Customer Profile">

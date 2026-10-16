@@ -339,6 +339,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- 1. AUTHENTICATION & ROLE MANAGEMENT (Requirement 4 & 5) ---
 
+  // =========================================================================
+  // รายชื่อบัญชีผู้ดูแลระบบ (Admin) ที่ระบุในโค้ดเท่านั้นที่สามารถเข้าสู่ระบบได้
+  // กำหนดอีเมลและรหัสผ่านที่ได้รับอนุญาตไว้ในโค้ดนี้ (สามารถแก้ไข/เพิ่ม/ลบได้ที่นี่)
+  // =========================================================================
+  const AUTHORIZED_ADMIN_ACCOUNTS = [
+    {
+      email: "ceo888@easy.com",
+      passwords: ["admin1234", "admin", "Easy123", "admin123"],
+      role: "manager",
+      name: "ผู้ดูแลระบบหลัก (Manager)"
+    },
+    {
+      email: "ceo777@easy.com",
+      passwords: ["admin1234", "admin", "Easy123", "admin123"],
+      role: "manager",
+      name: "ผู้จัดการระบบ (Admin)"
+    },
+    {
+      email: "admin88@easy.com",
+      passwords: ["staff1234", "staff", "Staff123", "1234", "123456"],
+      role: "admin",
+      name: "เจ้าหน้าที่ดูแลระบบ (Staff)"
+    }
+  ];
+  window.AUTHORIZED_ADMIN_ACCOUNTS = AUTHORIZED_ADMIN_ACCOUNTS;
+
   function getManagerPass() {
     let dbPass = "";
     try {
@@ -479,7 +505,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 2. Email Format Validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(emailFieldVal)) {
-      showAdminLoginError("รูปแบบอีเมลไม่ถูกต้อง (ตัวอย่าง: admin@easy.com)");
+      showAdminLoginError("รูปแบบอีเมลไม่ถูกต้อง ");
       showAdminToast("รูปแบบอีเมลไม่ถูกต้อง", "error");
       if (adminEmail) {
         adminEmail.focus();
@@ -501,64 +527,82 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // 4. Verify that email is in AUTHORIZED_ADMIN_ACCOUNTS (ระบุในโค้ดเท่านั้น)
+    const emailClean = emailFieldVal.toLowerCase();
+    const matchedAccount = AUTHORIZED_ADMIN_ACCOUNTS.find(
+      (acc) => acc.email.toLowerCase() === emailClean
+    );
+
+    if (!matchedAccount) {
+      showAdminLoginError("อีเมลหรือรหัสผ่านไม่ถูกต้อง (อีเมลนี้ไม่ได้รับอนุญาตในระบบ)");
+      showAdminToast("อีเมลนี้ไม่ได้รับอนุญาตในระบบ", "error");
+      if (adminEmail) {
+        adminEmail.focus();
+        adminEmail.classList.add("input-error-shake");
+        setTimeout(() => adminEmail.classList.remove("input-error-shake"), 600);
+      }
+      return;
+    }
+
+    // 5. Verify password for the matched account
     const managerPass = getManagerPass().trim();
     const staffPass = getStaffPass().trim();
     const passClean = passFieldVal.toLowerCase();
 
-    // Check Manager Access
-    const isManager =
-      passFieldVal === managerPass ||
-      passClean === managerPass.toLowerCase() ||
-      passClean === "easy123" ||
-      passClean === "admin" ||
-      passClean === "admin123" ||
-      passClean === "manager";
+    let isPasswordCorrect = false;
 
-    // Check Staff Access
-    const isStaff =
-      passFieldVal === staffPass ||
-      passClean === staffPass.toLowerCase() ||
-      passClean === "staff123" ||
-      passClean === "staff" ||
-      passClean === "1234" ||
-      passClean === "123456";
+    if (matchedAccount.role === "manager") {
+      isPasswordCorrect =
+        passFieldVal === managerPass ||
+        passClean === managerPass.toLowerCase() ||
+        (Array.isArray(matchedAccount.passwords) &&
+          matchedAccount.passwords.some(
+            (p) => p === passFieldVal || p.toLowerCase() === passClean
+          ));
+    } else if (matchedAccount.role === "staff") {
+      isPasswordCorrect =
+        passFieldVal === staffPass ||
+        passClean === staffPass.toLowerCase() ||
+        (Array.isArray(matchedAccount.passwords) &&
+          matchedAccount.passwords.some(
+            (p) => p === passFieldVal || p.toLowerCase() === passClean
+          ));
+    }
 
-    if (isManager) {
-      sessionStorage.setItem("easyfinance_admin_auth", "true");
-      sessionStorage.setItem("easyfinance_admin_role", "manager");
-      sessionStorage.setItem("easyfinance_admin_email", emailFieldVal);
-      if (adminLoginOverlay) {
-        adminLoginOverlay.style.display = "none";
-        adminLoginOverlay.classList.add("is-hidden");
-      }
-      document.documentElement.classList.add("admin-authenticated");
-      hideAdminLoginError();
-      showAdminToast("เข้าสู่ระบบในสิทธิ์: หัวหน้า (Manager) สำเร็จ", "success");
-      updateRoleUI();
-      initAdminDashboard();
-    } else if (isStaff) {
-      sessionStorage.setItem("easyfinance_admin_auth", "true");
-      sessionStorage.setItem("easyfinance_admin_role", "staff");
-      sessionStorage.setItem("easyfinance_admin_email", emailFieldVal);
-      if (adminLoginOverlay) {
-        adminLoginOverlay.style.display = "none";
-        adminLoginOverlay.classList.add("is-hidden");
-      }
-      document.documentElement.classList.add("admin-authenticated");
-      hideAdminLoginError();
-      showAdminToast("เข้าสู่ระบบในสิทธิ์: พนักงาน (Staff) สำเร็จ", "info");
-      updateRoleUI();
-      initAdminDashboard();
-      if (currentTab === "overview") {
-        switchTab("daily");
-      }
-    } else {
-      showAdminLoginError("รหัสผ่านไม่ถูกต้อง กรุณากรอกรหัสหัวหน้า (Easy123) หรือรหัสพนักงาน (1234)");
-      showAdminToast("รหัสผ่านไม่ถูกต้อง (กรุณากรอกรหัสหัวหน้า หรือรหัสพนักงาน)", "error");
+    if (!isPasswordCorrect) {
+      showAdminLoginError("รหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบรหัสผ่านอีกครั้ง");
+      showAdminToast("รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง", "error");
       if (adminSecretPass) {
         adminSecretPass.focus();
         adminSecretPass.classList.add("input-error-shake");
         setTimeout(() => adminSecretPass.classList.remove("input-error-shake"), 600);
+      }
+      return;
+    }
+
+    // 6. Login Successful
+    const role = matchedAccount.role;
+    sessionStorage.setItem("easyfinance_admin_auth", "true");
+    sessionStorage.setItem("easyfinance_admin_role", role);
+    sessionStorage.setItem("easyfinance_admin_email", matchedAccount.email);
+
+    if (adminLoginOverlay) {
+      adminLoginOverlay.style.display = "none";
+      adminLoginOverlay.classList.add("is-hidden");
+    }
+    document.documentElement.classList.add("admin-authenticated");
+    hideAdminLoginError();
+
+    if (role === "manager") {
+      showAdminToast(`เข้าสู่ระบบในสิทธิ์: ${matchedAccount.name} สำเร็จ`, "success");
+      updateRoleUI();
+      initAdminDashboard();
+    } else {
+      showAdminToast(`เข้าสู่ระบบในสิทธิ์: ${matchedAccount.name} สำเร็จ`, "info");
+      updateRoleUI();
+      initAdminDashboard();
+      if (currentTab === "overview") {
+        switchTab("daily");
       }
     }
   }
