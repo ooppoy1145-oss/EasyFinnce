@@ -340,27 +340,52 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 1. AUTHENTICATION & ROLE MANAGEMENT (Requirement 4 & 5) ---
 
   // =========================================================================
-  // รายชื่อบัญชีผู้ดูแลระบบ (Admin) ที่ระบุในโค้ดเท่านั้นที่สามารถเข้าสู่ระบบได้
-  // กำหนดอีเมลและรหัสผ่านที่ได้รับอนุญาตไว้ในโค้ดนี้ (สามารถแก้ไข/เพิ่ม/ลบได้ที่นี่)
+  // รายชื่อบัญชีผู้ดูแลระบบ (Admin) & เจ้าหน้าที่ (Staff) ที่ระบุในโค้ด
+  // รองรับทั้งการพิมพ์ชื่อผู้ใช้ (admin, staff, ceo888, admin88) หรืออีเมลเต็ม
   // =========================================================================
   const AUTHORIZED_ADMIN_ACCOUNTS = [
+    // --- 1. สิทธิ์หัวหน้า / ผู้ดูแลระบบ (Manager / Admin Mode) ---
+    {
+      email: "ceo999@easy.com",
+      username: "admin",
+      aliases: ["admin", "admin@easy.com", "admin@easy.com", "manager", "manager@easy.com"],
+      passwords: ["admin1234", "admin", "Easy123", "admin123", "1234", "123456"],
+      role: "manager",
+      name: "ผู้ดูแลระบบหลัก (Manager / Admin)"
+    },
     {
       email: "ceo888@easy.com",
-      passwords: ["admin1234", "admin", "Easy123", "admin123"],
+      username: "ceo888",
+      aliases: ["ceo888", "ceo888@easy.com"],
+      passwords: ["admin1234", "admin", "Easy123", "admin123", "1234", "123456"],
       role: "manager",
-      name: "ผู้ดูแลระบบหลัก (Manager)"
+      name: "ผู้บริหารระบบหลัก (CEO888)"
     },
     {
       email: "ceo777@easy.com",
-      passwords: ["admin1234", "admin", "Easy123", "admin123"],
+      username: "ceo777",
+      aliases: ["ceo777", "ceo777@easy.com"],
+      passwords: ["admin1234", "admin", "Easy123", "admin123", "1234", "123456"],
       role: "manager",
-      name: "ผู้จัดการระบบ (Admin)"
+      name: "ผู้จัดการระบบ (CEO777)"
+    },
+
+    // --- 2. สิทธิ์เจ้าหน้าที่ / พนักงาน (Staff Mode) ---
+    {
+      email: "admin888@easy.com",
+      username: "staff",
+      aliases: ["staff", "staff@easyfinance.com", "staff@easy.com", "staff88", "staff88@easy.com"],
+      passwords: ["admin1234", "staff", "admin123", "admin1234", "admin", "1234", "123456"],
+      role: "staff",
+      name: "เจ้าหน้าที่ดูแลระบบ (Staff)"
     },
     {
       email: "admin88@easy.com",
-      passwords: ["admin1234", "admin", "admin23", "1234", "123456"],
-      role: "admin",
-      name: "เจ้าหน้าที่ดูแลระบบ (Staff)"
+      username: "admin88",
+      aliases: ["admin88", "admin88@easy.com"],
+      passwords: ["admin1234", "admin", "admin23", "staff1234", "Staff123", "1234", "123456"],
+      role: "staff",
+      name: "เจ้าหน้าที่ดูแลระบบ (Staff - Admin88)"
     }
   ];
   window.AUTHORIZED_ADMIN_ACCOUNTS = AUTHORIZED_ADMIN_ACCOUNTS;
@@ -490,10 +515,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const emailFieldVal = adminEmail ? adminEmail.value.trim() : "";
     const passFieldVal = adminSecretPass ? adminSecretPass.value.trim() : "";
 
-    // 1. Mandatory Email Validation
+    // 1. Mandatory Identifier Validation
     if (!emailFieldVal) {
-      showAdminLoginError("กรุณากรอกอีเมลเข้าสู่ระบบ");
-      showAdminToast("กรุณากรอกอีเมลเข้าสู่ระบบ", "error");
+      showAdminLoginError("กรุณากรอกอีเมลหรือชื่อผู้ใช้งานเข้าสู่ระบบ (เช่น admin หรือ staff)");
+      showAdminToast("กรุณากรอกอีเมลหรือชื่อผู้ใช้งาน", "error");
       if (adminEmail) {
         adminEmail.focus();
         adminEmail.classList.add("input-error-shake");
@@ -502,20 +527,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // 2. Email Format Validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(emailFieldVal)) {
-      showAdminLoginError("รูปแบบอีเมลไม่ถูกต้อง ");
-      showAdminToast("รูปแบบอีเมลไม่ถูกต้อง", "error");
-      if (adminEmail) {
-        adminEmail.focus();
-        adminEmail.classList.add("input-error-shake");
-        setTimeout(() => adminEmail.classList.remove("input-error-shake"), 600);
-      }
-      return;
-    }
-
-    // 3. Mandatory Password Validation
+    // 2. Mandatory Password Validation
     if (!passFieldVal) {
       showAdminLoginError("กรุณากรอกรหัสผ่านเข้าสู่ระบบ");
       showAdminToast("กรุณากรอกรหัสผ่านเข้าสู่ระบบ", "error");
@@ -527,15 +539,20 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // 4. Verify that email is in AUTHORIZED_ADMIN_ACCOUNTS (ระบุในโค้ดเท่านั้น)
-    const emailClean = emailFieldVal.toLowerCase();
-    const matchedAccount = AUTHORIZED_ADMIN_ACCOUNTS.find(
-      (acc) => acc.email.toLowerCase() === emailClean
-    );
+    // 3. Find matched account in AUTHORIZED_ADMIN_ACCOUNTS (support username & email)
+    const inputClean = emailFieldVal.toLowerCase();
+    const matchedAccount = AUTHORIZED_ADMIN_ACCOUNTS.find((acc) => {
+      if (acc.email && acc.email.toLowerCase() === inputClean) return true;
+      if (acc.username && acc.username.toLowerCase() === inputClean) return true;
+      if (Array.isArray(acc.aliases) && acc.aliases.some((a) => a.toLowerCase() === inputClean)) return true;
+      const prefix = (acc.email || "").split("@")[0].toLowerCase();
+      if (prefix && prefix === inputClean) return true;
+      return false;
+    });
 
     if (!matchedAccount) {
-      showAdminLoginError("อีเมลหรือรหัสผ่านไม่ถูกต้อง (อีเมลนี้ไม่ได้รับอนุญาตในระบบ)");
-      showAdminToast("อีเมลนี้ไม่ได้รับอนุญาตในระบบ", "error");
+      showAdminLoginError("ไม่พบบัญชีผู้ใช้นี้ในระบบ (สามารถใช้ admin, staff หรืออีเมลที่กำหนด)");
+      showAdminToast("บัญชีนี้ไม่ได้รับอนุญาตในระบบ", "error");
       if (adminEmail) {
         adminEmail.focus();
         adminEmail.classList.add("input-error-shake");
@@ -544,29 +561,54 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // 5. Verify password for the matched account
+    // 4. Verify password for the matched account
     const managerPass = getManagerPass().trim();
     const staffPass = getStaffPass().trim();
-    const passClean = passFieldVal.toLowerCase();
+    const passInput = passFieldVal.trim();
+    const passClean = passInput.toLowerCase();
 
-    let isPasswordCorrect = false;
+    // Check password against account-specific list
+    const accountPasswords = Array.isArray(matchedAccount.passwords)
+      ? matchedAccount.passwords
+      : (matchedAccount.password ? [matchedAccount.password] : []);
 
-    if (matchedAccount.role === "manager") {
-      isPasswordCorrect =
-        passFieldVal === managerPass ||
-        passClean === managerPass.toLowerCase() ||
-        (Array.isArray(matchedAccount.passwords) &&
-          matchedAccount.passwords.some(
-            (p) => p === passFieldVal || p.toLowerCase() === passClean
-          ));
-    } else if (matchedAccount.role === "staff") {
-      isPasswordCorrect =
-        passFieldVal === staffPass ||
-        passClean === staffPass.toLowerCase() ||
-        (Array.isArray(matchedAccount.passwords) &&
-          matchedAccount.passwords.some(
-            (p) => p === passFieldVal || p.toLowerCase() === passClean
-          ));
+    let isPasswordCorrect = accountPasswords.some(
+      (p) => String(p).trim() === passInput || String(p).trim().toLowerCase() === passClean
+    );
+
+    // Determine target role (Manager vs Staff)
+    const rawRole = (matchedAccount.role || "").toLowerCase();
+    const isStaff = rawRole === "staff" ||
+      (matchedAccount.name && (matchedAccount.name.toLowerCase().includes("staff") || matchedAccount.name.includes("เจ้าหน้าที่")));
+    const effectiveRole = isStaff ? "staff" : "manager";
+
+    // Also check dynamic system passwords (from settings / localStorage / defaults)
+    if (!isPasswordCorrect) {
+      if (effectiveRole === "manager") {
+        if (
+          passInput === managerPass ||
+          passClean === managerPass.toLowerCase() ||
+          passClean === "easy123" ||
+          passClean === "admin1234" ||
+          passClean === "admin" ||
+          passClean === "admin123"
+        ) {
+          isPasswordCorrect = true;
+        }
+      } else {
+        if (
+          passInput === staffPass ||
+          passClean === staffPass.toLowerCase() ||
+          passClean === "staff123" ||
+          passClean === "staff1234" ||
+          passClean === "staff" ||
+          passClean === "admin1234" ||
+          passClean === "admin" ||
+          passClean === "1234"
+        ) {
+          isPasswordCorrect = true;
+        }
+      }
     }
 
     if (!isPasswordCorrect) {
@@ -580,11 +622,10 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // 6. Login Successful
-    const role = matchedAccount.role;
+    // 5. Login Successful
     sessionStorage.setItem("easyfinance_admin_auth", "true");
-    sessionStorage.setItem("easyfinance_admin_role", role);
-    sessionStorage.setItem("easyfinance_admin_email", matchedAccount.email);
+    sessionStorage.setItem("easyfinance_admin_role", effectiveRole);
+    sessionStorage.setItem("easyfinance_admin_email", matchedAccount.email || emailFieldVal);
 
     if (adminLoginOverlay) {
       adminLoginOverlay.style.display = "none";
@@ -593,7 +634,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.documentElement.classList.add("admin-authenticated");
     hideAdminLoginError();
 
-    if (role === "manager") {
+    if (effectiveRole === "manager") {
       showAdminToast(`เข้าสู่ระบบในสิทธิ์: ${matchedAccount.name} สำเร็จ`, "success");
       updateRoleUI();
       initAdminDashboard();
@@ -606,6 +647,20 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   }
+
+  // Quick preset login helper for UI
+  window.fillAdminLogin = function (identifier, pass) {
+    if (adminEmail) {
+      adminEmail.value = identifier;
+    }
+    if (adminSecretPass) {
+      adminSecretPass.value = pass;
+    }
+    hideAdminLoginError();
+    if (btnAdminLoginSubmit) {
+      btnAdminLoginSubmit.focus();
+    }
+  };
 
   if (adminAuthForm) {
     adminAuthForm.addEventListener("submit", doAdminLogin);
@@ -734,7 +789,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const managerPass = getManagerPass();
 
       const passClean = pass.toLowerCase();
-      const isCorrectManager = passClean === managerPass.trim().toLowerCase() || passClean === "easy123";
+      const isCorrectManager =
+        passClean === managerPass.trim().toLowerCase() ||
+        passClean === "easy123" ||
+        passClean === "admin1234" ||
+        passClean === "admin" ||
+        passClean === "admin123";
 
       if (isCorrectManager) {
         sessionStorage.setItem("easyfinance_admin_role", "manager");

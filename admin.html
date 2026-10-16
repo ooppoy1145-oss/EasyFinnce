@@ -100,15 +100,16 @@
         <!-- Login Form -->
         <form id="adminAuthForm" class="admin-login-form" novalidate onsubmit="return false;">
 
-          <!-- Email Field (Mandatory) -->
+          <!-- Email or Username Field (Mandatory) -->
           <div class="admin-login-field">
             <label for="adminEmail" class="admin-login-label">
-              อีเมลเข้าสู่ระบบ <span style="color: #ef4444; font-weight: bold;">*</span>
+              อีเมล หรือ ชื่อผู้ใช้งาน <span style="color: #ef4444; font-weight: bold;">*</span>
             </label>
             <div class="admin-login-input-wrap">
-              <i class="fa-regular fa-envelope admin-login-input-icon"></i>
-              <input type="email" id="adminEmail" name="email" value="" placeholder="ระบุอีเมล " autocomplete="email"
-                class="admin-login-input" required>
+              <i class="fa-regular fa-user admin-login-input-icon"></i>
+              <input type="text" id="adminEmail" name="username" value=""
+                placeholder="ระบุชื่อผู้ใช้ (admin, staff) หรืออีเมล" autocomplete="username" class="admin-login-input"
+                required>
             </div>
           </div>
 
@@ -127,6 +128,8 @@
               </button>
             </div>
           </div>
+
+          <!-- Quick Fill Preset Chips for Convenience -->
 
           <!-- Full-width Primary Button -->
           <button type="button" id="btnAdminLoginSubmit" class="btn-admin-login-submit">
