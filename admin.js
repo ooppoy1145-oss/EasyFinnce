@@ -358,7 +358,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     {
       email: "admin88@easy.com",
-      passwords: ["staff1234", "staff", "Staff123", "1234", "123456"],
+      passwords: ["admin1234", "admin", "admin23", "1234", "123456"],
       role: "admin",
       name: "เจ้าหน้าที่ดูแลระบบ (Staff)"
     }
