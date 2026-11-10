@@ -10,11 +10,18 @@
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-  <!-- Favicon -->
+  <!-- Favicon & PWA App Icons -->
   <link rel="icon" type="image/png" href="images/logo.png">
+  <link rel="apple-touch-icon" href="images/icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b1120">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="EasyFinance">
 
   <!-- App Stylesheet -->
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20261110_v6">
   <script>
     (function () {
       try {
@@ -74,6 +81,11 @@
             <i class="fa-solid fa-right-to-bracket"></i>
             <span>เข้าสู่ระบบ</span>
           </button>
+
+          <button type="button" class="btn-pwa-install-card" data-pwa-install>
+            <i class="fa-solid fa-mobile-screen-button"></i>
+            <span>ติดตั้งแอปลงมือถือ (EasyFinance App)</span>
+          </button>
         </form>
 
         <div class="login-help-note">
@@ -104,6 +116,10 @@
         </div>
 
         <div class="user-profile-header">
+          <button type="button" class="btn-pwa-header-chip" data-pwa-install title="ติดตั้งแอปลงมือถือ">
+            <i class="fa-solid fa-mobile-screen-button"></i>
+            <span>ติดตั้งแอป</span>
+          </button>
           <div class="avatar-wrapper">
             <img id="userAvatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
               alt="Customer Profile">
@@ -407,9 +423,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <!-- Scripts -->
-  <script src="firebase-config.js"></script>
-  <script src="bank-verification.js"></script>
-  <script src="app.js"></script>
+  <script src="firebase-config.js?v=20261110_v6"></script>
+  <script src="bank-verification.js?v=20261110_v6"></script>
+  <script src="app.js?v=20261110_v6"></script>
+  <script src="pwa-install.js?v=20261110_v6"></script>
 </body>
 
 </html>

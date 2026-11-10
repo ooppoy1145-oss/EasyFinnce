@@ -16,11 +16,18 @@
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-  <!-- Favicon -->
+  <!-- Favicon & PWA App Icons -->
   <link rel="icon" type="image/png" href="images/logo.png">
+  <link rel="apple-touch-icon" href="images/icon-192.png">
+  <link rel="manifest" href="manifest-admin.json">
+  <meta name="theme-color" content="#0b1120">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="EF Admin">
 
   <!-- Admin Dedicated Stylesheet -->
-  <link rel="stylesheet" href="admin.css?v=20261110_v5">
+  <link rel="stylesheet" href="admin.css?v=20261110_v6">
 
   <!-- Early script to avoid layout & theme flicker on page reload -->
   <script>
@@ -144,8 +151,12 @@
           </button>
         </form>
 
-        <!-- Back to Customer App -->
-        <div class="admin-login-footer">
+        <!-- Back to Customer App & PWA Install Button -->
+        <div class="admin-login-footer" style="display: flex; flex-direction: column; gap: 10px; align-items: center;">
+          <button type="button" class="btn-pwa-install-card" data-pwa-install style="margin-top: 0;">
+            <i class="fa-solid fa-mobile-screen-button"></i>
+            <span>ติดตั้งแอปหลังบ้านลงมือถือ (Full-Screen App)</span>
+          </button>
           <a href="index.html" class="admin-login-back-link">
             <i class="fa-solid fa-arrow-left"></i>
             <span>กลับสู่หน้าลูกค้า (Customer App)</span>
@@ -313,6 +324,11 @@
             <span class="dock-icon-wrap"><i class="fa-solid fa-arrow-up-right-from-square"></i></span>
             <span class="sidebar-item-label">หน้าบ้านลูกค้า</span>
           </a>
+
+          <a class="sidebar-item dock-btn" data-pwa-install data-dock-tooltip="ติดตั้งแอปลงมือถือ" title="ติดตั้งแอปลงมือถือ" style="cursor: pointer;">
+            <span class="dock-icon-wrap" style="color: #34d399;"><i class="fa-solid fa-mobile-screen-button"></i></span>
+            <span class="sidebar-item-label" style="color: #34d399; font-weight: 600;">ติดตั้งแอปลงมือถือ</span>
+          </a>
         </div>
 
         <!-- User Profile Chip -->
@@ -351,6 +367,12 @@
         </div>
 
         <div class="nav-right">
+          <!-- PWA Install App Button -->
+          <button type="button" class="btn-pwa-install-nav" data-pwa-install title="ติดตั้งแอปหลังบ้านลงมือถือ" aria-label="ติดตั้งแอปลงมือถือ">
+            <i class="fa-solid fa-mobile-screen-button"></i>
+            <span class="pwa-nav-text">ติดตั้งแอป</span>
+          </button>
+
           <!-- Theme Toggle Button (Dark / Light White) -->
           <button type="button" id="btnThemeToggle" class="btn-theme-toggle" title="สลับโหมดสี (สว่างขาว / มืด)"
             aria-label="สลับโหมดสี ขาว/มืด">
@@ -2756,9 +2778,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <!-- Scripts -->
-  <script src="firebase-config.js?v=20261110_v5"></script>
-  <script src="bank-verification.js?v=20261110_v5"></script>
-  <script src="admin.js?v=20261110_v5"></script>
+  <script src="firebase-config.js?v=20261110_v6"></script>
+  <script src="bank-verification.js?v=20261110_v6"></script>
+  <script src="admin.js?v=20261110_v6"></script>
+  <script src="pwa-install.js?v=20261110_v6"></script>
 </body>
 
 </html>
