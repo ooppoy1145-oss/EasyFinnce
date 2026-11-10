@@ -1019,7 +1019,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const allSidebarLinks = document.querySelectorAll(".sidebar-item");
   const sidebarUserChip = document.getElementById("sidebarUserChip");
   const btnSidebarRoleAction = document.getElementById("btnSidebarRoleAction");
-  const STORAGE_KEY_SIDEBAR_COLLAPSED = "easyfinance_sidebar_rail_v2";
+  const STORAGE_KEY_SIDEBAR_COLLAPSED = "easyfinance_sidebar_rail_v3";
 
   function setSidebarRailCollapsed(collapsed, save = true) {
     if (!adminSidebar) return;
@@ -1043,6 +1043,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Restore rail width from localStorage (defaults to expanded so logo & brand name are visible)
   try {
+    localStorage.removeItem("easyfinance_sidebar_rail_collapsed");
+    localStorage.removeItem("easyfinance_sidebar_rail_v2");
     const isSavedCollapsed = localStorage.getItem(STORAGE_KEY_SIDEBAR_COLLAPSED) === "true";
     if (window.innerWidth > 900) {
       setSidebarRailCollapsed(isSavedCollapsed, false);
@@ -1995,13 +1997,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- 3. STATS COUNTERS & QUICK PILLS ---
 
+  // Toggle Secondary Report Cards Drawer (Modern FinTech Workspace)
+  window.toggleSecondaryStatsDrawer = function () {
+    const drawer = document.getElementById("secondaryStatsDrawer");
+    const btn = document.getElementById("btnToggleSecondaryStats");
+    const textEl = document.getElementById("secondaryStatsToggleText");
+    const iconEl = document.getElementById("secondaryStatsToggleIcon");
+    if (!drawer) return;
+    const isOpen = drawer.classList.toggle("open");
+    if (btn) {
+      btn.classList.toggle("open", isOpen);
+      btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    }
+    if (textEl) {
+      textEl.textContent = isOpen ? "ซ่อนการ์ดรายงาน (6)" : "แสดงการ์ดรายงาน (6)";
+    }
+    if (iconEl) {
+      iconEl.className = isOpen ? "fa-solid fa-chevron-up" : "fa-solid fa-chevron-down";
+    }
+  };
+
   function renderStatsCounters() {
     const statLabelFinanced = document.getElementById("statLabelFinanced");
     const statLabelCollected = document.getElementById("statLabelCollected");
     const statLabelOutstanding = document.getElementById("statLabelOutstanding");
     const statLabelCount = document.getElementById("statLabelCount");
+    const secondaryStatsWrapper = document.getElementById("secondaryStatsWrapper");
 
     if (currentTab === "bad_debt") {
+      if (secondaryStatsWrapper) secondaryStatsWrapper.style.display = "none";
       if (cardStatLateFines) cardStatLateFines.style.display = "none";
       if (cardStatMotorcycle) cardStatMotorcycle.style.display = "none";
       if (cardStatInterestCut) cardStatInterestCut.style.display = "none";
@@ -2033,6 +2057,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (secondaryStatsWrapper) secondaryStatsWrapper.style.display = "";
     if (cardStatLateFines) cardStatLateFines.style.display = "";
     if (cardStatMotorcycle) cardStatMotorcycle.style.display = "";
     if (cardStatInterestCut) cardStatInterestCut.style.display = "";
@@ -4479,6 +4504,15 @@ document.addEventListener("DOMContentLoaded", () => {
       detailInstallmentsBody.appendChild(tr);
     });
 
+    // Attach mobile card labels to detailInstallmentsBody (Desktop unaffected)
+    const instLabels = ["งวดที่", "กำหนดชำระ", "ยอดค่างวด", "สถานะ", "วันที่ชำระ", "สลิป / อ้างอิง", "จัดการ"];
+    detailInstallmentsBody.querySelectorAll("tr").forEach((tr) => {
+      const tds = tr.querySelectorAll("td");
+      tds.forEach((td, i) => {
+        if (instLabels[i]) td.setAttribute("data-label", instLabels[i]);
+      });
+    });
+
     contractDetailModal.classList.add("active");
   };
 
@@ -6803,6 +6837,19 @@ document.addEventListener("DOMContentLoaded", () => {
         </td>
       `;
       customerDbTableBody.appendChild(tr);
+    });
+
+    // Attach mobile card labels to customerDbTableBody (Desktop unaffected)
+    const cdbLabels = ["ลูกค้า", "เบอร์โทรศัพท์", "เลขบัตรประชาชน", "สถานะสินเชื่อ", "ยอดปล่อยรวม", "คงค้างรอเก็บ", "จัดการ"];
+    customerDbTableBody.querySelectorAll("tr").forEach((tr) => {
+      const tds = tr.querySelectorAll("td");
+      if (tds.length === 1 && tds[0].hasAttribute("colspan")) {
+        tr.classList.add("mobile-empty-row");
+        return;
+      }
+      tds.forEach((td, i) => {
+        if (cdbLabels[i]) td.setAttribute("data-label", cdbLabels[i]);
+      });
     });
   }
 

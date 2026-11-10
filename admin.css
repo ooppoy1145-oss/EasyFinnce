@@ -6703,12 +6703,12 @@ html.theme-light .admin-sidebar,
 }
 
 /* ==========================================================================
-   STATE A: EXPANDED FULL SIDEBAR (DEFAULT ON DESKTOP 268px)
+   STATE A: EXPANDED FULL SIDEBAR (DEFAULT ON DESKTOP 272px)
    ========================================================================== */
 .admin-sidebar:not(.collapsed):not(.sidebar-init-collapsed) {
-  width: 268px !important;
-  min-width: 268px !important;
-  max-width: 268px !important;
+  width: 272px !important;
+  min-width: 272px !important;
+  max-width: 272px !important;
   padding: 14px 12px 12px 12px !important;
   justify-content: flex-start !important;
   align-items: stretch !important;
@@ -6722,8 +6722,8 @@ html.theme-light .admin-sidebar,
   align-items: center !important;
   justify-content: space-between !important;
   gap: 8px !important;
-  padding: 6px 6px 12px 6px !important;
-  margin-bottom: 10px !important;
+  padding: 4px 4px 12px 4px !important;
+  margin-bottom: 8px !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
   flex-shrink: 0 !important;
 }
@@ -6747,7 +6747,7 @@ html.theme-light .admin-sidebar .sidebar-top-section,
   min-width: 42px !important;
   border-radius: 12px !important;
   background: radial-gradient(circle at 30% 30%, rgba(16, 185, 129, 0.18), rgba(15, 23, 42, 0.9)) !important;
-  border: 1px solid rgba(212, 175, 55, 0.4) !important;
+  border: 1px solid rgba(212, 175, 55, 0.45) !important;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
   display: flex !important;
   align-items: center !important;
@@ -6832,6 +6832,13 @@ html.theme-light .admin-sidebar .sidebar-brand-text span,
   transition: all 0.2s ease !important;
 }
 
+/* Prevent double-rotation bug on collapse icon */
+.admin-sidebar .btn-rail-collapse i,
+.admin-sidebar.collapsed .btn-rail-collapse i,
+html.sidebar-init-collapsed .admin-sidebar .btn-rail-collapse i {
+  transform: none !important;
+}
+
 .admin-sidebar .btn-rail-collapse:hover {
   background: rgba(16, 185, 129, 0.18) !important;
   border-color: rgba(16, 185, 129, 0.4) !important;
@@ -6855,7 +6862,7 @@ html.theme-light .admin-sidebar .btn-rail-collapse:hover,
 .admin-sidebar .sidebar-search-container {
   display: block !important;
   padding: 0 2px !important;
-  margin-bottom: 10px !important;
+  margin-bottom: 8px !important;
   flex-shrink: 0 !important;
 }
 
@@ -6864,7 +6871,7 @@ html.theme-light .admin-sidebar .btn-rail-collapse:hover,
   align-items: center !important;
   gap: 8px !important;
   border-radius: 10px !important;
-  padding: 7px 11px !important;
+  padding: 6px 11px !important;
   background: rgba(255, 255, 255, 0.04) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   transition: all 0.2s ease !important;
@@ -6887,7 +6894,7 @@ html.theme-light .admin-sidebar .sidebar-search-box,
   border: none !important;
   outline: none !important;
   font-family: inherit !important;
-  font-size: 0.82rem !important;
+  font-size: 0.81rem !important;
   width: 100% !important;
   color: #ffffff !important;
 }
@@ -6903,7 +6910,7 @@ html.theme-light .admin-sidebar .sidebar-search-box input,
   min-height: 0 !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 3px !important;
+  gap: 2px !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   padding: 0 2px !important;
@@ -6927,8 +6934,8 @@ html.theme-light .admin-sidebar .sidebar-search-box input,
 .admin-sidebar .sidebar-group-header-wrap {
   display: flex !important;
   align-items: center !important;
-  padding: 8px 8px 4px 8px !important;
-  font-size: 0.68rem !important;
+  padding: 6px 8px 3px 8px !important;
+  font-size: 0.66rem !important;
   font-weight: 700 !important;
   text-transform: uppercase !important;
   letter-spacing: 0.06em !important;
@@ -6944,15 +6951,15 @@ html.theme-light .admin-sidebar .sidebar-search-box input,
 /* Menu Items */
 .admin-sidebar .dock-btn {
   width: 100% !important;
-  height: 40px !important;
-  min-height: 40px !important;
-  max-height: 40px !important;
-  border-radius: 11px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  border-radius: 10px !important;
   padding: 0 10px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: flex-start !important;
-  gap: 11px !important;
+  gap: 10px !important;
   margin: 0 !important;
   box-sizing: border-box !important;
   color: #94a3b8 !important;
@@ -6971,16 +6978,16 @@ html.theme-light .admin-sidebar .dock-btn,
 
 /* Icon Box inside Menu Item */
 .admin-sidebar .dock-icon-wrap {
-  width: 30px !important;
-  height: 30px !important;
-  min-width: 30px !important;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
   border-radius: 8px !important;
   background: rgba(255, 255, 255, 0.04) !important;
   border: 1px solid rgba(255, 255, 255, 0.06) !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 0.92rem !important;
+  font-size: 0.88rem !important;
   transition: all 0.18s ease !important;
   flex-shrink: 0 !important;
 }
@@ -7006,7 +7013,7 @@ html.theme-light .admin-sidebar .dock-icon-wrap,
 
 .admin-sidebar .sidebar-item-label {
   display: inline-block !important;
-  font-size: 0.85rem !important;
+  font-size: 0.84rem !important;
   font-weight: 500 !important;
   flex: 1 !important;
   white-space: nowrap !important;
@@ -7017,21 +7024,21 @@ html.theme-light .admin-sidebar .dock-icon-wrap,
 }
 
 /* Hover State */
-html:not(.theme-light) .admin-sidebar .dock-btn:hover {
+html:not(.theme-light) .admin-sidebar:not(.collapsed) .dock-btn:hover {
   background: rgba(255, 255, 255, 0.06) !important;
   color: #f8fafc !important;
   transform: translateX(2px) !important;
 }
 
-html.theme-light .admin-sidebar .dock-btn:hover,
-[data-theme="light"] .admin-sidebar .dock-btn:hover {
+html.theme-light .admin-sidebar:not(.collapsed) .dock-btn:hover,
+[data-theme="light"] .admin-sidebar:not(.collapsed) .dock-btn:hover {
   background: #f1f5f9 !important;
   color: #0f172a !important;
   transform: translateX(2px) !important;
 }
 
-/* Active State (Glowing Emerald Accent) */
-html:not(.theme-light) .admin-sidebar .dock-btn.active {
+/* Active State in Expanded Mode (Glowing Emerald Accent) */
+html:not(.theme-light) .admin-sidebar:not(.collapsed) .dock-btn.active {
   background: linear-gradient(90deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.05) 100%) !important;
   color: #ffffff !important;
   border-color: rgba(16, 185, 129, 0.35) !important;
@@ -7040,15 +7047,15 @@ html:not(.theme-light) .admin-sidebar .dock-btn.active {
   transform: none !important;
 }
 
-html:not(.theme-light) .admin-sidebar .dock-btn.active .dock-icon-wrap {
+html:not(.theme-light) .admin-sidebar:not(.collapsed) .dock-btn.active .dock-icon-wrap {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
   color: #ffffff !important;
   border-color: rgba(52, 211, 153, 0.5) !important;
   box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35) !important;
 }
 
-html.theme-light .admin-sidebar .dock-btn.active,
-[data-theme="light"] .admin-sidebar .dock-btn.active {
+html.theme-light .admin-sidebar:not(.collapsed) .dock-btn.active,
+[data-theme="light"] .admin-sidebar:not(.collapsed) .dock-btn.active {
   background: linear-gradient(90deg, rgba(249, 115, 22, 0.14) 0%, rgba(249, 115, 22, 0.03) 100%) !important;
   color: #ea580c !important;
   border-color: rgba(249, 115, 22, 0.35) !important;
@@ -7057,8 +7064,8 @@ html.theme-light .admin-sidebar .dock-btn.active,
   transform: none !important;
 }
 
-html.theme-light .admin-sidebar .dock-btn.active .dock-icon-wrap,
-[data-theme="light"] .admin-sidebar .dock-btn.active .dock-icon-wrap {
+html.theme-light .admin-sidebar:not(.collapsed) .dock-btn.active .dock-icon-wrap,
+[data-theme="light"] .admin-sidebar:not(.collapsed) .dock-btn.active .dock-icon-wrap {
   background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
   color: #ffffff !important;
   border-color: transparent !important;
@@ -7088,7 +7095,7 @@ html.theme-light .admin-sidebar .dock-btn.active .dock-icon-wrap,
 .dock-divider {
   width: calc(100% - 16px) !important;
   height: 1px !important;
-  margin: 6px auto !important;
+  margin: 5px auto !important;
   background: rgba(255, 255, 255, 0.08) !important;
   flex-shrink: 0 !important;
 }
@@ -7102,8 +7109,8 @@ html.theme-light .dock-divider,
 .admin-sidebar .sidebar-bottom-section {
   display: flex !important;
   flex-direction: column !important;
-  gap: 7px !important;
-  padding-top: 10px !important;
+  gap: 6px !important;
+  padding-top: 8px !important;
   margin-top: auto !important;
   border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
   background: transparent !important;
@@ -7131,7 +7138,7 @@ html.theme-light .admin-sidebar .sidebar-bottom-section,
   border-radius: 10px !important;
   background: rgba(255, 255, 255, 0.04) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  flex: 1 !important;
+  flex: 1.1 !important;
 }
 
 html.theme-light .admin-sidebar .dock-island-theme,
@@ -7148,12 +7155,13 @@ html.theme-light .admin-sidebar .dock-island-theme,
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 5px !important;
-  font-size: 0.74rem !important;
+  gap: 4px !important;
+  font-size: 0.73rem !important;
   font-weight: 600 !important;
   font-family: inherit !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
+  padding: 0 4px !important;
 }
 
 html:not(.theme-light) #btnDockThemeDark {
@@ -7161,7 +7169,7 @@ html:not(.theme-light) #btnDockThemeDark {
   color: #38bdf8 !important;
 }
 html:not(.theme-light) #btnDockThemeLight {
-  color: #64748b !important;
+  color: #94a3b8 !important;
 }
 
 html.theme-light #btnDockThemeLight {
@@ -7179,9 +7187,10 @@ html.theme-light #btnDockThemeDark {
   min-height: 34px !important;
   max-height: 34px !important;
   padding: 0 8px !important;
-  gap: 6px !important;
-  background: rgba(255, 255, 255, 0.03) !important;
-  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  gap: 5px !important;
+  justify-content: center !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 10px !important;
 }
 
@@ -7191,16 +7200,17 @@ html.theme-light .sidebar-utility-row .client-portal-link {
 }
 
 .sidebar-utility-row .client-portal-link .dock-icon-wrap {
-  width: 22px !important;
-  height: 22px !important;
-  min-width: 22px !important;
-  font-size: 0.75rem !important;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  font-size: 0.74rem !important;
   background: transparent !important;
   border: none !important;
 }
 
 .sidebar-utility-row .client-portal-link .sidebar-item-label {
-  font-size: 0.74rem !important;
+  font-size: 0.73rem !important;
+  flex: 0 1 auto !important;
 }
 
 /* User Profile Chip */
@@ -7208,8 +7218,8 @@ html.theme-light .sidebar-utility-row .client-portal-link {
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
-  padding: 7px 10px !important;
-  border-radius: 11px !important;
+  padding: 6px 10px !important;
+  border-radius: 10px !important;
   background: rgba(255, 255, 255, 0.04) !important;
   border: 1px solid rgba(255, 255, 255, 0.08) !important;
   width: 100% !important;
@@ -7223,20 +7233,20 @@ html.theme-light .admin-sidebar .sidebar-user-chip {
 }
 
 .admin-sidebar .user-chip-avatar {
-  width: 32px !important;
-  height: 32px !important;
-  min-width: 32px !important;
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
   border-radius: 50% !important;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   color: #ffffff !important;
-  font-size: 0.85rem !important;
+  font-size: 0.82rem !important;
 }
 
 .admin-sidebar .user-chip-name {
-  font-size: 0.8rem !important;
+  font-size: 0.79rem !important;
   font-weight: 600 !important;
   color: #ffffff !important;
   line-height: 1.2 !important;
@@ -7247,32 +7257,44 @@ html.theme-light .admin-sidebar .user-chip-name {
 }
 
 .admin-sidebar .user-chip-plan {
-  font-size: 0.68rem !important;
+  font-size: 0.67rem !important;
   color: #94a3b8 !important;
 }
 
-/* Logout Button in Sidebar */
+/* Logout Button in Sidebar (Centered & Balanced) */
 .admin-sidebar .dock-btn-logout {
-  background: rgba(239, 68, 68, 0.08) !important;
-  border: 1px solid rgba(239, 68, 68, 0.22) !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
   color: #fca5a5 !important;
-  height: 36px !important;
-  min-height: 36px !important;
-  max-height: 36px !important;
+  height: 35px !important;
+  min-height: 35px !important;
+  max-height: 35px !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 100% !important;
 }
 
 .admin-sidebar .dock-btn-logout .dock-icon-wrap {
-  width: 24px !important;
-  height: 24px !important;
-  min-width: 24px !important;
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
   background: transparent !important;
   border: none !important;
   color: #f87171 !important;
 }
 
+.admin-sidebar .dock-btn-logout .sidebar-item-label {
+  flex: 0 1 auto !important;
+  text-align: center !important;
+  font-weight: 600 !important;
+  font-size: 0.8rem !important;
+}
+
 .admin-sidebar .dock-btn-logout:hover {
-  background: rgba(239, 68, 68, 0.18) !important;
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
   color: #ffffff !important;
+  transform: none !important;
 }
 
 html.theme-light .admin-sidebar .dock-btn-logout {
@@ -7288,7 +7310,7 @@ html.theme-light .admin-sidebar .dock-btn-logout {
 }
 
 /* ==========================================================================
-   STATE B: COLLAPSED RAIL ON DESKTOP (80px - KEEPS LOGO VISIBLE AT TOP!)
+   STATE B: COLLAPSED RAIL ON DESKTOP (80px - CLEAN CENTERED ALIGNMENT)
    ========================================================================== */
 @media (min-width: 901px) {
   .admin-sidebar.collapsed,
@@ -7296,7 +7318,7 @@ html.theme-light .admin-sidebar .dock-btn-logout {
     width: 80px !important;
     min-width: 80px !important;
     max-width: 80px !important;
-    padding: 12px 8px !important;
+    padding: 12px 10px !important;
     align-items: center !important;
     overflow: visible !important;
   }
@@ -7308,7 +7330,8 @@ html.theme-light .admin-sidebar .dock-btn-logout {
     justify-content: center !important;
     align-items: center !important;
     gap: 8px !important;
-    padding: 4px 0 10px 0 !important;
+    padding: 2px 0 10px 0 !important;
+    margin-bottom: 6px !important;
     width: 100% !important;
   }
 
@@ -7316,8 +7339,25 @@ html.theme-light .admin-sidebar .dock-btn-logout {
   html.sidebar-init-collapsed .admin-sidebar .sidebar-brand-expanded {
     display: flex !important;
     justify-content: center !important;
+    align-items: center !important;
     flex: 0 0 auto !important;
+    width: 100% !important;
     cursor: pointer !important;
+  }
+
+  .admin-sidebar.collapsed .sidebar-header-actions,
+  html.sidebar-init-collapsed .admin-sidebar .sidebar-header-actions {
+    justify-content: center !important;
+    width: 100% !important;
+  }
+
+  .admin-sidebar.collapsed .btn-rail-collapse,
+  html.sidebar-init-collapsed .admin-sidebar .btn-rail-collapse {
+    width: 38px !important;
+    height: 26px !important;
+    min-width: 38px !important;
+    border-radius: 8px !important;
+    margin: 0 auto !important;
   }
 
   .admin-sidebar.collapsed .sidebar-brand-text,
@@ -7340,40 +7380,212 @@ html.theme-light .admin-sidebar .dock-btn-logout {
     align-items: center !important;
     overflow: visible !important;
     gap: 5px !important;
+    padding: 0 !important;
+    width: 100% !important;
   }
 
+  /* Single Clean Centered 44x42 Icon Tile in Collapsed Mode (No Double Boxes!) */
   .admin-sidebar.collapsed .dock-btn,
   html.sidebar-init-collapsed .admin-sidebar .dock-btn {
-    width: 46px !important;
-    height: 44px !important;
-    min-width: 46px !important;
-    min-height: 44px !important;
+    width: 44px !important;
+    height: 42px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
     padding: 0 !important;
+    margin: 0 auto !important;
     justify-content: center !important;
+    align-items: center !important;
     border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    box-shadow: none !important;
+  }
+
+  html.theme-light .admin-sidebar.collapsed .dock-btn,
+  html.theme-light.sidebar-init-collapsed .admin-sidebar .dock-btn,
+  [data-theme="light"] .admin-sidebar.collapsed .dock-btn {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+
+  /* Remove inner box border/bg in collapsed mode so only the outer 44x42 tile shows */
+  .admin-sidebar.collapsed .dock-btn .dock-icon-wrap,
+  html.sidebar-init-collapsed .admin-sidebar .dock-btn .dock-icon-wrap {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-size: 1.02rem !important;
+  }
+
+  .admin-sidebar.collapsed .dock-btn:hover,
+  html.sidebar-init-collapsed .admin-sidebar .dock-btn:hover {
+    background: rgba(255, 255, 255, 0.09) !important;
+    border-color: rgba(255, 255, 255, 0.16) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  html.theme-light .admin-sidebar.collapsed .dock-btn:hover,
+  [data-theme="light"] .admin-sidebar.collapsed .dock-btn:hover {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  /* Single Glowing Active Square in Collapsed Mode (No double green border!) */
+  html:not(.theme-light) .admin-sidebar.collapsed .dock-btn.active,
+  html.sidebar-init-collapsed:not(.theme-light) .admin-sidebar .dock-btn.active {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    border: 1px solid rgba(52, 211, 153, 0.6) !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4) !important;
+    color: #ffffff !important;
+    transform: none !important;
+  }
+
+  html:not(.theme-light) .admin-sidebar.collapsed .dock-btn.active .dock-icon-wrap,
+  html.sidebar-init-collapsed:not(.theme-light) .admin-sidebar .dock-btn.active .dock-icon-wrap {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #ffffff !important;
+  }
+
+  html.theme-light .admin-sidebar.collapsed .dock-btn.active,
+  html.theme-light.sidebar-init-collapsed .admin-sidebar .dock-btn.active,
+  [data-theme="light"] .admin-sidebar.collapsed .dock-btn.active {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%) !important;
+    border: 1px solid rgba(251, 146, 60, 0.6) !important;
+    box-shadow: 0 4px 14px rgba(249, 115, 22, 0.35) !important;
+    color: #ffffff !important;
+    transform: none !important;
+  }
+
+  html.theme-light .admin-sidebar.collapsed .dock-btn.active .dock-icon-wrap,
+  html.theme-light.sidebar-init-collapsed .admin-sidebar .dock-btn.active .dock-icon-wrap,
+  [data-theme="light"] .admin-sidebar.collapsed .dock-btn.active .dock-icon-wrap {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #ffffff !important;
   }
 
   .admin-sidebar.collapsed .dock-badge-pill,
   html.sidebar-init-collapsed .admin-sidebar .dock-badge-pill {
     position: absolute !important;
-    top: -3px !important;
-    right: -3px !important;
-    min-width: 16px !important;
+    top: -4px !important;
+    right: -4px !important;
+    min-width: 18px !important;
     height: 16px !important;
     padding: 0 4px !important;
     font-size: 0.6rem !important;
+    border: 1.5px solid #0b1120 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+  }
+
+  html.theme-light .admin-sidebar.collapsed .dock-badge-pill,
+  [data-theme="light"] .admin-sidebar.collapsed .dock-badge-pill {
+    border-color: #ffffff !important;
+  }
+
+  /* Perfectly Centered Bottom Section in Collapsed Mode */
+  .admin-sidebar.collapsed .sidebar-bottom-section,
+  html.sidebar-init-collapsed .admin-sidebar .sidebar-bottom-section {
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    padding-top: 8px !important;
+    width: 100% !important;
   }
 
   .admin-sidebar.collapsed .sidebar-utility-row,
   html.sidebar-init-collapsed .admin-sidebar .sidebar-utility-row {
     flex-direction: column !important;
-    gap: 5px !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    width: 100% !important;
   }
 
+  /* In Collapsed Mode, show a single 44x38 Theme Toggle button instead of a tall 2-row box */
   .admin-sidebar.collapsed .dock-island-theme,
   html.sidebar-init-collapsed .admin-sidebar .dock-island-theme {
-    grid-template-columns: 1fr !important;
-    width: 46px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 44px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    height: 38px !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    border-radius: 12px !important;
+    flex: 0 0 auto !important;
+  }
+
+  /* In Dark mode collapsed, show Sun button to switch to Light; in Light mode collapsed, show Moon button to switch to Dark */
+  html:not(.theme-light) .admin-sidebar.collapsed #btnDockThemeDark,
+  html.sidebar-init-collapsed:not(.theme-light) .admin-sidebar #btnDockThemeDark {
+    display: none !important;
+  }
+
+  html:not(.theme-light) .admin-sidebar.collapsed #btnDockThemeLight,
+  html.sidebar-init-collapsed:not(.theme-light) .admin-sidebar #btnDockThemeLight {
+    display: inline-flex !important;
+    width: 100% !important;
+    height: 100% !important;
+    color: #fbbf24 !important;
+    font-size: 0.95rem !important;
+  }
+
+  html.theme-light .admin-sidebar.collapsed #btnDockThemeLight,
+  html.theme-light.sidebar-init-collapsed .admin-sidebar #btnDockThemeLight {
+    display: none !important;
+  }
+
+  html.theme-light .admin-sidebar.collapsed #btnDockThemeDark,
+  html.theme-light.sidebar-init-collapsed .admin-sidebar #btnDockThemeDark {
+    display: inline-flex !important;
+    width: 100% !important;
+    height: 100% !important;
+    color: #38bdf8 !important;
+    font-size: 0.95rem !important;
+  }
+
+  .admin-sidebar.collapsed .client-portal-link,
+  html.sidebar-init-collapsed .admin-sidebar .client-portal-link {
+    width: 44px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    align-items: center !important;
+    border-radius: 12px !important;
+    flex: 0 0 auto !important;
+  }
+
+  .admin-sidebar.collapsed .dock-btn-logout,
+  html.sidebar-init-collapsed .admin-sidebar .dock-btn-logout {
+    width: 44px !important;
+    min-width: 44px !important;
+    max-width: 44px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    align-items: center !important;
+    align-self: center !important;
+    border-radius: 12px !important;
+    background: rgba(239, 68, 68, 0.12) !important;
+    border: 1px solid rgba(239, 68, 68, 0.28) !important;
   }
 
   /* Hover Tooltips in Collapsed Mode */
@@ -7404,6 +7616,417 @@ html.theme-light .admin-sidebar .dock-btn-logout {
   html.sidebar-init-collapsed .admin-sidebar [data-dock-tooltip]:hover::after {
     opacity: 1 !important;
     visibility: visible !important;
+  }
+
+  /* ========================================================================
+     MODERN FINTECH WORKSPACE REDESIGN (DESKTOP > 900px)
+     1. 4 Primary KPI Cards + Collapsible Secondary Reports Drawer (6 Cards)
+     2. Unified Control Toolbar (Sub-Tabs + Search + Add Button + Date Bar)
+     3. Eliminated Duplicate Controls (Pills, Duplicate Theme/Logout/Buttons)
+     ======================================================================== */
+  .admin-container {
+    padding: 20px 28px 48px 28px !important;
+    gap: 16px !important;
+  }
+
+  /* Remove duplicate controls between Top Navbar, Sidebar, and Action Bar */
+  .admin-navbar #btnAdminLogout,
+  .admin-sidebar #dockIslandTheme,
+  #summaryQuickPills,
+  #btnOpenCustomerDb,
+  #btnOpenDashboardOverview {
+    display: none !important;
+  }
+
+  .admin-sidebar .sidebar-utility-row .client-portal-link {
+    width: 100% !important;
+    flex: 1 1 100% !important;
+  }
+
+  /* 1. KPI SECTION: 4 Primary Cards + Collapsible Secondary Drawer */
+  .workspace-kpi-section {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .stats-primary-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+    align-items: stretch !important;
+    width: 100% !important;
+  }
+
+  .stat-counter-card {
+    padding: 16px 18px !important;
+    border-radius: 16px !important;
+    min-height: 88px !important;
+    height: 100% !important;
+    box-sizing: border-box !important;
+    gap: 12px !important;
+  }
+
+  .stat-counter-card .stat-info {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+  }
+
+  .stat-counter-card .stat-info .stat-label {
+    font-size: 0.78rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .stat-counter-card .stat-info .stat-val {
+    font-size: 1.45rem !important;
+    line-height: 1.2 !important;
+    margin-top: 4px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  #statLateFinesSub,
+  #statMotorcycleSub,
+  #statInterestCutSub,
+  #statDownPaymentSub,
+  #statDailyAllCategoriesSub,
+  #statBankReconciliationSub {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: 0.68rem !important;
+  }
+
+  .stat-counter-card .stat-icon-box {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    border-radius: 12px !important;
+    font-size: 1.18rem !important;
+  }
+}
+
+/* Collapsible Secondary Reports Drawer (Shared Desktop & Mobile Base) */
+.secondary-stats-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.secondary-stats-toggle-bar {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 16px;
+  border-radius: 13px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  font-family: 'Prompt', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.secondary-stats-toggle-bar:hover,
+.secondary-stats-toggle-bar.open {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #ffffff;
+}
+
+html.theme-light .secondary-stats-toggle-bar,
+[data-theme="light"] .secondary-stats-toggle-bar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+html.theme-light .secondary-stats-toggle-bar:hover,
+html.theme-light .secondary-stats-toggle-bar.open,
+[data-theme="light"] .secondary-stats-toggle-bar:hover,
+[data-theme="light"] .secondary-stats-toggle-bar.open {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.secondary-toggle-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.secondary-toggle-icon-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  flex-shrink: 0;
+}
+
+.secondary-toggle-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.secondary-toggle-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.sec-tag {
+  font-size: 0.68rem;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  white-space: nowrap;
+}
+
+.sec-tag.tag-orange { color: #fb923c; background: rgba(249, 115, 22, 0.1); border-color: rgba(249, 115, 22, 0.25); }
+.sec-tag.tag-sky { color: #38bdf8; background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.25); }
+.sec-tag.tag-blue { color: #60a5fa; background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.25); }
+.sec-tag.tag-emerald { color: #34d399; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.25); }
+.sec-tag.tag-purple { color: #c084fc; background: rgba(168, 85, 247, 0.1); border-color: rgba(168, 85, 247, 0.25); }
+.sec-tag.tag-teal { color: #2dd4bf; background: rgba(20, 184, 166, 0.1); border-color: rgba(20, 184, 166, 0.25); }
+
+html.theme-light .sec-tag,
+[data-theme="light"] .sec-tag {
+  font-weight: 600;
+}
+
+.secondary-toggle-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #34d399;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+html.theme-light .secondary-toggle-right,
+[data-theme="light"] .secondary-toggle-right {
+  color: #059669;
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+/* Secondary 6-Card Grid (Hidden by Default, Expands when .open) */
+.stats-secondary-grid {
+  display: none !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  animation: fadeInSecondaryStats 0.22s ease-out;
+}
+
+.stats-secondary-grid.open {
+  display: grid !important;
+}
+
+@keyframes fadeInSecondaryStats {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   2. UNIFIED WORKSPACE CONTROL TOOLBAR (.workspace-unified-toolbar)
+   Combines: Status Sub-Tabs + Search Box + Primary Button + Date Filter Bar
+   ========================================================================== */
+.workspace-unified-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: rgba(17, 24, 39, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 18px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.35);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+html.theme-light .workspace-unified-toolbar,
+[data-theme="light"] .workspace-unified-toolbar {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.05);
+}
+
+.unified-toolbar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+/* Modern Segmented Control style for #adminSubTabNav inside Unified Toolbar */
+.workspace-unified-toolbar .admin-tab-nav {
+  border-bottom: none !important;
+  padding: 4px !important;
+  margin: 0 !important;
+  background: rgba(9, 13, 22, 0.55) !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 12px !important;
+  gap: 4px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+}
+
+html.theme-light .workspace-unified-toolbar .admin-tab-nav,
+[data-theme="light"] .workspace-unified-toolbar .admin-tab-nav {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+}
+
+.workspace-unified-toolbar .admin-tab-nav .tab-btn {
+  padding: 7px 14px !important;
+  border-radius: 9px !important;
+  font-size: 0.83rem !important;
+  border-bottom: none !important;
+}
+
+.workspace-unified-toolbar .admin-tab-nav .tab-btn.active {
+  background: rgba(16, 185, 129, 0.18) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+html.theme-light .workspace-unified-toolbar .admin-tab-nav .tab-btn.active,
+[data-theme="light"] .workspace-unified-toolbar .admin-tab-nav .tab-btn.active {
+  background: #ffffff !important;
+  color: #059669 !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Right side of Unified Toolbar Top: Search + Primary CTA */
+.workspace-unified-toolbar .action-bar-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  flex: 1 1 auto !important;
+  margin: 0 !important;
+}
+
+.workspace-unified-toolbar .search-filter-box {
+  max-width: 340px !important;
+  min-width: 220px !important;
+  flex: 1 1 260px !important;
+}
+
+.workspace-unified-toolbar .search-input-wrapper input {
+  padding: 8px 14px 8px 38px !important;
+  font-size: 0.84rem !important;
+  height: 38px !important;
+  box-sizing: border-box !important;
+}
+
+.workspace-unified-toolbar .action-bar-btn-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+.workspace-unified-toolbar #btnOpenAddContract,
+.workspace-unified-toolbar #btnOpenAddBadDebt {
+  height: 38px !important;
+  padding: 0 18px !important;
+  font-size: 0.85rem !important;
+}
+
+/* Integrated Date Filter Bar inside Unified Toolbar */
+.workspace-unified-toolbar .date-filter-bar {
+  background: transparent !important;
+  border: none !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 10px 0 2px 0 !important;
+  margin: 10px 0 0 0 !important;
+  gap: 8px !important;
+}
+
+html.theme-light .workspace-unified-toolbar .date-filter-bar,
+[data-theme="light"] .workspace-unified-toolbar .date-filter-bar {
+  border-top-color: #e2e8f0 !important;
+}
+
+@media (min-width: 901px) {
+  .workspace-unified-toolbar .date-filter-main-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  .workspace-unified-toolbar .date-filter-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .workspace-unified-toolbar .date-filter-summary-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 0 !important;
+    border: none !important;
+    margin: 0 !important;
+    flex: 1 1 auto !important;
+    justify-content: center !important;
+  }
+
+  .workspace-unified-toolbar .date-daily-total-badge {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 6px 14px !important;
+    border-radius: 12px !important;
+  }
+
+  .workspace-unified-toolbar .daily-total-amount {
+    font-size: 1.15rem !important;
   }
 }
 
@@ -7537,51 +8160,57 @@ html.theme-light .admin-sidebar .dock-btn-logout {
 
   /* ----------------------------------------------------------------------
      2. SWAP UI POSITIONS ON MOBILE (order)
-     Desktop Order: Stats -> Action Bar -> Pills -> Overview -> SubTabs -> DateBar -> Table
-     Mobile Order:  Action Bar (1) -> DateBar (2) -> Stats (3) -> Pills (4) -> Overview (5) -> SubTabs (6) -> Table (7)
+     Desktop Order: KPI Section (1) -> Overview (2) -> Unified Toolbar (3) -> Table (4)
+     Mobile Order:  Unified Toolbar (1) -> KPI Section (2) -> Overview (3) -> Table (4)
      ---------------------------------------------------------------------- */
-  .admin-container > .action-bar-header {
+  .admin-navbar #btnAdminLogout,
+  #summaryQuickPills,
+  #btnOpenCustomerDb,
+  #btnOpenDashboardOverview {
+    display: none !important;
+  }
+
+  .admin-container > .workspace-unified-toolbar {
     order: 1 !important;
+    margin-bottom: 0 !important;
+    padding: 10px !important;
+    border-radius: 14px !important;
+    gap: 8px !important;
+  }
+
+  .admin-container > .workspace-kpi-section {
+    order: 2 !important;
     margin-bottom: 0 !important;
     gap: 7px !important;
   }
 
-  .admin-container > .date-filter-bar {
-    order: 2 !important;
-    margin-bottom: 0 !important;
-  }
-
-  .admin-container > .stats-counter-row {
+  .admin-container > #dashboardOverviewSection {
     order: 3 !important;
     margin-bottom: 0 !important;
   }
 
-  .admin-container > .summary-pills-bar {
+  .admin-container > .data-table-card {
     order: 4 !important;
     margin-bottom: 0 !important;
   }
 
-  .admin-container > #dashboardOverviewSection {
-    order: 5 !important;
-    margin-bottom: 0 !important;
+  .unified-toolbar-top {
+    flex-direction: column-reverse !important;
+    align-items: stretch !important;
+    gap: 8px !important;
   }
 
-  .admin-container > .admin-tab-nav {
-    order: 6 !important;
-    margin-bottom: 0 !important;
+  /* Inside Action Bar on Mobile: Primary Add Button on top (order: 1), Search Box below (order: 2) */
+  .action-bar-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    width: 100% !important;
   }
 
-  .admin-container > .data-table-card {
-    order: 7 !important;
-    margin-bottom: 0 !important;
-  }
-
-  /* Inside Action Bar on Mobile: Quick Action Buttons on top (order: 1), Search Box below (order: 2) */
   .action-bar-header .action-bar-btn-group {
     order: 1 !important;
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 6px !important;
+    display: flex !important;
     width: 100% !important;
   }
 
@@ -7589,6 +8218,8 @@ html.theme-light .admin-sidebar .dock-btn-logout {
     order: 2 !important;
     width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
   }
 
   .search-input-wrapper input {
@@ -7599,22 +8230,34 @@ html.theme-light .admin-sidebar .dock-btn-logout {
 
   #btnOpenAddContract,
   #btnOpenAddBadDebt {
-    grid-column: 1 / -1 !important;
-    order: -1 !important;
+    width: 100% !important;
     padding: 9px 12px !important;
     font-size: 0.82rem !important;
     border-radius: 10px !important;
   }
 
-  #btnOpenCustomerDb,
-  #btnOpenDashboardOverview {
-    padding: 7px 8px !important;
+  .secondary-stats-toggle-bar {
+    padding: 8px 10px !important;
+    border-radius: 11px !important;
+    gap: 6px !important;
+  }
+
+  .secondary-toggle-tags {
+    display: none !important;
+  }
+
+  .secondary-toggle-title {
     font-size: 0.74rem !important;
-    border-radius: 9px !important;
-    justify-content: center !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
+  }
+
+  .secondary-toggle-right {
+    font-size: 0.7rem !important;
+    padding: 3px 8px !important;
+  }
+
+  .stats-secondary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
   }
 
   /* Inside Date Filter Bar on Mobile: Swap Daily Total Badge to top (order: 1), Date Picker below (order: 2) */

@@ -20,19 +20,25 @@
   <link rel="icon" type="image/png" href="images/logo.png">
 
   <!-- Admin Dedicated Stylesheet -->
-  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="admin.css?v=20261110_v5">
 
   <!-- Early script to avoid layout & theme flicker on page reload -->
   <script>
     (function () {
       try {
+        // Clear legacy collapsed keys so Desktop defaults to Expanded sidebar with Logo & Brand Name
+        localStorage.removeItem('easyfinance_sidebar_rail_collapsed');
+        localStorage.removeItem('easyfinance_sidebar_rail_v2');
+
         const theme = localStorage.getItem('easyfinance_theme');
         if (theme && theme !== 'dark') {
           document.documentElement.setAttribute('data-theme', 'light');
           document.documentElement.classList.add('theme-light');
         }
-        if (localStorage.getItem('easyfinance_sidebar_rail_v2') === 'true' && window.innerWidth > 900) {
+        if (localStorage.getItem('easyfinance_sidebar_rail_v3') === 'true' && window.innerWidth > 900) {
           document.documentElement.classList.add('sidebar-init-collapsed');
+        } else {
+          document.documentElement.classList.remove('sidebar-init-collapsed');
         }
         // Immediately hide login overlay if already authenticated to eliminate reload flicker
         if (sessionStorage.getItem('easyfinance_admin_auth') === 'true') {
@@ -372,191 +378,187 @@
         </div>
       </header>
 
-      <!-- Page Container -->
+      <!-- Page Container (Modern FinTech Workspace Layout) -->
       <div class="admin-container">
 
-        <!-- 4 Stats Counters -->
-        <div class="stats-counter-row">
-          <div class="stat-counter-card">
-            <div class="stat-info">
-              <div class="stat-label" id="statLabelFinanced">ยอดปล่อยสินเชื่อรวม</div>
-              <div class="stat-val" id="statTotalFinanced">฿0</div>
-            </div>
-            <div class="stat-icon-box stat-icon-emerald" id="statIconFinanced">
-              <i class="fa-solid fa-vault"></i>
-            </div>
-          </div>
-
-          <div class="stat-counter-card">
-            <div class="stat-info">
-              <div class="stat-label" id="statLabelCollected">ยอดเก็บเงินได้แล้ว</div>
-              <div class="stat-val" id="statTotalCollected">฿0</div>
-            </div>
-            <div class="stat-icon-box stat-icon-blue" id="statIconCollected">
-              <i class="fa-solid fa-circle-check"></i>
-            </div>
-          </div>
-
-          <div class="stat-counter-card">
-            <div class="stat-info">
-              <div class="stat-label" id="statLabelOutstanding">ยอดคงค้างรอเก็บ</div>
-              <div class="stat-val" id="statTotalOutstanding">฿0</div>
-            </div>
-            <div class="stat-icon-box stat-icon-amber" id="statIconOutstanding">
-              <i class="fa-solid fa-clock-rotate-left"></i>
-            </div>
-          </div>
-
-          <div class="stat-counter-card">
-            <div class="stat-info">
-              <div class="stat-label" id="statLabelCount">สัญญาทั้งหมด</div>
-              <div class="stat-val" id="statContractsCount">0</div>
-            </div>
-            <div class="stat-icon-box stat-icon-purple" id="statIconCount">
-              <i class="fa-solid fa-users"></i>
-            </div>
-          </div>
-
-          <!-- ช่องรวมยอดค่าปรับ (Requirement 1: คลิกเปิดดูรายงานค่าปรับรายวันได้เหมือนยอดตัดดอก) -->
-          <div class="stat-counter-card" id="cardStatLateFines" style="cursor: pointer;"
-            onclick="openLateFineReportModal()" title="คลิกเพื่อดูสรุปยอดค่าปรับรายวัน">
-            <div class="stat-info">
-              <div class="stat-label" id="statLabelLateFines" style="color: #fb923c;">
-                <i class="fa-solid fa-triangle-exclamation"></i> ยอดรวมค่าปรับ
+        <!-- ====================================================================
+             SECTION 1: 4 PRIMARY KPI CARDS + COLLAPSIBLE SECONDARY REPORTS DRAWER
+             ==================================================================== -->
+        <div class="workspace-kpi-section">
+          <!-- 4 Core KPI Counters (Always Visible in 1 Clean Row) -->
+          <div class="stats-counter-row stats-primary-grid">
+            <div class="stat-counter-card">
+              <div class="stat-info">
+                <div class="stat-label" id="statLabelFinanced">ยอดปล่อยสินเชื่อรวม</div>
+                <div class="stat-val" id="statTotalFinanced">฿0</div>
               </div>
-              <div class="stat-val" id="statTotalLateFines" style="color: #fb923c;">฿0</div>
-              <div id="statLateFinesSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
-                แยกเฉพาะค่าปรับ (คลิกดูสรุปต่อวัน)</div>
+              <div class="stat-icon-box stat-icon-emerald" id="statIconFinanced">
+                <i class="fa-solid fa-vault"></i>
+              </div>
             </div>
-            <div class="stat-icon-box" id="statIconLateFines"
-              style="background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.35);">
-              <i class="fa-solid fa-triangle-exclamation"></i>
+
+            <div class="stat-counter-card">
+              <div class="stat-info">
+                <div class="stat-label" id="statLabelCollected">ยอดเก็บเงินได้แล้ว</div>
+                <div class="stat-val" id="statTotalCollected">฿0</div>
+              </div>
+              <div class="stat-icon-box stat-icon-blue" id="statIconCollected">
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+            </div>
+
+            <div class="stat-counter-card">
+              <div class="stat-info">
+                <div class="stat-label" id="statLabelOutstanding">ยอดคงค้างรอเก็บ</div>
+                <div class="stat-val" id="statTotalOutstanding">฿0</div>
+              </div>
+              <div class="stat-icon-box stat-icon-amber" id="statIconOutstanding">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+              </div>
+            </div>
+
+            <div class="stat-counter-card">
+              <div class="stat-info">
+                <div class="stat-label" id="statLabelCount">สัญญาทั้งหมด</div>
+                <div class="stat-val" id="statContractsCount">0</div>
+              </div>
+              <div class="stat-icon-box stat-icon-purple" id="statIconCount">
+                <i class="fa-solid fa-users"></i>
+              </div>
             </div>
           </div>
 
-          <!-- ช่องยอดรวมมอไซต์ (Requirement: แยกยอดออกมาต่างหาก ไม่ต้องยกยอดไปรวมกับยอดปล่อยสินเชื่อรวม) -->
-          <div class="stat-counter-card" id="cardStatMotorcycle" style="cursor: pointer;"
-            onclick="switchTab('motorcycle')" title="คลิกเพื่อดูสรุปหมวดรถมอไซต์">
-            <div class="stat-info">
-              <div class="stat-label" id="statLabelMotorcycle" style="color: #38bdf8;">
-                <i class="fa-solid fa-motorcycle"></i> ยอดรวมมอไซต์
+          <!-- Collapsible Secondary Reports & Bank Reconciliation Drawer -->
+          <div class="secondary-stats-wrapper" id="secondaryStatsWrapper">
+            <button type="button" class="secondary-stats-toggle-bar" id="btnToggleSecondaryStats"
+              onclick="window.toggleSecondaryStatsDrawer && window.toggleSecondaryStatsDrawer()"
+              aria-expanded="false">
+              <div class="secondary-toggle-left">
+                <span class="secondary-toggle-icon-badge"><i class="fa-solid fa-layer-group"></i></span>
+                <span class="secondary-toggle-title">การ์ดรายงานเสริม & กระทบยอดบัญชี</span>
+                <div class="secondary-toggle-tags">
+                  <span class="sec-tag tag-orange">ค่าปรับ</span>
+                  <span class="sec-tag tag-sky">มอไซต์</span>
+                  <span class="sec-tag tag-blue">ตัดดอก</span>
+                  <span class="sec-tag tag-emerald">เงินดาวน์</span>
+                  <span class="sec-tag tag-purple">สรุปต่อวัน</span>
+                  <span class="sec-tag tag-teal">เทียบยอดบัญชี</span>
+                </div>
               </div>
-              <div class="stat-val" id="statTotalMotorcycle" style="color: #38bdf8;">฿0</div>
-              <div id="statMotorcycleSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
-                แยกเฉพาะหมวดมอไซต์</div>
-            </div>
-            <div class="stat-icon-box" id="statIconMotorcycle"
-              style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);">
-              <i class="fa-solid fa-motorcycle"></i>
-            </div>
-          </div>
+              <div class="secondary-toggle-right">
+                <span id="secondaryStatsToggleText">แสดงการ์ดรายงาน (6)</span>
+                <i class="fa-solid fa-chevron-down" id="secondaryStatsToggleIcon"></i>
+              </div>
+            </button>
 
-          <!-- ช่องยอดรวมตัดดอก (Requirement 3.3: แยกต่างหาก ไม่รวมกับยอดปล่อยสินเชื่อรวม / ยอดเก็บเงินได้แล้ว / ยอดคงค้างรอเก็บ) -->
-          <div class="stat-counter-card" id="cardStatInterestCut" style="cursor: pointer;"
-            onclick="openInterestCutReportModal()" title="คลิกเพื่อดูสรุปยอดตัดดอกรายวัน">
-            <div class="stat-info">
-              <div class="stat-label" id="statLabelInterestCut" style="color: #38bdf8;">
-                <i class="fa-solid fa-percent"></i> ยอดรวมตัดดอก
+            <div class="stats-secondary-grid" id="secondaryStatsDrawer">
+              <!-- ช่องรวมยอดค่าปรับ -->
+              <div class="stat-counter-card" id="cardStatLateFines" style="cursor: pointer;"
+                onclick="openLateFineReportModal()" title="คลิกเพื่อดูสรุปยอดค่าปรับรายวัน">
+                <div class="stat-info">
+                  <div class="stat-label" id="statLabelLateFines" style="color: #fb923c;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> ยอดรวมค่าปรับ
+                  </div>
+                  <div class="stat-val" id="statTotalLateFines" style="color: #fb923c;">฿0</div>
+                  <div id="statLateFinesSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
+                    แยกเฉพาะค่าปรับ (คลิกดูสรุปต่อวัน)</div>
+                </div>
+                <div class="stat-icon-box" id="statIconLateFines"
+                  style="background: rgba(249, 115, 22, 0.15); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.35);">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
               </div>
-              <div class="stat-val" id="statTotalInterestCut" style="color: #38bdf8;">฿0</div>
-              <div id="statInterestCutSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
-                แยกเฉพาะตัดดอก (คลิกดูสรุปต่อวัน)</div>
-            </div>
-            <div class="stat-icon-box" id="statIconInterestCut"
-              style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);">
-              <i class="fa-solid fa-hand-holding-dollar"></i>
-            </div>
-          </div>
 
-          <!-- ช่องรวมเงินดาวน์ (แยกต่างหาก ไม่รวมกับช่องอื่น เหมือนกันกับ ยอดรวมตัดดอก) -->
-          <div class="stat-counter-card" id="cardStatDownPayment" style="cursor: pointer;"
-            onclick="openDownPaymentReportModal()" title="คลิกเพื่อดูสรุปเงินดาวน์รายวัน">
-            <div class="stat-info">
-              <div class="stat-label" id="statLabelDownPayment" style="color: #34d399;">
-                <i class="fa-solid fa-coins"></i> ช่องรวมเงินดาวน์
+              <!-- ช่องยอดรวมมอไซต์ -->
+              <div class="stat-counter-card" id="cardStatMotorcycle" style="cursor: pointer;"
+                onclick="switchTab('motorcycle')" title="คลิกเพื่อดูสรุปหมวดรถมอไซต์">
+                <div class="stat-info">
+                  <div class="stat-label" id="statLabelMotorcycle" style="color: #38bdf8;">
+                    <i class="fa-solid fa-motorcycle"></i> ยอดรวมมอไซต์
+                  </div>
+                  <div class="stat-val" id="statTotalMotorcycle" style="color: #38bdf8;">฿0</div>
+                  <div id="statMotorcycleSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
+                    แยกเฉพาะหมวดมอไซต์</div>
+                </div>
+                <div class="stat-icon-box" id="statIconMotorcycle"
+                  style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);">
+                  <i class="fa-solid fa-motorcycle"></i>
+                </div>
               </div>
-              <div class="stat-val" id="statTotalDownPayment" style="color: #34d399;">฿0</div>
-              <div id="statDownPaymentSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
-                แยกเฉพาะเงินดาวน์ (คลิกดูสรุปต่อวัน)</div>
-            </div>
-            <div class="stat-icon-box" id="statIconDownPayment"
-              style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35);">
-              <i class="fa-solid fa-sack-dollar"></i>
-            </div>
-          </div>
 
-          <!-- ช่องสรุปรวมต่อวัน (Requirement: เพิ่มอีกช่องไว้ข้างๆ ช่องรวมเงินดาวน์ สรุปยอดทั้งหมดของวัน รวมรับแล้วของ รายวัน รายอาทิตย์ รายเดือน รถมอเตอร์ไซค์) -->
-          <div class="stat-counter-card" id="cardStatDailyAllCategories" style="cursor: pointer;"
-            onclick="openDailyAllCategoriesReportModal()" title="คลิกเพื่อดูสรุปรวมรับแล้วต่อวันทุกหมวด">
-            <div class="stat-info">
-              <div class="stat-label" id="statLabelDailyAllCategories" style="color: #c084fc;">
-                <i class="fa-solid fa-calendar-check"></i> ช่องสรุปรวมต่อวัน
+              <!-- ช่องยอดรวมตัดดอก -->
+              <div class="stat-counter-card" id="cardStatInterestCut" style="cursor: pointer;"
+                onclick="openInterestCutReportModal()" title="คลิกเพื่อดูสรุปยอดตัดดอกรายวัน">
+                <div class="stat-info">
+                  <div class="stat-label" id="statLabelInterestCut" style="color: #38bdf8;">
+                    <i class="fa-solid fa-percent"></i> ยอดรวมตัดดอก
+                  </div>
+                  <div class="stat-val" id="statTotalInterestCut" style="color: #38bdf8;">฿0</div>
+                  <div id="statInterestCutSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
+                    แยกเฉพาะตัดดอก (คลิกดูสรุปต่อวัน)</div>
+                </div>
+                <div class="stat-icon-box" id="statIconInterestCut"
+                  style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);">
+                  <i class="fa-solid fa-hand-holding-dollar"></i>
+                </div>
               </div>
-              <div class="stat-val" id="statTotalDailyAllCategories" style="color: #c084fc;">฿0</div>
-              <div id="statDailyAllCategoriesSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
-                รวมรับแล้วทุกหมวด (คลิกดูสรุปต่อวัน)</div>
-            </div>
-            <div class="stat-icon-box" id="statIconDailyAllCategories"
-              style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.35);">
-              <i class="fa-solid fa-receipt"></i>
-            </div>
-          </div>
 
-          <!-- ช่องเปรียบเทียบยอดในบัญชี (Requirement: เพิ่มอีกช่องข้างๆ ช่องสรุปรวมต่อวัน คือช่องเปรียบเทียบยอดในบัญชี) -->
-          <div class="stat-counter-card" id="cardStatBankReconciliation" style="cursor: pointer;"
-            onclick="openBankReconciliationModal()" title="คลิกเพื่อเปรียบเทียบยอดในบัญชีธนาคารกับยอดรับประจำวัน">
-            <div class="stat-info">
-              <div class="stat-label" id="statLabelBankReconciliation" style="color: #14b8a6;">
-                <i class="fa-solid fa-scale-balanced"></i> ช่องเปรียบเทียบยอดในบัญชี
+              <!-- ช่องรวมเงินดาวน์ -->
+              <div class="stat-counter-card" id="cardStatDownPayment" style="cursor: pointer;"
+                onclick="openDownPaymentReportModal()" title="คลิกเพื่อดูสรุปเงินดาวน์รายวัน">
+                <div class="stat-info">
+                  <div class="stat-label" id="statLabelDownPayment" style="color: #34d399;">
+                    <i class="fa-solid fa-coins"></i> ช่องรวมเงินดาวน์
+                  </div>
+                  <div class="stat-val" id="statTotalDownPayment" style="color: #34d399;">฿0</div>
+                  <div id="statDownPaymentSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
+                    แยกเฉพาะเงินดาวน์ (คลิกดูสรุปต่อวัน)</div>
+                </div>
+                <div class="stat-icon-box" id="statIconDownPayment"
+                  style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35);">
+                  <i class="fa-solid fa-sack-dollar"></i>
+                </div>
               </div>
-              <div class="stat-val" id="statTotalBankReconciliation" style="color: #14b8a6;">฿0</div>
-              <div id="statBankReconciliationSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
-                กระทบยอดเงินในธนาคาร (คลิกดูสรุป)</div>
-            </div>
-            <div class="stat-icon-box" id="statIconBankReconciliation"
-              style="background: rgba(20, 184, 166, 0.15); color: #14b8a6; border: 1px solid rgba(20, 184, 166, 0.35);">
-              <i class="fa-solid fa-building-columns"></i>
+
+              <!-- ช่องสรุปรวมต่อวัน -->
+              <div class="stat-counter-card" id="cardStatDailyAllCategories" style="cursor: pointer;"
+                onclick="openDailyAllCategoriesReportModal()" title="คลิกเพื่อดูสรุปรวมรับแล้วต่อวันทุกหมวด">
+                <div class="stat-info">
+                  <div class="stat-label" id="statLabelDailyAllCategories" style="color: #c084fc;">
+                    <i class="fa-solid fa-calendar-check"></i> ช่องสรุปรวมต่อวัน
+                  </div>
+                  <div class="stat-val" id="statTotalDailyAllCategories" style="color: #c084fc;">฿0</div>
+                  <div id="statDailyAllCategoriesSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
+                    รวมรับแล้วทุกหมวด (คลิกดูสรุปต่อวัน)</div>
+                </div>
+                <div class="stat-icon-box" id="statIconDailyAllCategories"
+                  style="background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.35);">
+                  <i class="fa-solid fa-receipt"></i>
+                </div>
+              </div>
+
+              <!-- ช่องเปรียบเทียบยอดในบัญชี -->
+              <div class="stat-counter-card" id="cardStatBankReconciliation" style="cursor: pointer;"
+                onclick="openBankReconciliationModal()" title="คลิกเพื่อเปรียบเทียบยอดในบัญชีธนาคารกับยอดรับประจำวัน">
+                <div class="stat-info">
+                  <div class="stat-label" id="statLabelBankReconciliation" style="color: #14b8a6;">
+                    <i class="fa-solid fa-scale-balanced"></i> ช่องเปรียบเทียบยอดในบัญชี
+                  </div>
+                  <div class="stat-val" id="statTotalBankReconciliation" style="color: #14b8a6;">฿0</div>
+                  <div id="statBankReconciliationSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
+                    กระทบยอดเงินในธนาคาร (คลิกดูสรุป)</div>
+                </div>
+                <div class="stat-icon-box" id="statIconBankReconciliation"
+                  style="background: rgba(20, 184, 166, 0.15); color: #14b8a6; border: 1px solid rgba(20, 184, 166, 0.35);">
+                  <i class="fa-solid fa-building-columns"></i>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Action Bar: Search, Dashboard Overview Button & Add Contract -->
-        <div class="action-bar-header">
-          <div class="search-filter-box">
-            <div class="search-input-wrapper">
-              <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="text" id="adminSearchInput" placeholder="ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์, หรืออีเมล...">
-            </div>
-          </div>
-
-          <div class="action-bar-btn-group" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <button id="btnOpenCustomerDb" type="button" class="btn-table-action" onclick="openCustomerDatabaseModal()"
-              style="padding: 10px 16px; font-size: 0.88rem; background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.35); color: #34d399; font-weight: 600; cursor: pointer;">
-              <i class="fa-solid fa-address-book"></i>
-              <span>ฐานข้อมูลลูกค้า</span>
-            </button>
-
-            <button id="btnOpenDashboardOverview" class="btn-table-action"
-              style="padding: 10px 16px; font-size: 0.88rem; background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3); color: #93c5fd; cursor: pointer;">
-              <i class="fa-solid fa-chart-pie"></i>
-              <span>สรุปแดชบอร์ด</span>
-            </button>
-
-            <button id="btnOpenAddContract" class="btn-primary-action">
-              <i class="fa-solid fa-user-plus"></i>
-              <span>+ เพิ่มสัญญาใหม่</span>
-            </button>
-
-            <button id="btnOpenAddBadDebt" class="btn-primary-action"
-              style="display: none; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.35);">
-              <i class="fa-solid fa-triangle-exclamation"></i>
-              <span>+ เพิ่มประวัติหนี้เสีย</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 3.1 Quick Summary Category Pills (ยอดรวมรายวัน / ยอดรวมรายอาทิตย์ / ยอดรวมรายเดือน / ยอดรวมมอไซต์) -->
-        <div class="summary-pills-bar" id="summaryQuickPills">
+        <!-- Hidden Legacy Category Pills (Preserved in DOM for JS compatibility, hidden to remove visual duplication) -->
+        <div class="summary-pills-bar" id="summaryQuickPills" style="display: none !important;">
           <button class="summary-pill-btn active" id="pillDailyBtn" onclick="switchTab('daily')">
             <i class="fa-solid fa-calendar-day" style="color: var(--primary);"></i>
             <span>ยอดรวมรายวัน: <strong class="pill-val" id="quickPillDaily">฿0</strong></span>
@@ -569,18 +571,13 @@
             <i class="fa-solid fa-calendar-days" style="color: #c084fc;"></i>
             <span>ยอดรวมรายเดือน: <strong class="pill-val" id="quickPillMonthly">฿0</strong></span>
           </button>
-          <button class="summary-pill-btn" id="pillMotorcycleBtn" onclick="switchTab('motorcycle')"
-            style="border-color: rgba(56, 189, 248, 0.35);">
+          <button class="summary-pill-btn" id="pillMotorcycleBtn" onclick="switchTab('motorcycle')">
             <i class="fa-solid fa-motorcycle" style="color: #38bdf8;"></i>
-            <span>ยอดรวมมอไซต์: <strong class="pill-val" id="quickPillMotorcycle"
-                style="color: #38bdf8;">฿0</strong></span>
+            <span>ยอดรวมมอไซต์: <strong class="pill-val" id="quickPillMotorcycle">฿0</strong></span>
           </button>
-          <!-- 3.1.5 ยอดรวมค่าปรับ (คลิกเพื่อดูสรุปยอดค่าปรับรายวัน) -->
-          <button class="summary-pill-btn" id="pillLateFineBtn" onclick="openLateFineReportModal()"
-            style="border-color: rgba(251, 146, 60, 0.35);" title="คลิกเพื่อดูสรุปยอดค่าปรับรายวัน">
+          <button class="summary-pill-btn" id="pillLateFineBtn" onclick="openLateFineReportModal()">
             <i class="fa-solid fa-triangle-exclamation" style="color: #fb923c;"></i>
-            <span>ยอดรวมค่าปรับ: <strong class="pill-val" id="quickPillLateFine"
-                style="color: #fb923c;">฿0</strong></span>
+            <span>ยอดรวมค่าปรับ: <strong class="pill-val" id="quickPillLateFine">฿0</strong></span>
           </button>
         </div>
 
@@ -591,76 +588,114 @@
           </div>
         </div>
 
-        <!-- DYNAMIC SUB-TABS (ส่วนที่วงสีแดง: เปลี่ยนตามหมวดหมู่ เช่น ลูกค้าทั้งหมดของรายวัน / จ่ายแล้ว / ค้างจ่าย) -->
-        <div class="admin-tab-nav" id="adminSubTabNav">
-          <!-- Dynamic Sub-tabs will be rendered here -->
-        </div>
-
-        <!-- DATE / PERIOD FILTER BAR (Daily / Weekly / Monthly Tracker - Balanced & Proportioned) -->
-        <div class="date-filter-bar" id="dateFilterBar">
-          <!-- แถวบน: เลือกวันที่ + สเต็ปเปอร์ และยอดรวมของวัน (สมส่วน ซ้าย-ขวา) -->
-          <div class="date-filter-main-row">
-            <div class="date-filter-left">
-              <!-- Unified Single-Date Filter (สำหรับ รายวัน, รายอาทิตย์, และ รายเดือน เหมือนกันทั้งหมด) -->
-              <div class="date-input-group" id="dateFilterSingleGroup">
-                <label for="adminDateFilter" class="date-filter-label">
-                  <i class="fa-solid fa-calendar-day" id="dateFilterIcon" style="color: var(--primary);"></i>
-                  <span id="dateFilterLabelText">เลือกวันที่สรุปยอดรายวัน:</span>
-                </label>
-                <input type="date" id="adminDateFilter" class="input-admin-date">
-              </div>
-
-              <!-- Quick Navigation Buttons -->
-              <div class="date-quick-btns">
-                <button type="button" class="btn-date-quick" id="btnDatePrev" title="วันก่อนหน้า">
-                  <i class="fa-solid fa-chevron-left"></i>
-                </button>
-                <button type="button" class="btn-date-quick active" id="btnDateToday">
-                  วันนี้
-                </button>
-                <button type="button" class="btn-date-quick" id="btnDateNext" title="วันถัดไป">
-                  <i class="fa-solid fa-chevron-right"></i>
-                </button>
-              </div>
+        <!-- ====================================================================
+             SECTION 2: UNIFIED WORKSPACE CONTROL TOOLBAR
+             (รวม แท็บสถานะ + ช่องค้นหา + ปุ่มเพิ่มสัญญา + แถบเลือกวันที่ ไว้ในกล่องเดียว)
+             ==================================================================== -->
+        <div class="workspace-unified-toolbar" id="workspaceUnifiedToolbar">
+          <!-- Top Row: Status Sub-Tabs (Left) + Search & Primary Action Button (Right) -->
+          <div class="unified-toolbar-top">
+            <!-- Dynamic Sub-Tabs (ทั้งหมด / จ่ายแล้ว / ค้างจ่าย) -->
+            <div class="admin-tab-nav" id="adminSubTabNav">
+              <!-- Dynamic Sub-tabs will be rendered here -->
             </div>
 
-            <!-- ยอดรวมของช่วงเวลาที่เลือก (เด้งสรุปขึ้นมาในวงสีเขียวมรกต) -->
-            <div class="date-daily-total-badge" id="dateDailyTotalBadge">
-              <div class="daily-total-main">
-                <span class="daily-total-label" id="dateTotalMainLabel">
-                  <i class="fa-solid fa-coins" style="color: #34d399;"></i>
-                  <span id="dateTotalLabelText">ยอดรวมของวัน:</span>
-                </span>
-                <strong class="daily-total-amount" id="dailyTotalAmountVal">฿0</strong>
+            <!-- Search & Primary CTA -->
+            <div class="action-bar-header">
+              <div class="search-filter-box">
+                <div class="search-input-wrapper">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input type="text" id="adminSearchInput" placeholder="ค้นหาชื่อลูกค้า, เบอร์โทรศัพท์, หรืออีเมล...">
+                </div>
               </div>
-              <div class="daily-total-details" id="dailyTotalDetails">
-                <span class="daily-mini-chip chip-paid" id="dailyPaidAmountVal">
-                  <i class="fa-solid fa-circle-check"></i> รับแล้ว ฿0
-                </span>
-                <span class="daily-mini-chip chip-pending" id="dailyPendingAmountVal">
-                  <i class="fa-solid fa-clock"></i> รอเก็บ ฿0
-                </span>
-                <span class="daily-mini-chip chip-fine" id="dailyFineAmountVal" style="display: none; cursor: pointer;"
-                  onclick="openLateFineReportModal()" title="คลิกดูรายงานสรุปค่าปรับ">
-                  <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ฿0
-                </span>
+
+              <div class="action-bar-btn-group">
+                <!-- Hidden redundant buttons (already in Sidebar) kept in DOM for JS compatibility -->
+                <button id="btnOpenCustomerDb" type="button" class="btn-table-action" onclick="openCustomerDatabaseModal()" style="display: none !important;">
+                  <i class="fa-solid fa-address-book"></i>
+                  <span>ฐานข้อมูลลูกค้า</span>
+                </button>
+                <button id="btnOpenDashboardOverview" class="btn-table-action" style="display: none !important;">
+                  <i class="fa-solid fa-chart-pie"></i>
+                  <span>สรุปแดชบอร์ด</span>
+                </button>
+
+                <button id="btnOpenAddContract" class="btn-primary-action">
+                  <i class="fa-solid fa-user-plus"></i>
+                  <span>+ เพิ่มสัญญาใหม่</span>
+                </button>
+
+                <button id="btnOpenAddBadDebt" class="btn-primary-action"
+                  style="display: none; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.35);">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                  <span>+ เพิ่มประวัติหนี้เสีย</span>
+                </button>
               </div>
             </div>
           </div>
 
-          <!-- แถวล่าง: สรุปประจำวัน (จ่ายแล้ว / ค้างจ่าย) จับคู่กับ ความคืบหน้าการจัดเก็บ (Balance สมส่วน สวยงาม) -->
-          <div class="date-filter-summary-row">
-            <div class="date-filter-summary" id="dateFilterSummary">
-              <!-- Dynamic summary text for selected date / week / month -->
-            </div>
-            <div class="date-filter-progress-wrap" id="dateFilterProgressWrap">
-              <span class="progress-label-text">
-                <i class="fa-solid fa-chart-pie" style="color: #34d399;"></i> ความคืบหน้าการจัดเก็บ:
-              </span>
-              <div class="progress-bar-track">
-                <div class="progress-bar-fill" id="dateFilterProgressBar" style="width: 0%;"></div>
+          <!-- Bottom Row: Integrated Date Picker, Progress & Daily Summary Bar -->
+          <div class="date-filter-bar" id="dateFilterBar">
+            <div class="date-filter-main-row">
+              <div class="date-filter-left">
+                <div class="date-input-group" id="dateFilterSingleGroup">
+                  <label for="adminDateFilter" class="date-filter-label">
+                    <i class="fa-solid fa-calendar-day" id="dateFilterIcon" style="color: var(--primary);"></i>
+                    <span id="dateFilterLabelText">เลือกวันที่สรุปยอดรายวัน:</span>
+                  </label>
+                  <input type="date" id="adminDateFilter" class="input-admin-date">
+                </div>
+
+                <!-- Quick Navigation Buttons -->
+                <div class="date-quick-btns">
+                  <button type="button" class="btn-date-quick" id="btnDatePrev" title="วันก่อนหน้า">
+                    <i class="fa-solid fa-chevron-left"></i>
+                  </button>
+                  <button type="button" class="btn-date-quick active" id="btnDateToday">
+                    วันนี้
+                  </button>
+                  <button type="button" class="btn-date-quick" id="btnDateNext" title="วันถัดไป">
+                    <i class="fa-solid fa-chevron-right"></i>
+                  </button>
+                </div>
               </div>
-              <span class="progress-pct-text" id="dateFilterProgressPct">0%</span>
+
+              <!-- Compact Inline Progress & Summary -->
+              <div class="date-filter-summary-row">
+                <div class="date-filter-summary" id="dateFilterSummary"></div>
+                <div class="date-filter-progress-wrap" id="dateFilterProgressWrap">
+                  <span class="progress-label-text">
+                    <i class="fa-solid fa-chart-pie" style="color: #34d399;"></i> ความคืบหน้า:
+                  </span>
+                  <div class="progress-bar-track">
+                    <div class="progress-bar-fill" id="dateFilterProgressBar" style="width: 0%;"></div>
+                  </div>
+                  <span class="progress-pct-text" id="dateFilterProgressPct">0%</span>
+                </div>
+              </div>
+
+              <!-- Daily Total Summary Pill -->
+              <div class="date-daily-total-badge" id="dateDailyTotalBadge">
+                <div class="daily-total-main">
+                  <span class="daily-total-label" id="dateTotalMainLabel">
+                    <i class="fa-solid fa-coins" style="color: #34d399;"></i>
+                    <span id="dateTotalLabelText">ยอดรวมของวัน:</span>
+                  </span>
+                  <strong class="daily-total-amount" id="dailyTotalAmountVal">฿0</strong>
+                </div>
+                <div class="daily-total-details" id="dailyTotalDetails">
+                  <span class="daily-mini-chip chip-paid" id="dailyPaidAmountVal">
+                    <i class="fa-solid fa-circle-check"></i> รับแล้ว ฿0
+                  </span>
+                  <span class="daily-mini-chip chip-pending" id="dailyPendingAmountVal">
+                    <i class="fa-solid fa-clock"></i> รอเก็บ ฿0
+                  </span>
+                  <span class="daily-mini-chip chip-fine" id="dailyFineAmountVal" style="display: none; cursor: pointer;"
+                    onclick="openLateFineReportModal()" title="คลิกดูรายงานสรุปค่าปรับ">
+                    <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ฿0
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2721,9 +2756,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <!-- Scripts -->
-  <script src="firebase-config.js"></script>
-  <script src="bank-verification.js"></script>
-  <script src="admin.js"></script>
+  <script src="firebase-config.js?v=20261110_v5"></script>
+  <script src="bank-verification.js?v=20261110_v5"></script>
+  <script src="admin.js?v=20261110_v5"></script>
 </body>
 
 </html>
