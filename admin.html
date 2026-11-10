@@ -31,7 +31,7 @@
           document.documentElement.setAttribute('data-theme', 'light');
           document.documentElement.classList.add('theme-light');
         }
-        if (localStorage.getItem('easyfinance_sidebar_collapsed') === 'true' && window.innerWidth > 900) {
+        if (localStorage.getItem('easyfinance_sidebar_rail_v2') === 'true' && window.innerWidth > 900) {
           document.documentElement.classList.add('sidebar-init-collapsed');
         }
         // Immediately hide login overlay if already authenticated to eliminate reload flicker
@@ -159,25 +159,28 @@
        ==================================================================== -->
   <div class="admin-layout" id="adminMainLayout">
 
-    <!-- Sidebar -->
-    <aside class="admin-sidebar" id="adminSidebar">
-      <!-- Top Brand Mark & Rail Collapse Chevron -->
-      <div class="sidebar-brand">
-        <div class="sidebar-brand-icon has-img" title="Easy Wealth Finance">
-          <img src="images/logo.png" alt="Easy Wealth Finance">
+    <!-- Sidebar (Modern Premium Full Sidebar with Logo & Brand Name) -->
+    <aside class="admin-sidebar" id="adminSidebar" data-collapsed="false">
+
+      <!-- ================= 1. TOP BRAND HEADER ================= -->
+      <div class="sidebar-top-section">
+        <div class="sidebar-brand-expanded">
+          <div class="sidebar-brand-icon has-img" title="Easy Wealth Finance">
+            <img src="images/logo.png" alt="Easy Wealth Finance">
+          </div>
+          <div class="sidebar-brand-text">
+            <h2>Easy Wealth Finance</h2>
+            <span><i class="fa-solid fa-circle-check"></i> ระบบจัดการหลังบ้าน</span>
+          </div>
         </div>
-        <div class="sidebar-brand-text" data-label>
-          <h2>Easy Wealth Finance</h2>
-          <span>Admin Portal</span>
-        </div>
-        <!-- Sidebar Actions: Rail Collapse & Slide Close Button -->
-        <div class="sidebar-brand-actions">
-          <button type="button" class="btn-rail-collapse" id="btnRailCollapse" title="ย่อ / ขยายแถบข้าง (Collapse Rail)"
-            aria-label="ย่อหรือขยายแถบเมนูข้าง">
-            <i class="fa-solid fa-chevron-left" id="railCollapseIcon"></i>
+
+        <div class="sidebar-header-actions">
+          <!-- Collapse Chevron Button (Desktop: ย่อ/ขยายแถบข้าง) -->
+          <button type="button" class="btn-rail-collapse" id="btnRailCollapse" title="ย่อ/ขยายแถบเมนูด้านข้าง" aria-label="ย่อแถบข้าง">
+            <i class="fa-solid fa-angles-left" id="railCollapseIcon"></i>
           </button>
-          <button type="button" class="btn-close-sidebar" id="btnCloseSidebar" title="สไลด์ปิดแถบข้าง / ย้อนกลับ"
-            aria-label="ปิดเมนูแถบข้าง">
+          <!-- Close Button (Mobile Drawer) -->
+          <button type="button" class="btn-close-sidebar" id="btnCloseSidebar" title="ปิดเมนู" aria-label="ปิดเมนู" style="display: none;">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -186,134 +189,145 @@
       <!-- Quick Search Box -->
       <div class="sidebar-search-container">
         <div class="sidebar-search-box" title="ค้นหาเมนูในระบบ">
-          <button type="button" class="search-box-btn" id="btnSidebarSearchTrigger" title="ค้นหาเมนู"
-            aria-label="ค้นหาเมนู">
+          <button type="button" class="search-box-btn" id="btnSidebarSearchTrigger" title="ค้นหาเมนู" aria-label="ค้นหาเมนู">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
           </button>
-          <input type="text" id="sidebarSearchInput" placeholder="ค้นหาเมนู..." data-label autocomplete="off"
-            aria-label="ค้นหาเมนู">
-          <button type="button" class="btn-clear-search" id="btnClearSearch" title="ล้างการค้นหา" data-label
-            aria-label="ล้างคำค้นหา">
+          <input type="text" id="sidebarSearchInput" placeholder="ค้นหาเมนูในระบบ..." autocomplete="off" aria-label="ค้นหาเมนู">
+          <button type="button" class="btn-clear-search" id="btnClearSearch" title="ล้างการค้นหา" aria-label="ล้างคำค้นหา">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
       </div>
 
-      <nav class="sidebar-menu">
-        <!-- Group 1: Workspace -->
-        <div class="sidebar-group" id="groupWrapWorkspace">
-          <button type="button" class="sidebar-group-header" data-group="groupWorkspace" aria-expanded="true"
-            title="Workspace (การติดตามยอดชำระ)">
-            <span class="group-title" data-label>Workspace</span>
-            <i class="fa-solid fa-chevron-down caret-icon" data-label></i>
-          </button>
-          <div class="sidebar-group-list" id="groupWorkspace">
-            <a class="sidebar-item" data-tab="overview" title="สรุปแดชบอร์ดภาพรวม (Overview)"
-              data-tooltip="สรุปแดชบอร์ด">
-              <span class="sidebar-icon-glyph"><i class="fa-solid fa-chart-pie"></i></span>
-              <span class="sidebar-item-label" data-label>สรุปแดชบอร์ด (Overview)</span>
-              <i class="fa-solid fa-lock" id="iconOverviewLock" data-label
-                style="margin-left: auto; font-size: 0.72rem; color: #f59e0b; display: none;"
-                title="ต้องใช้รหัสหัวหน้า"></i>
-            </a>
-            <a class="sidebar-item active" data-tab="daily" title="สรุปรายวัน" data-tooltip="สรุปรายวัน">
-              <span class="sidebar-icon-glyph"><i class="fa-solid fa-calendar-day"></i></span>
-              <span class="sidebar-item-label" data-label>สรุปรายวัน</span>
-            </a>
-            <a class="sidebar-item" data-tab="weekly" title="สรุปรายอาทิตย์" data-tooltip="สรุปรายอาทิตย์">
-              <span class="sidebar-icon-glyph"><i class="fa-solid fa-calendar-week"></i></span>
-              <span class="sidebar-item-label" data-label>สรุปรายอาทิตย์</span>
-            </a>
-            <a class="sidebar-item" data-tab="monthly" title="สรุปรายเดือน" data-tooltip="สรุปรายเดือน">
-              <span class="sidebar-icon-glyph"><i class="fa-solid fa-calendar-days"></i></span>
-              <span class="sidebar-item-label" data-label>สรุปรายเดือน</span>
-            </a>
-            <a class="sidebar-item" data-tab="motorcycle" id="menuMotorcycle" title="หมวดรถมอไซต์"
-              data-tooltip="หมวดรถมอไซต์">
-              <span class="sidebar-icon-glyph"><i class="fa-solid fa-motorcycle" style="color: #38bdf8;"></i></span>
-              <span class="sidebar-item-label" data-label>หมวดรถมอไซต์</span>
-              <span id="motorcycleCountBadge" class="tab-count-badge" data-label
-                style="margin-left: auto; background: rgba(56, 189, 248, 0.2); color: #38bdf8; display: inline-flex;">0</span>
-            </a>
-            <a class="sidebar-item" data-tab="all" title="สัญญาทั้งหมด" data-tooltip="สัญญาทั้งหมด">
-              <span class="sidebar-icon-glyph"><i class="fa-solid fa-file-contract"></i></span>
-              <span class="sidebar-item-label" data-label>สัญญาทั้งหมด</span>
-            </a>
-            <a class="sidebar-item" id="menuCustomerDb" onclick="openCustomerDatabaseModal()" style="cursor: pointer;"
-              title="ฐานข้อมูลลูกค้า" data-tooltip="ฐานข้อมูลลูกค้า">
-              <span class="sidebar-icon-glyph"><i class="fa-solid fa-address-book" style="color: #34d399;"></i></span>
-              <span class="sidebar-item-label" data-label>ฐานข้อมูลลูกค้า</span>
-              <span id="customerCountBadge" class="tab-count-badge" data-label
-                style="margin-left: auto; background: rgba(16, 185, 129, 0.2); color: #34d399; display: inline-flex;">0</span>
-            </a>
-            <a class="sidebar-item" data-tab="bad_debt" id="menuBadDebt" title="เช็คประวัติลูกค้า"
-              data-tooltip="เช็คประวัติลูกค้า">
-              <span class="sidebar-icon-glyph"><i class="fa-solid fa-triangle-exclamation"
-                  style="color: #f87171;"></i></span>
-              <span class="sidebar-item-label" data-label>เช็คประวัติลูกค้า</span>
-              <span id="badDebtBadgeCount" class="tab-count-badge" data-label
-                style="margin-left: auto; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); display: none;">0</span>
-            </a>
-          </div>
+      <!-- ================= 2. MIDDLE NAVIGATION MENU ================= -->
+      <nav class="sidebar-menu-scroll" id="dockIslandMain">
+        <!-- Group 1: Main Menu -->
+        <div class="sidebar-group-header-wrap">
+          <span class="sidebar-group-title"><i class="fa-solid fa-layer-group"></i> เมนูหลัก (MAIN MENU)</span>
         </div>
 
-        <!-- Group 2: Insights -->
-        <div class="sidebar-group" id="groupWrapInsights">
-          <button type="button" class="sidebar-group-header" data-group="groupInsights" aria-expanded="true"
-            title="Insights (การตั้งค่าระบบ)">
-            <span class="group-title" data-label>Insights</span>
-            <i class="fa-solid fa-chevron-down caret-icon" data-label></i>
-          </button>
-          <div class="sidebar-group-list" id="groupInsights">
-            <a class="sidebar-item" id="btnMenuQrSettings" title="ตั้งค่า QR รับเงิน" data-tooltip="ตั้งค่า QR รับเงิน">
-              <span class="sidebar-icon-glyph"><i class="fa-solid fa-qrcode"></i></span>
-              <span class="sidebar-item-label" data-label>ตั้งค่า QR รับเงิน</span>
-            </a>
-            <a class="sidebar-item" id="btnMenuBankApi" title="ระบบตรวจสลิป (Bank API)"
-              data-tooltip="ระบบตรวจสลิป Bank API">
-              <span class="sidebar-icon-glyph"><i class="fa-solid fa-shield-halved"></i></span>
-              <span class="sidebar-item-label" data-label>ระบบตรวจสลิป (Bank API)</span>
-            </a>
-            <a class="sidebar-item" id="btnMenuPassSettings" title="ตั้งรหัสหัวหน้า / พนักงาน"
-              data-tooltip="ตั้งรหัสผ่าน">
-              <span class="sidebar-icon-glyph"><i class="fa-solid fa-key" style="color: #f59e0b;"></i></span>
-              <span class="sidebar-item-label" data-label>ตั้งรหัสหัวหน้า / พนักงาน</span>
-              <span data-label style="margin-left: auto; font-size: 0.7rem; color: #f59e0b; opacity: 0.85;"
-                title="ต้องใช้รหัสผ่านหัวหน้าเพื่อเข้า"><i class="fa-solid fa-lock"></i></span>
-            </a>
-            <a href="index.html" target="_blank" class="sidebar-item client-portal-link" title="เปิดดูหน้าบ้านลูกค้า"
-              data-tooltip="หน้าบ้านลูกค้า">
-              <span class="sidebar-icon-glyph"><i class="fa-solid fa-mobile-screen"></i></span>
-              <span class="sidebar-item-label" data-label>เปิดดูหน้าบ้านลูกค้า</span>
-              <i class="fa-solid fa-arrow-up-right-from-square" data-label
-                style="margin-left: auto; font-size: 0.7rem; opacity: 0.6;"></i>
-            </a>
-            <!-- Theme Toggle Item in Sidebar -->
-            <a class="sidebar-item" id="btnSidebarThemeToggle" title="สลับโหมดสี (สว่างขาว / มืด)"
-              data-tooltip="สลับโหมด ขาว/มืด" style="cursor: pointer;">
-              <span class="sidebar-icon-glyph"><i class="fa-solid fa-circle-half-stroke" id="sidebarThemeIcon"
-                  style="color: #38bdf8;"></i></span>
-              <span class="sidebar-item-label" data-label id="sidebarThemeText">เปลี่ยนเป็นโหมดสว่าง</span>
-            </a>
-          </div>
+        <!-- Overview -->
+        <a class="sidebar-item dock-btn" data-tab="overview" data-dock-tooltip="สรุปแดชบอร์ดภาพรวม (Overview)" title="สรุปแดชบอร์ดภาพรวม">
+          <span class="dock-icon-wrap icon-overview"><i class="fa-solid fa-chart-pie"></i></span>
+          <span class="sidebar-item-label">สรุปแดชบอร์ด (Overview)</span>
+          <i class="fa-solid fa-lock" id="iconOverviewLock" style="display: none;"></i>
+        </a>
+
+        <!-- Daily -->
+        <a class="sidebar-item dock-btn active" data-tab="daily" data-dock-tooltip="สรุปรายวัน" title="สรุปรายวัน">
+          <span class="dock-icon-wrap icon-daily"><i class="fa-solid fa-calendar-day"></i></span>
+          <span class="sidebar-item-label">สรุปรายวัน</span>
+        </a>
+
+        <!-- Weekly -->
+        <a class="sidebar-item dock-btn" data-tab="weekly" data-dock-tooltip="สรุปรายอาทิตย์" title="สรุปรายอาทิตย์">
+          <span class="dock-icon-wrap icon-weekly"><i class="fa-solid fa-calendar-week"></i></span>
+          <span class="sidebar-item-label">สรุปรายอาทิตย์</span>
+        </a>
+
+        <!-- Monthly -->
+        <a class="sidebar-item dock-btn" data-tab="monthly" data-dock-tooltip="สรุปรายเดือน" title="สรุปรายเดือน">
+          <span class="dock-icon-wrap icon-monthly"><i class="fa-solid fa-calendar-days"></i></span>
+          <span class="sidebar-item-label">สรุปรายเดือน</span>
+        </a>
+
+        <!-- Motorcycle -->
+        <a class="sidebar-item dock-btn" data-tab="motorcycle" id="menuMotorcycle" data-dock-tooltip="หมวดรถมอไซต์" title="หมวดรถมอไซต์">
+          <span class="dock-icon-wrap icon-motorcycle"><i class="fa-solid fa-motorcycle"></i></span>
+          <span class="sidebar-item-label">หมวดรถมอไซต์</span>
+          <span id="motorcycleCountBadge" class="dock-badge-pill" style="display: none;">0</span>
+        </a>
+
+        <!-- All Contracts -->
+        <a class="sidebar-item dock-btn" data-tab="all" data-dock-tooltip="สัญญาทั้งหมด" title="สัญญาทั้งหมด">
+          <span class="dock-icon-wrap icon-all"><i class="fa-solid fa-file-contract"></i></span>
+          <span class="sidebar-item-label">สัญญาทั้งหมด</span>
+        </a>
+
+        <!-- Customer DB -->
+        <a class="sidebar-item dock-btn" id="menuCustomerDb" onclick="openCustomerDatabaseModal()" data-dock-tooltip="ฐานข้อมูลลูกค้า" title="ฐานข้อมูลลูกค้า" style="cursor: pointer;">
+          <span class="dock-icon-wrap icon-customers"><i class="fa-solid fa-users"></i></span>
+          <span class="sidebar-item-label">ฐานข้อมูลลูกค้า</span>
+          <span id="customerCountBadge" class="dock-badge-pill" style="display: none;">0</span>
+        </a>
+
+        <!-- Bad Debt -->
+        <a class="sidebar-item dock-btn" data-tab="bad_debt" id="menuBadDebt" data-dock-tooltip="เช็คประวัติลูกค้า" title="เช็คประวัติลูกค้า">
+          <span class="dock-icon-wrap icon-baddebt"><i class="fa-solid fa-triangle-exclamation"></i></span>
+          <span class="sidebar-item-label">เช็คประวัติลูกค้า</span>
+          <span id="badDebtBadgeCount" class="dock-badge-pill" style="display: none;">0</span>
+        </a>
+
+        <!-- Divider -->
+        <div class="dock-divider"></div>
+
+        <!-- Group 2: Settings -->
+        <div class="sidebar-group-header-wrap">
+          <span class="sidebar-group-title"><i class="fa-solid fa-sliders"></i> ตั้งค่าระบบ (SETTINGS)</span>
         </div>
+
+        <!-- QR Settings -->
+        <a class="sidebar-item dock-btn" id="btnMenuQrSettings" data-dock-tooltip="ตั้งค่า QR รับเงิน" title="ตั้งค่า QR รับเงิน">
+          <span class="dock-icon-wrap icon-qr"><i class="fa-solid fa-qrcode"></i></span>
+          <span class="sidebar-item-label">ตั้งค่า QR รับเงิน</span>
+        </a>
+
+        <!-- Bank API -->
+        <a class="sidebar-item dock-btn" id="btnMenuBankApi" data-dock-tooltip="ระบบตรวจสลิป (Bank API)" title="ระบบตรวจสลิป">
+          <span class="dock-icon-wrap icon-bank"><i class="fa-solid fa-shield-halved"></i></span>
+          <span class="sidebar-item-label">ระบบตรวจสลิป (Bank API)</span>
+        </a>
+
+        <!-- Pass Settings -->
+        <a class="sidebar-item dock-btn" id="btnMenuPassSettings" data-dock-tooltip="ตั้งรหัสหัวหน้า / พนักงาน" title="ตั้งรหัสผ่าน">
+          <span class="dock-icon-wrap icon-pass"><i class="fa-solid fa-key"></i></span>
+          <span class="sidebar-item-label">ตั้งรหัสหัวหน้า / พนักงาน</span>
+        </a>
       </nav>
 
-      <!-- Pin User Chip to the Bottom -->
-      <div class="sidebar-footer">
-        <div class="sidebar-user-chip" id="sidebarUserChip" title="ผู้ใช้ปัจจุบัน (คลิกเพื่อจัดการสิทธิ์/สลับโหมด)">
+      <!-- ================= 3. BOTTOM SECTION ================= -->
+      <div class="sidebar-bottom-section" id="dockIslandBottom">
+        <!-- Theme Switcher & Client Portal Row -->
+        <div class="sidebar-utility-row">
+          <div class="dock-island dock-island-theme" id="dockIslandTheme">
+            <button type="button" class="dock-theme-btn" id="btnDockThemeLight" data-dock-tooltip="โหมดสว่าง" title="โหมดสว่าง" aria-label="โหมดสว่าง">
+              <i class="fa-solid fa-sun"></i>
+              <span class="theme-btn-text">สว่าง</span>
+            </button>
+            <button type="button" class="dock-theme-btn" id="btnDockThemeDark" data-dock-tooltip="โหมดมืด" title="โหมดมืด" aria-label="โหมดมืด">
+              <i class="fa-solid fa-moon"></i>
+              <span class="theme-btn-text">มืด</span>
+            </button>
+            <a id="btnSidebarThemeToggle" style="display: none;"></a>
+            <span id="sidebarThemeIcon" style="display: none;"></span>
+            <span id="sidebarThemeText" style="display: none;"></span>
+          </div>
+
+          <a href="index.html" target="_blank" class="sidebar-item dock-btn client-portal-link" data-dock-tooltip="เปิดดูหน้าบ้านลูกค้า" title="เปิดดูหน้าบ้านลูกค้า">
+            <span class="dock-icon-wrap"><i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+            <span class="sidebar-item-label">หน้าบ้านลูกค้า</span>
+          </a>
+        </div>
+
+        <!-- User Profile Chip -->
+        <div class="sidebar-user-chip" id="sidebarUserChip" title="คลิกเพื่อสลับสิทธิ์การใช้งาน">
           <div class="user-chip-avatar" id="sidebarUserAvatar">
             <i class="fa-solid fa-crown" id="sidebarUserAvatarIcon"></i>
           </div>
-          <div class="user-chip-info" data-label>
+          <div class="user-chip-info">
             <div class="user-chip-name" id="sidebarUserName">หัวหน้า (Manager)</div>
             <div class="user-chip-plan" id="sidebarUserPlan">Easy Wealth Finance</div>
           </div>
-          <button type="button" class="user-chip-action" id="btnSidebarRoleAction" title="สลับสิทธิ์การใช้งาน"
-            data-label aria-label="สลับสิทธิ์การใช้งาน">
+          <button type="button" class="user-chip-action" id="btnSidebarRoleAction" title="สลับสิทธิ์การใช้งาน" aria-label="สลับสิทธิ์การใช้งาน">
             <i class="fa-solid fa-arrow-right-arrow-left"></i>
           </button>
         </div>
+
+        <!-- Logout Button -->
+        <button type="button" class="dock-btn dock-btn-logout" id="btnDockLogout" onclick="document.getElementById('btnAdminLogout')?.click()" data-dock-tooltip="ออกจากระบบ" aria-label="ออกจากระบบ">
+          <span class="dock-icon-wrap"><i class="fa-solid fa-arrow-right-from-bracket"></i></span>
+          <span class="sidebar-item-label">ออกจากระบบหลังบ้าน</span>
+        </button>
       </div>
     </aside>
 
@@ -669,6 +683,33 @@
 
       </div>
     </div>
+
+    <!-- ====================================================================
+         MOBILE BOTTOM NAVIGATION BAR (แสดงเฉพาะเมื่อเข้าผ่านมือถือ <= 900px)
+         รายวัน | รายอาทิตย์ | รายเดือน | รถมอเตอร์ไซค์ | เมนูเพิ่มเติม
+         ==================================================================== -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="แถบเมนูด้านล่างสำหรับมือถือ">
+      <button type="button" class="mobile-bottom-nav-btn active" data-mobile-tab="daily" onclick="switchTab('daily')">
+        <span class="mobile-nav-icon"><i class="fa-solid fa-calendar-day"></i></span>
+        <span class="mobile-nav-label">รายวัน</span>
+      </button>
+      <button type="button" class="mobile-bottom-nav-btn" data-mobile-tab="weekly" onclick="switchTab('weekly')">
+        <span class="mobile-nav-icon"><i class="fa-solid fa-calendar-week"></i></span>
+        <span class="mobile-nav-label">รายอาทิตย์</span>
+      </button>
+      <button type="button" class="mobile-bottom-nav-btn" data-mobile-tab="monthly" onclick="switchTab('monthly')">
+        <span class="mobile-nav-icon"><i class="fa-solid fa-calendar-days"></i></span>
+        <span class="mobile-nav-label">รายเดือน</span>
+      </button>
+      <button type="button" class="mobile-bottom-nav-btn" data-mobile-tab="motorcycle" onclick="switchTab('motorcycle')">
+        <span class="mobile-nav-icon"><i class="fa-solid fa-motorcycle"></i></span>
+        <span class="mobile-nav-label">รถมอเตอร์ไซค์</span>
+      </button>
+      <button type="button" class="mobile-bottom-nav-btn mobile-nav-menu-trigger" id="btnMobileBottomMenu" onclick="document.getElementById('btnSidebarToggle')?.click()">
+        <span class="mobile-nav-icon"><i class="fa-solid fa-bars"></i></span>
+        <span class="mobile-nav-label">เมนูอื่น</span>
+      </button>
+    </nav>
   </div>
 
   <!-- ====================================================================

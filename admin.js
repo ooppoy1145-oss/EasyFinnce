@@ -1019,7 +1019,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const allSidebarLinks = document.querySelectorAll(".sidebar-item");
   const sidebarUserChip = document.getElementById("sidebarUserChip");
   const btnSidebarRoleAction = document.getElementById("btnSidebarRoleAction");
-  const STORAGE_KEY_SIDEBAR_COLLAPSED = "easyfinance_sidebar_collapsed";
+  const STORAGE_KEY_SIDEBAR_COLLAPSED = "easyfinance_sidebar_rail_v2";
 
   function setSidebarRailCollapsed(collapsed, save = true) {
     if (!adminSidebar) return;
@@ -1028,7 +1028,11 @@ document.addEventListener("DOMContentLoaded", () => {
     document.documentElement.classList.toggle("sidebar-init-collapsed", collapsed);
     if (btnRailCollapse) {
       btnRailCollapse.setAttribute("aria-label", collapsed ? "ขยายแถบข้าง" : "ย่อแถบข้าง");
-      btnRailCollapse.title = collapsed ? "ขยายแถบข้าง (Expand Rail)" : "ย่อแถบข้าง (Collapse Rail)";
+      btnRailCollapse.title = collapsed ? "ขยายแถบเมนูด้านข้าง" : "ย่อแถบเมนูด้านข้าง";
+    }
+    const railIcon = document.getElementById("railCollapseIcon");
+    if (railIcon) {
+      railIcon.className = collapsed ? "fa-solid fa-angles-right" : "fa-solid fa-angles-left";
     }
     if (save) {
       try {
@@ -1037,13 +1041,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Restore rail width from localStorage
+  // Restore rail width from localStorage (defaults to expanded so logo & brand name are visible)
   try {
     const isSavedCollapsed = localStorage.getItem(STORAGE_KEY_SIDEBAR_COLLAPSED) === "true";
-    if (isSavedCollapsed && window.innerWidth > 900) {
-      setSidebarRailCollapsed(true, false);
+    if (window.innerWidth > 900) {
+      setSidebarRailCollapsed(isSavedCollapsed, false);
+    } else {
+      setSidebarRailCollapsed(false, false);
     }
   } catch (e) { }
+
+  // Allow clicking brand icon when collapsed on desktop to expand sidebar
+  const sidebarBrandExpanded = document.querySelector(".sidebar-brand-expanded");
+  if (sidebarBrandExpanded) {
+    sidebarBrandExpanded.addEventListener("click", () => {
+      if (window.innerWidth > 900 && adminSidebar && adminSidebar.classList.contains("collapsed")) {
+        setSidebarRailCollapsed(false, true);
+      }
+    });
+  }
 
   // Chevron collapse button
   if (btnRailCollapse) {
@@ -1101,7 +1117,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btnClearSearch.style.display = query ? "inline-flex" : "none";
       }
 
-      const items = document.querySelectorAll(".sidebar-group-list .sidebar-item");
+      const items = document.querySelectorAll(".sidebar-group-list .sidebar-item, .sidebar-menu-scroll .sidebar-item, .sidebar-item[data-tab]");
       items.forEach((item) => {
         const text = item.textContent.toLowerCase();
         if (!query || text.includes(query)) {
@@ -1209,6 +1225,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
       applyTheme(currentTheme === "light" ? "dark" : "light", true);
     });
+  }
+
+  const btnDockThemeLight = document.getElementById("btnDockThemeLight");
+  const btnDockThemeDark = document.getElementById("btnDockThemeDark");
+  if (btnDockThemeLight) {
+    btnDockThemeLight.addEventListener("click", () => applyTheme("light", true));
+  }
+  if (btnDockThemeDark) {
+    btnDockThemeDark.addEventListener("click", () => applyTheme("dark", true));
   }
 
   // --- HELPER: THAI DATE FORMATTER ---
@@ -1762,6 +1787,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (pillMonthlyBtn) pillMonthlyBtn.classList.toggle("active", tabName === "monthly");
     if (pillMotorcycleBtn) pillMotorcycleBtn.classList.toggle("active", tabName === "motorcycle");
 
+    // Update active class on Mobile Bottom Navigation Bar buttons
+    document.querySelectorAll(".mobile-bottom-nav-btn[data-mobile-tab]").forEach((btn) => {
+      btn.classList.toggle("active", btn.getAttribute("data-mobile-tab") === tabName);
+    });
+
     const titles = {
       overview: "สรุปแดชบอร์ดภาพรวมการเงิน (Overview Dashboard)",
       daily: "สรุปการเก็บเงินรายวัน (Daily Tracker)",
@@ -1973,6 +2003,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (currentTab === "bad_debt") {
       if (cardStatLateFines) cardStatLateFines.style.display = "none";
+      if (cardStatMotorcycle) cardStatMotorcycle.style.display = "none";
       if (cardStatInterestCut) cardStatInterestCut.style.display = "none";
       if (cardStatDownPayment) cardStatDownPayment.style.display = "none";
       if (cardStatDailyAllCategories) cardStatDailyAllCategories.style.display = "none";
@@ -2535,6 +2566,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       </div>
     `;
+
   }
 
   // --- 3.2 RENDER DYNAMIC SUB-TABS (Requirement 1 & 2) ---
@@ -2845,6 +2877,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       renderBadDebtTable(filtered);
+      applyMobileTableDataLabels();
       return;
     }
 
@@ -2925,6 +2958,55 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       renderAllContractsTable(filtered);
     }
+
+    // 5. Attach data-label & mobile card classes for Mobile Card View (Desktop remains untouched)
+    applyMobileTableDataLabels();
+  }
+
+  function applyMobileTableDataLabels() {
+    if (!tableBody) return;
+
+    const labelMaps = {
+      daily: ["ลูกค้า", "สิ่งที่ผ่อน", "ค่างวด/วัน", "สถานะวันนี้", "คงเหลือรวม", "จัดการ"],
+      motorcycle: ["ลูกค้า", "รุ่นรถมอเตอร์ไซค์", "ค่างวด", "สถานะวันนี้", "คงเหลือรวม", "จัดการ"],
+      weekly: ["ลูกค้า", "สิ่งที่ผ่อน", "กำหนดชำระ", "ค่างวด/สัปดาห์", "สถานะวันนี้", "คงเหลือรวม", "จัดการ"],
+      monthly: ["ลูกค้า", "สิ่งที่ผ่อน", "กำหนดชำระ", "ค่างวด/เดือน", "สถานะวันนี้", "คงเหลือรวม", "จัดการ"],
+      all: ["รหัสสัญญา", "ลูกค้า", "หมวด / สิ่งที่ผ่อน", "ยอดรวม (บาท)", "ความคืบหน้า", "สถานะ", "จัดการ"],
+      overview: ["รหัสสัญญา", "ลูกค้า", "หมวด / สิ่งที่ผ่อน", "ยอดรวม (บาท)", "ความคืบหน้า", "สถานะ", "จัดการ"],
+      bad_debt: ["วันที่บันทึก", "ชื่อลูกหนี้", "เบอร์โทร & ที่อยู่", "สิ่งที่ผ่อน / ยอดหนี้", "หมวดหมู่", "หมายเหตุ", "จัดการ"]
+    };
+
+    const labels = labelMaps[currentTab] || labelMaps.all;
+    const rows = tableBody.querySelectorAll("tr");
+
+    rows.forEach((tr) => {
+      const cells = tr.querySelectorAll("td");
+      if (cells.length === 1 && cells[0].hasAttribute("colspan")) {
+        tr.classList.add("mobile-empty-row");
+        return;
+      }
+      const middleCells = [];
+      cells.forEach((td, idx) => {
+        td.classList.remove("td-mobile-header", "td-mobile-actions", "td-mobile-status", "td-mobile-field", "td-mobile-full");
+        if (labels[idx]) {
+          td.setAttribute("data-label", labels[idx]);
+        }
+        if (td.querySelector(".customer-cell") || td.querySelector(".customer-info")) {
+          td.classList.add("td-mobile-header");
+        } else if (td.querySelector(".table-actions")) {
+          td.classList.add("td-mobile-actions");
+        } else if (td.querySelector(".status-badge")) {
+          td.classList.add("td-mobile-status");
+          middleCells.push(td);
+        } else {
+          td.classList.add("td-mobile-field");
+          middleCells.push(td);
+        }
+      });
+      if (middleCells.length % 2 === 1) {
+        middleCells[middleCells.length - 1].classList.add("td-mobile-full");
+      }
+    });
   }
 
   // --- 4.1 DAILY TABLE (Requirement 2: กรองตามวันที่เลือก) ---
