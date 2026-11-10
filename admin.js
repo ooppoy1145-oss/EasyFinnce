@@ -267,7 +267,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const iconToggleDeletePass = document.getElementById("iconToggleDeletePass");
 
   // State
-  let currentTab = "daily"; // 'overview' | 'daily' | 'weekly' | 'monthly' | 'all' | 'bad_debt'
+  let currentTab = "overview"; // 'overview' | 'daily' | 'weekly' | 'monthly' | 'all' | 'bad_debt'
   let currentSubFilter = "all"; // 'all' | 'paid' | 'pending' | 'bad_debt' | 'blacklist' | 'delayed'
   // Helper: Local date & month strings (ป้องกัน Timezone drift)
   function getLocalDateStr(d = new Date()) {
@@ -955,6 +955,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function initAdminDashboard() {
     updateRoleUI();
     updateCloudStatus();
+    document.body.setAttribute("data-active-tab", currentTab);
+    switchTab(currentTab);
     renderStatsCounters();
     renderSubTabs();
     renderActiveTabTable();
@@ -1758,21 +1760,11 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // Tab switching handler (Requirement 4: Overview tab requires manager password)
+  // Tab switching handler
   function switchTab(tabName) {
-    if (tabName === "overview" && !isManagerLoggedIn()) {
-      openManagerAuthModal(() => {
-        switchTab("overview");
-      }, {
-        title: "สรุปแดชบอร์ดภาพรวมการเงิน",
-        desc: 'หน้านี้และยอดสรุปสงวนสิทธิ์เฉพาะหัวหน้าเท่านั้น<br><span style="color: #cbd5e1;">กรุณาระบุรหัสผ่านหัวหน้าเพื่อปลดล็อกเข้าดูข้อมูล</span>',
-        icon: "fa-solid fa-chart-pie"
-      });
-      return;
-    }
-
     currentTab = tabName;
     currentSubFilter = "all"; // Reset sub-tab filter on tab change
+    document.body.setAttribute("data-active-tab", tabName);
 
     // Update active class on sidebar items
     sidebarItems.forEach((item) => {
@@ -1795,7 +1787,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const titles = {
-      overview: "สรุปแดชบอร์ดภาพรวมการเงิน (Overview Dashboard)",
+      overview: "แดชบอร์ดภาพรวมการเงิน (Executive Dashboard)",
       daily: "สรุปการเก็บเงินรายวัน (Daily Tracker)",
       weekly: "สรุปการเก็บเงินรายอาทิตย์ (Weekly Tracker)",
       monthly: "สรุปการเก็บเงินรายเดือน (Monthly Tracker)",
@@ -1805,13 +1797,29 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     activeTabTitle.textContent = titles[tabName] || "จัดการสัญญา";
 
-    // Toggle Overview Section
+    // Toggle Overview Section vs Standard Working Workspace Section
+    const workspaceKpiSection = document.querySelector(".workspace-kpi-section");
+    const workspaceToolbar = document.getElementById("workspaceUnifiedToolbar");
+    const dataTableCard = document.getElementById("dataTableCard");
+    const contractsCardsContainer = document.getElementById("contractsCardsContainer");
+    const paginationContainer = document.getElementById("paginationContainer");
+
     if (dashboardOverviewSection) {
       if (tabName === "overview") {
         dashboardOverviewSection.classList.remove("hidden");
+        if (workspaceKpiSection) workspaceKpiSection.style.display = "none";
+        if (workspaceToolbar) workspaceToolbar.style.display = "none";
+        if (dataTableCard) dataTableCard.style.display = "none";
+        if (contractsCardsContainer) contractsCardsContainer.style.display = "none";
+        if (paginationContainer) paginationContainer.style.display = "none";
         renderOverviewCards();
       } else {
         dashboardOverviewSection.classList.add("hidden");
+        if (workspaceKpiSection) workspaceKpiSection.style.display = "none";
+        if (workspaceToolbar) workspaceToolbar.style.display = "";
+        if (dataTableCard) dataTableCard.style.display = "";
+        if (contractsCardsContainer) contractsCardsContainer.style.display = "";
+        if (paginationContainer) paginationContainer.style.display = "";
       }
     }
 
@@ -2018,11 +2026,20 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   function renderStatsCounters() {
+    const workspaceKpiSection = document.querySelector(".workspace-kpi-section");
+    const secondaryStatsWrapper = document.getElementById("secondaryStatsWrapper");
+
+    if (workspaceKpiSection) workspaceKpiSection.style.display = "none";
+    if (secondaryStatsWrapper) secondaryStatsWrapper.style.display = "none";
+
+    if (currentTab === "overview") {
+      return;
+    }
+
     const statLabelFinanced = document.getElementById("statLabelFinanced");
     const statLabelCollected = document.getElementById("statLabelCollected");
     const statLabelOutstanding = document.getElementById("statLabelOutstanding");
     const statLabelCount = document.getElementById("statLabelCount");
-    const secondaryStatsWrapper = document.getElementById("secondaryStatsWrapper");
 
     if (currentTab === "bad_debt") {
       if (secondaryStatsWrapper) secondaryStatsWrapper.style.display = "none";
@@ -2377,221 +2394,525 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // --- 3.1 RENDER DASHBOARD OVERVIEW CARDS (Requirement 3.1) ---
+  // Helper: Escape HTML strings safely
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // --- ACTIVITY AUDIT LOGGER FOR ORDERS OVERVIEW (Requirement 7) ---
+  function recordActivityLog(actionTitle, actionDesc, iconType = "check", badgeColor = "emerald") {
+    try {
+      const logs = JSON.parse(localStorage.getItem("easyfinance_activity_log") || "[]");
+      const now = new Date();
+      const newEntry = {
+        id: "act_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
+        title: actionTitle,
+        desc: actionDesc,
+        icon: iconType,
+        color: badgeColor,
+        timestamp: now.toISOString(),
+        timeFormatted: now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + " น.",
+        dateFormatted: now.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })
+      };
+      logs.unshift(newEntry);
+      if (logs.length > 60) logs.length = 60;
+      localStorage.setItem("easyfinance_activity_log", JSON.stringify(logs));
+      if (currentTab === "overview") {
+        renderOverviewCards();
+      }
+    } catch (e) { }
+  }
+  window.recordActivityLog = recordActivityLog;
+
+  function getTodayActivityLogs() {
+    let logs = [];
+    try {
+      logs = JSON.parse(localStorage.getItem("easyfinance_activity_log") || "[]");
+    } catch (e) { }
+
+    const todayStr = getLocalDateStr(new Date());
+    let todayLogs = logs.filter((l) => l.timestamp && l.timestamp.startsWith(todayStr));
+
+    // If no recent actions in localStorage today yet, generate real meaningful activity from contracts!
+    if (todayLogs.length === 0) {
+      const contracts = window.easyFinanceDB ? window.easyFinanceDB.getContracts() : [];
+
+      // 1. Any installment paid on today's date
+      contracts.forEach((c) => {
+        (c.installments || []).forEach((inst) => {
+          if (inst.status === "paid" && inst.paidDate && inst.paidDate.includes(todayStr)) {
+            todayLogs.push({
+              id: "inst_" + c.id + "_" + inst.installmentNo,
+              title: `ชำระค่างวด: คุณ${c.name} (งวดที่ ${inst.installmentNo})`,
+              desc: `รับชำระ ฿${Number(inst.amount).toLocaleString()} บาท • ${c.itemFinanced || "สินเชื่อ"}`,
+              icon: "check",
+              color: "emerald",
+              timeFormatted: "วันนี้",
+              dateFormatted: "วันนี้"
+            });
+          }
+        });
+        if (c.createdAt && c.createdAt.includes(todayStr)) {
+          todayLogs.push({
+            id: "created_" + c.id,
+            title: `เพิ่มสัญญาใหม่: คุณ${c.name}`,
+            desc: `สัญญา ${c.contractId || c.id} วงเงิน ฿${Number(c.totalAmount).toLocaleString()} บาท`,
+            icon: "cart",
+            color: "pink",
+            timeFormatted: "วันนี้",
+            dateFormatted: "วันนี้"
+          });
+        }
+      });
+
+      // 2. If still empty, present latest recorded actions from database
+      if (todayLogs.length === 0 && contracts.length > 0) {
+        contracts.slice(0, 6).forEach((c, idx) => {
+          const paidInsts = (c.installments || []).filter((i) => i.status === "paid");
+          const lastPaid = paidInsts[paidInsts.length - 1];
+          if (lastPaid) {
+            todayLogs.push({
+              id: "sample_paid_" + c.id,
+              title: `บันทึกชำระค่างวด: คุณ${c.name}`,
+              desc: `ยอด ฿${Number(lastPaid.amount).toLocaleString()} บาท (งวดที่ ${lastPaid.installmentNo}) • ${c.paymentFrequency || "รายวัน"}`,
+              icon: "bell",
+              color: "emerald",
+              timeFormatted: "ล่าสุด",
+              dateFormatted: "วันนี้"
+            });
+          } else {
+            todayLogs.push({
+              id: "sample_created_" + c.id,
+              title: `เปิดสัญญา: คุณ${c.name}`,
+              desc: `${c.itemFinanced || "สัญญาเงินกู้"} ยอด ฿${Number(c.totalAmount).toLocaleString()} บาท`,
+              icon: "file",
+              color: "blue",
+              timeFormatted: "ล่าสุด",
+              dateFormatted: "วันนี้"
+            });
+          }
+        });
+      }
+    }
+
+    return todayLogs;
+  }
+
+  // --- 3.1 RENDER SOFT UI DASHBOARD OVERVIEW (Requirement 1 - 7) ---
 
   function renderOverviewCards() {
-    if (!overviewCardsGrid) return;
+    if (!dashboardOverviewSection) return;
 
+    const isManager = isManagerLoggedIn();
+    const contracts = window.easyFinanceDB ? window.easyFinanceDB.getContracts() : [];
+
+    // Category statistics
     const dailyStats = getCategoryStats("daily");
     const weeklyStats = getCategoryStats("weekly");
     const monthlyStats = getCategoryStats("monthly");
+    const motoStats = getMotorcycleStats();
 
-    overviewCardsGrid.innerHTML = `
-      <!-- 1. การ์ดสรุปยอดรวมรายวัน -->
-      <div class="overview-summary-card card-daily-theme">
-        <div class="overview-card-header">
-          <div class="overview-card-header-left">
-            <div class="overview-card-icon">
-              <i class="fa-solid fa-calendar-day"></i>
+    // General portfolio (excluding motorcycle)
+    const genFinanced = dailyStats.totalFinanced + weeklyStats.totalFinanced + monthlyStats.totalFinanced;
+    const genCollected = dailyStats.totalCollected + weeklyStats.totalCollected + monthlyStats.totalCollected;
+    const genOutstanding = dailyStats.totalOutstanding + weeklyStats.totalOutstanding + monthlyStats.totalOutstanding;
+    const genContractsCount = dailyStats.contractsCount + weeklyStats.contractsCount + monthlyStats.contractsCount;
+
+    // Grand Total (ALL 4 categories: Daily + Weekly + Monthly + Motorcycle)
+    const grandFinanced = genFinanced + motoStats.totalFinanced;
+    const grandCollected = genCollected + motoStats.totalCollected;
+    const grandOutstanding = genOutstanding + motoStats.totalOutstanding;
+    const grandTotalContracts = contracts.length;
+    const grandPaidContracts = dailyStats.paidCustomersCount + weeklyStats.paidCustomersCount + monthlyStats.paidCustomersCount + motoStats.paidCustomersCount;
+    const grandPendingContracts = Math.max(0, grandTotalContracts - grandPaidContracts);
+    const grandCollectionRate = grandFinanced > 0 ? Math.round((grandCollected / grandFinanced) * 100) : 0;
+
+    // --- 1. POPULATE ROW 1: 4 STAT CARDS ---
+    const softStatFinanced = document.getElementById("softStatFinanced");
+    const softStatCollected = document.getElementById("softStatCollected");
+    const softStatCollectedRate = document.getElementById("softStatCollectedRate");
+    const softStatOutstanding = document.getElementById("softStatOutstanding");
+    const softStatGeneralCount = document.getElementById("softStatGeneralCount");
+
+    if (softStatFinanced) {
+      softStatFinanced.textContent = isManager ? `฿${genFinanced.toLocaleString()}` : "฿******";
+    }
+    if (softStatCollected) {
+      softStatCollected.textContent = isManager ? `฿${genCollected.toLocaleString()}` : "฿******";
+    }
+    if (softStatCollectedRate) {
+      const genRate = genFinanced > 0 ? Math.round((genCollected / genFinanced) * 100) : 0;
+      softStatCollectedRate.textContent = `${genRate}%`;
+    }
+    if (softStatOutstanding) {
+      softStatOutstanding.textContent = isManager ? `฿${genOutstanding.toLocaleString()}` : "฿******";
+    }
+    if (softStatGeneralCount) {
+      softStatGeneralCount.textContent = `${genContractsCount} สัญญา`;
+    }
+
+    // --- 2. POPULATE ROW 2: BUILT BY DEVELOPERS (Grand Portfolio) ---
+    const softGrandFinanced = document.getElementById("softGrandFinanced");
+    const softGrandCollected = document.getElementById("softGrandCollected");
+    const softGrandOutstanding = document.getElementById("softGrandOutstanding");
+    const softGrandTotalContracts = document.getElementById("softGrandTotalContracts");
+    const softGrandPaidContracts = document.getElementById("softGrandPaidContracts");
+    const softGrandPendingContracts = document.getElementById("softGrandPendingContracts");
+    const softGrandCollectionRate = document.getElementById("softGrandCollectionRate");
+    const softGrandProgressBar = document.getElementById("softGrandProgressBar");
+
+    if (softGrandFinanced) softGrandFinanced.textContent = isManager ? `฿${grandFinanced.toLocaleString()}` : "฿******";
+    if (softGrandCollected) softGrandCollected.textContent = isManager ? `฿${grandCollected.toLocaleString()}` : "฿******";
+    if (softGrandOutstanding) softGrandOutstanding.textContent = isManager ? `฿${grandOutstanding.toLocaleString()}` : "฿******";
+    if (softGrandTotalContracts) softGrandTotalContracts.textContent = grandTotalContracts;
+    if (softGrandPaidContracts) softGrandPaidContracts.textContent = grandPaidContracts;
+    if (softGrandPendingContracts) softGrandPendingContracts.textContent = grandPendingContracts;
+    if (softGrandCollectionRate) softGrandCollectionRate.textContent = `${grandCollectionRate}% (${grandPaidContracts}/${grandTotalContracts} ราย)`;
+    if (softGrandProgressBar) softGrandProgressBar.style.width = `${grandCollectionRate}%`;
+
+    // --- 3. POPULATE ROW 3: ACTIVE USERS (Dark Bar Chart + 4 Categories) ---
+    // Bar Chart inside #softCategoryChartContainer
+    const chartWrap = document.getElementById("softCategoryChartContainer");
+    if (chartWrap) {
+      const maxFinanced = Math.max(dailyStats.totalFinanced, weeklyStats.totalFinanced, monthlyStats.totalFinanced, motoStats.totalFinanced, 1);
+      const hDaily = Math.max(16, Math.round((dailyStats.totalFinanced / maxFinanced) * 115));
+      const hWeekly = Math.max(16, Math.round((weeklyStats.totalFinanced / maxFinanced) * 115));
+      const hMonthly = Math.max(16, Math.round((monthlyStats.totalFinanced / maxFinanced) * 115));
+      const hMoto = Math.max(16, Math.round((motoStats.totalFinanced / maxFinanced) * 115));
+
+      chartWrap.innerHTML = `
+        <div class="soft-bar-col" onclick="switchTab('daily')" style="cursor: pointer;" title="คลิกดูรายวัน: ฿${dailyStats.totalFinanced.toLocaleString()}">
+          <span class="soft-bar-val">${isManager ? '฿' + Math.round(dailyStats.totalFinanced / 1000) + 'k' : '***'}</span>
+          <div class="soft-bar-track">
+            <div class="soft-bar-fill bar-daily" style="height: ${hDaily}px;"></div>
+          </div>
+          <span class="soft-bar-label"><i class="fa-solid fa-calendar-day" style="color: #34d399;"></i> รายวัน</span>
+        </div>
+        <div class="soft-bar-col" onclick="switchTab('weekly')" style="cursor: pointer;" title="คลิกดูรายอาทิตย์: ฿${weeklyStats.totalFinanced.toLocaleString()}">
+          <span class="soft-bar-val">${isManager ? '฿' + Math.round(weeklyStats.totalFinanced / 1000) + 'k' : '***'}</span>
+          <div class="soft-bar-track">
+            <div class="soft-bar-fill bar-weekly" style="height: ${hWeekly}px;"></div>
+          </div>
+          <span class="soft-bar-label"><i class="fa-solid fa-calendar-week" style="color: #60a5fa;"></i> รายอาทิตย์</span>
+        </div>
+        <div class="soft-bar-col" onclick="switchTab('monthly')" style="cursor: pointer;" title="คลิกดูรายเดือน: ฿${monthlyStats.totalFinanced.toLocaleString()}">
+          <span class="soft-bar-val">${isManager ? '฿' + Math.round(monthlyStats.totalFinanced / 1000) + 'k' : '***'}</span>
+          <div class="soft-bar-track">
+            <div class="soft-bar-fill bar-monthly" style="height: ${hMonthly}px;"></div>
+          </div>
+          <span class="soft-bar-label"><i class="fa-solid fa-calendar-days" style="color: #c084fc;"></i> รายเดือน</span>
+        </div>
+        <div class="soft-bar-col" onclick="switchTab('motorcycle')" style="cursor: pointer;" title="คลิกดูมอไซต์: ฿${motoStats.totalFinanced.toLocaleString()}">
+          <span class="soft-bar-val">${isManager ? '฿' + Math.round(motoStats.totalFinanced / 1000) + 'k' : '***'}</span>
+          <div class="soft-bar-track">
+            <div class="soft-bar-fill bar-moto" style="height: ${hMoto}px;"></div>
+          </div>
+          <span class="soft-bar-label"><i class="fa-solid fa-motorcycle" style="color: #38bdf8;"></i> มอไซต์</span>
+        </div>
+      `;
+    }
+
+    // 4 Metric Columns
+    const softCatDailyAmount = document.getElementById("softCatDailyAmount");
+    const softCatDailyMeta = document.getElementById("softCatDailyMeta");
+    const softCatDailyBar = document.getElementById("softCatDailyBar");
+    if (softCatDailyAmount) softCatDailyAmount.textContent = isManager ? `฿${dailyStats.totalFinanced.toLocaleString()}` : "฿******";
+    if (softCatDailyMeta) softCatDailyMeta.textContent = `${dailyStats.contractsCount} ราย (เก็บแล้ว ฿${isManager ? dailyStats.totalCollected.toLocaleString() : '***'})`;
+    if (softCatDailyBar) softCatDailyBar.style.width = `${dailyStats.collectionRate}%`;
+
+    const softCatWeeklyAmount = document.getElementById("softCatWeeklyAmount");
+    const softCatWeeklyMeta = document.getElementById("softCatWeeklyMeta");
+    const softCatWeeklyBar = document.getElementById("softCatWeeklyBar");
+    if (softCatWeeklyAmount) softCatWeeklyAmount.textContent = isManager ? `฿${weeklyStats.totalFinanced.toLocaleString()}` : "฿******";
+    if (softCatWeeklyMeta) softCatWeeklyMeta.textContent = `${weeklyStats.contractsCount} ราย (เก็บแล้ว ฿${isManager ? weeklyStats.totalCollected.toLocaleString() : '***'})`;
+    if (softCatWeeklyBar) softCatWeeklyBar.style.width = `${weeklyStats.collectionRate}%`;
+
+    const softCatMonthlyAmount = document.getElementById("softCatMonthlyAmount");
+    const softCatMonthlyMeta = document.getElementById("softCatMonthlyMeta");
+    const softCatMonthlyBar = document.getElementById("softCatMonthlyBar");
+    if (softCatMonthlyAmount) softCatMonthlyAmount.textContent = isManager ? `฿${monthlyStats.totalFinanced.toLocaleString()}` : "฿******";
+    if (softCatMonthlyMeta) softCatMonthlyMeta.textContent = `${monthlyStats.contractsCount} ราย (เก็บแล้ว ฿${isManager ? monthlyStats.totalCollected.toLocaleString() : '***'})`;
+    if (softCatMonthlyBar) softCatMonthlyBar.style.width = `${monthlyStats.collectionRate}%`;
+
+    const softCatMotoAmount = document.getElementById("softCatMotoAmount");
+    const softCatMotoMeta = document.getElementById("softCatMotoMeta");
+    const softCatMotoBar = document.getElementById("softCatMotoBar");
+    if (softCatMotoAmount) softCatMotoAmount.textContent = isManager ? `฿${motoStats.totalFinanced.toLocaleString()}` : "฿******";
+    if (softCatMotoMeta) softCatMotoMeta.textContent = `${motoStats.contractsCount} ราย (เก็บแล้ว ฿${isManager ? motoStats.totalCollected.toLocaleString() : '***'})`;
+    if (softCatMotoBar) softCatMotoBar.style.width = `${motoStats.collectionRate}%`;
+
+    // --- 4. POPULATE ROW 4: PROJECTS TABLE (6 ROWS) ---
+    let totalLateFinesCollected = 0;
+    let totalLateFinesPending = 0;
+    let totalInterestCutCollected = 0;
+    let totalInterestCutCount = 0;
+    let totalDownPaymentCollected = 0;
+    let totalDownPaymentCount = 0;
+
+    contracts.forEach((c) => {
+      const downPayment = Number(c.downPayment) || 0;
+      if (downPayment > 0) {
+        totalDownPaymentCollected += downPayment;
+        totalDownPaymentCount++;
+      }
+      const contractCollectedFine = Number(c.totalLateFinesCollected) || 0;
+      let instCollectedFine = 0;
+      (c.installments || []).forEach((inst) => {
+        if (inst.paidLateFine) instCollectedFine += Number(inst.paidLateFine) || 0;
+      });
+      totalLateFinesCollected += Math.max(contractCollectedFine, instCollectedFine);
+      totalLateFinesPending += Number(c.lateFine) || 0;
+
+      if (Array.isArray(c.interestCutHistory)) {
+        c.interestCutHistory.forEach((h) => {
+          totalInterestCutCollected += Number(h.amount) || 0;
+          totalInterestCutCount++;
+        });
+      }
+    });
+
+    const totalLateFinesAll = totalLateFinesCollected + totalLateFinesPending;
+
+    // Daily summary for today
+    const targetDate = selectedDailyDate || getLocalDateStr(new Date());
+    const allHistory = window.easyFinanceDB.getAllDailyAllCategoriesHistory ? window.easyFinanceDB.getAllDailyAllCategoriesHistory() : [];
+    const dateCollections = allHistory.filter((h) => (h.dateStr && h.dateStr === targetDate) || (h.paidAt && h.paidAt.includes(targetDate)));
+    const todayDailyAmount = dateCollections.reduce((sum, h) => sum + (Number(h.amount) || 0), 0);
+
+    // Bank reconciliation balance
+    const bankSettings = (window.easyFinanceDB && typeof window.easyFinanceDB.getBankReconciliationSettings === "function") ? window.easyFinanceDB.getBankReconciliationSettings() : {};
+    const bankBase = Number(bankSettings.bankStartingBalance) || 0;
+    const adjustments = Array.isArray(bankSettings.adjustments) ? bankSettings.adjustments : [];
+    const totalAdded = adjustments.filter((a) => a.type === "add").reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
+    const totalDeducted = adjustments.filter((a) => a.type === "deduct").reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
+    const currentBankBalance = bankBase + totalAdded - totalDeducted;
+    const totalReconciled = currentBankBalance + todayDailyAmount;
+
+    const softProjectsTableBody = document.getElementById("softProjectsTableBody");
+    if (softProjectsTableBody) {
+      softProjectsTableBody.innerHTML = `
+        <!-- Row 1: ยอดรวมค่าปรับ (แทน Soft UI XD Version) -->
+        <tr onclick="openLateFineReportModal()" title="คลิกเพื่อเปิดสรุปยอดค่าปรับรายวัน">
+          <td>
+            <div class="soft-proj-cell">
+              <div class="soft-proj-icon-box" style="background: linear-gradient(310deg, #f97316 0%, #ea580c 100%);">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              </div>
+              <div>
+                <div class="soft-proj-title">ยอดรวมค่าปรับ </div>
+                <div class="soft-proj-sub">รายงานสรุปค่าปรับรายวัน</div>
+              </div>
             </div>
-            <div>
-              <div class="overview-card-title">ยอดรวมรายวัน</div>
-              <div class="overview-card-sub">Daily Overview</div>
+          </td>
+          <td>
+            <span class="soft-badge-role role-all"><i class="fa-solid fa-users"></i> ทุกคน (All Staff)</span>
+          </td>
+          <td class="soft-proj-budget">
+            ${isManager ? `฿${totalLateFinesAll.toLocaleString()}` : "฿******"}
+            <div style="font-size: 0.72rem; color: #fb923c;">รับแล้ว ฿${isManager ? totalLateFinesCollected.toLocaleString() : '***'}</div>
+          </td>
+          <td style="text-align: center;">
+            <button type="button" class="soft-proj-action-btn" onclick="event.stopPropagation(); openLateFineReportModal();">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i> ดูรายงาน
+            </button>
+          </td>
+        </tr>
+
+        <!-- Row 2: ยอดรวมมอไซต์ -->
+        <tr onclick="switchTab('motorcycle')" title="คลิกเพื่อเปิดหมวดรถมอไซต์">
+          <td>
+            <div class="soft-proj-cell">
+              <div class="soft-proj-icon-box" style="background: linear-gradient(310deg, #0284c7 0%, #0369a1 100%);">
+                <i class="fa-solid fa-motorcycle"></i>
+              </div>
+              <div>
+                <div class="soft-proj-title">ยอดรวมหมวดรถมอไซต์</div>
+                <div class="soft-proj-sub">สัญญาผ่อนรถจักรยานยนต์ทั้งหมด</div>
+              </div>
             </div>
-          </div>
-          <span class="overview-card-badge badge-daily">รายวัน</span>
-        </div>
+          </td>
+          <td>
+            <span class="soft-badge-role role-all"><i class="fa-solid fa-users"></i> ทุกคน (All Staff)</span>
+          </td>
+          <td class="soft-proj-budget">
+            ${isManager ? `฿${motoStats.totalFinanced.toLocaleString()}` : "฿******"}
+            <div style="font-size: 0.72rem; color: #38bdf8;">${motoStats.contractsCount} คัน (ปิดแล้ว ${motoStats.paidCustomersCount})</div>
+          </td>
+          <td style="text-align: center;">
+            <button type="button" class="soft-proj-action-btn" onclick="event.stopPropagation(); switchTab('motorcycle');">
+              <i class="fa-solid fa-table-list"></i> ดูสัญญา (${motoStats.contractsCount})
+            </button>
+          </td>
+        </tr>
 
-        <div class="overview-hero-amount">
-          ฿${dailyStats.totalFinanced.toLocaleString()}
-          <small>ยอดสินเชื่อรวม</small>
-        </div>
-
-        <div class="overview-metrics-grid">
-          <div class="overview-metric-item">
-            <span class="overview-metric-label">เก็บได้แล้ว</span>
-            <span class="overview-metric-val" style="color: #34d399;">฿${dailyStats.totalCollected.toLocaleString()} (${dailyStats.collectionRate}%)</span>
-          </div>
-          <div class="overview-metric-item">
-            <span class="overview-metric-label">คงค้างรอเก็บ</span>
-            <span class="overview-metric-val" style="color: #fbbf24;">฿${dailyStats.totalOutstanding.toLocaleString()}</span>
-          </div>
-        </div>
-
-        <div class="overview-status-pills">
-          <span><i class="fa-solid fa-users"></i> ทั้งหมด <strong>${dailyStats.contractsCount}</strong> ราย</span>
-          <span style="color: #34d399;"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว <strong>${dailyStats.paidCustomersCount}</strong></span>
-          <span style="color: #f87171;"><i class="fa-solid fa-clock"></i> ค้างจ่าย <strong>${dailyStats.pendingCustomersCount}</strong></span>
-        </div>
-
-        <div class="progress-track" style="height: 6px;">
-          <div class="progress-bar-fill" style="width: ${dailyStats.collectionRate}%; background: #10b981;"></div>
-        </div>
-
-        <div class="overview-card-actions">
-          <button class="btn-overview-action" onclick="switchTab('daily')">
-            <i class="fa-solid fa-table-list"></i> ดูลูกค้ารายวัน (${dailyStats.contractsCount})
-          </button>
-          <button class="btn-overview-action" style="color: #f87171; border-color: rgba(248, 113, 113, 0.3);" onclick="switchTab('daily'); setSubFilter('pending');">
-            <i class="fa-solid fa-triangle-exclamation"></i> ค้างจ่าย (${dailyStats.pendingCustomersCount})
-          </button>
-        </div>
-      </div>
-
-      <!-- 2. การ์ดสรุปยอดรวมรายอาทิตย์ -->
-      <div class="overview-summary-card card-weekly-theme">
-        <div class="overview-card-header">
-          <div class="overview-card-header-left">
-            <div class="overview-card-icon">
-              <i class="fa-solid fa-calendar-week"></i>
+        <!-- Row 3: ยอดรวมตัดดอก -->
+        <tr onclick="openInterestCutReportModal()" title="คลิกเพื่อดูประวัติตัดดอกเบี้ย">
+          <td>
+            <div class="soft-proj-cell">
+              <div class="soft-proj-icon-box" style="background: linear-gradient(310deg, #2563eb 0%, #1d4ed8 100%);">
+                <i class="fa-solid fa-scissors"></i>
+              </div>
+              <div>
+                <div class="soft-proj-title">ยอดรวมตัดดอก </div>
+                <div class="soft-proj-sub">ประวัติรับชำระตัดดอกเบี้ยคงที่</div>
+              </div>
             </div>
-            <div>
-              <div class="overview-card-title">ยอดรวมรายอาทิตย์</div>
-              <div class="overview-card-sub">Weekly Overview</div>
+          </td>
+          <td>
+            <span class="soft-badge-role role-mgr"><i class="fa-solid fa-crown"></i> สิทธิ์หัวหน้า (Manager)</span>
+          </td>
+          <td class="soft-proj-budget">
+            ${isManager ? `฿${totalInterestCutCollected.toLocaleString()}` : "฿******"}
+            <div style="font-size: 0.72rem; color: #60a5fa;">${totalInterestCutCount} ครั้ง</div>
+          </td>
+          <td style="text-align: center;">
+            <button type="button" class="soft-proj-action-btn" onclick="event.stopPropagation(); openInterestCutReportModal();">
+              <i class="fa-solid fa-receipt"></i> ประวัติตัดดอก
+            </button>
+          </td>
+        </tr>
+
+        <!-- Row 4: ช่องรวมเงินดาวน์ -->
+        <tr onclick="openDownPaymentReportModal()" title="คลิกเพื่อดูรายงานเงินดาวน์">
+          <td>
+            <div class="soft-proj-cell">
+              <div class="soft-proj-icon-box" style="background: linear-gradient(310deg, #059669 0%, #047857 100%);">
+                <i class="fa-solid fa-hand-holding-dollar"></i>
+              </div>
+              <div>
+                <div class="soft-proj-title">ช่องรวมเงินดาวน์ </div>
+                <div class="soft-proj-sub">รายงานเงินดาวน์ตั้งต้นทุกสัญญา</div>
+              </div>
             </div>
-          </div>
-          <span class="overview-card-badge badge-weekly">รายอาทิตย์</span>
-        </div>
+          </td>
+          <td>
+            <span class="soft-badge-role role-all"><i class="fa-solid fa-users"></i> ทุกคน (All Staff)</span>
+          </td>
+          <td class="soft-proj-budget">
+            ${isManager ? `฿${totalDownPaymentCollected.toLocaleString()}` : "฿******"}
+            <div style="font-size: 0.72rem; color: #34d399;">${totalDownPaymentCount} รายการ</div>
+          </td>
+          <td style="text-align: center;">
+            <button type="button" class="soft-proj-action-btn" onclick="event.stopPropagation(); openDownPaymentReportModal();">
+              <i class="fa-solid fa-file-invoice-dollar"></i> รายงานเงินดาวน์
+            </button>
+          </td>
+        </tr>
 
-        <div class="overview-hero-amount">
-          ฿${weeklyStats.totalFinanced.toLocaleString()}
-          <small>ยอดสินเชื่อรวม</small>
-        </div>
-
-        <div class="overview-metrics-grid">
-          <div class="overview-metric-item">
-            <span class="overview-metric-label">เก็บได้แล้ว</span>
-            <span class="overview-metric-val" style="color: #60a5fa;">฿${weeklyStats.totalCollected.toLocaleString()} (${weeklyStats.collectionRate}%)</span>
-          </div>
-          <div class="overview-metric-item">
-            <span class="overview-metric-label">คงค้างรอเก็บ</span>
-            <span class="overview-metric-val" style="color: #fbbf24;">฿${weeklyStats.totalOutstanding.toLocaleString()}</span>
-          </div>
-        </div>
-
-        <div class="overview-status-pills">
-          <span><i class="fa-solid fa-users"></i> ทั้งหมด <strong>${weeklyStats.contractsCount}</strong> ราย</span>
-          <span style="color: #60a5fa;"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว <strong>${weeklyStats.paidCustomersCount}</strong></span>
-          <span style="color: #f87171;"><i class="fa-solid fa-clock"></i> ค้างจ่าย <strong>${weeklyStats.pendingCustomersCount}</strong></span>
-        </div>
-
-        <div class="progress-track" style="height: 6px;">
-          <div class="progress-bar-fill" style="width: ${weeklyStats.collectionRate}%; background: #3b82f6;"></div>
-        </div>
-
-        <div class="overview-card-actions">
-          <button class="btn-overview-action" onclick="switchTab('weekly')">
-            <i class="fa-solid fa-table-list"></i> ดูลูกค้ารายอาทิตย์ (${weeklyStats.contractsCount})
-          </button>
-          <button class="btn-overview-action" style="color: #f87171; border-color: rgba(248, 113, 113, 0.3);" onclick="switchTab('weekly'); setSubFilter('pending');">
-            <i class="fa-solid fa-triangle-exclamation"></i> ค้างจ่าย (${weeklyStats.pendingCustomersCount})
-          </button>
-        </div>
-      </div>
-
-      <!-- 3. การ์ดสรุปยอดรวมรายเดือน -->
-      <div class="overview-summary-card card-monthly-theme">
-        <div class="overview-card-header">
-          <div class="overview-card-header-left">
-            <div class="overview-card-icon">
-              <i class="fa-solid fa-calendar-days"></i>
+        <!-- Row 5: ช่องสรุปรวมต่อวัน -->
+        <tr onclick="openDailyAllCategoriesReportModal()" title="คลิกเพื่อดูสรุปรวมทุกหมวดต่อวัน">
+          <td>
+            <div class="soft-proj-cell">
+              <div class="soft-proj-icon-box" style="background: linear-gradient(310deg, #7c3aed 0%, #6d28d9 100%);">
+                <i class="fa-solid fa-calendar-check"></i>
+              </div>
+              <div>
+                <div class="soft-proj-title">ช่องสรุปรวมต่อวัน </div>
+                <div class="soft-proj-sub">รวมยอดรับชำระทุกหมวดหมู่ประจำวัน</div>
+              </div>
             </div>
-            <div>
-              <div class="overview-card-title">ยอดรวมรายเดือน</div>
-              <div class="overview-card-sub">Monthly Overview</div>
+          </td>
+          <td>
+            <span class="soft-badge-role role-all"><i class="fa-solid fa-users"></i> ทุกคน (All Staff)</span>
+          </td>
+          <td class="soft-proj-budget">
+            ${isManager ? `฿${todayDailyAmount.toLocaleString()}` : "฿******"}
+            <div style="font-size: 0.72rem; color: #c084fc;">${dateCollections.length} รายการวันนี้</div>
+          </td>
+          <td style="text-align: center;">
+            <button type="button" class="soft-proj-action-btn" onclick="event.stopPropagation(); openDailyAllCategoriesReportModal();">
+              <i class="fa-solid fa-chart-pie"></i> สรุปยอดวัน
+            </button>
+          </td>
+        </tr>
+
+        <!-- Row 6: ช่องเปรียบเทียบยอดในบัญชี -->
+        <tr onclick="openBankReconciliationModal()" title="คลิกเพื่อเปิดระบบกระทบยอดบัญชีธนาคาร">
+          <td>
+            <div class="soft-proj-cell">
+              <div class="soft-proj-icon-box" style="background: linear-gradient(310deg, #0d9488 0%, #0f766e 100%);">
+                <i class="fa-solid fa-scale-balanced"></i>
+              </div>
+              <div>
+                <div class="soft-proj-title">ช่องเปรียบเทียบยอดในบัญชี</div>
+                <div class="soft-proj-sub">Bank Reconciliation กระทบยอดเงินฝาก</div>
+              </div>
             </div>
+          </td>
+          <td>
+            <span class="soft-badge-role role-mgr"><i class="fa-solid fa-crown"></i> สิทธิ์หัวหน้า (Manager)</span>
+          </td>
+          <td class="soft-proj-budget">
+            ${isManager ? `฿${totalReconciled.toLocaleString()}` : "฿******"}
+            <div style="font-size: 0.72rem; color: #2dd4bf;">เทียบกับยอดรับวัน</div>
+          </td>
+          <td style="text-align: center;">
+            <button type="button" class="soft-proj-action-btn" onclick="event.stopPropagation(); openBankReconciliationModal();">
+              <i class="fa-solid fa-building-columns"></i> ตรวจสอบยอด
+            </button>
+          </td>
+        </tr>
+      `;
+    }
+
+    // --- 5. POPULATE ROW 4: ORDERS OVERVIEW TIMELINE ---
+    const softOrdersTimeline = document.getElementById("softOrdersTimeline");
+    if (softOrdersTimeline) {
+      const logs = getTodayActivityLogs();
+      if (!logs || logs.length === 0) {
+        softOrdersTimeline.innerHTML = `
+          <div style="text-align: center; padding: 24px 10px; color: #94a3b8; font-size: 0.82rem;">
+            <i class="fa-solid fa-circle-info" style="font-size: 1.4rem; color: #38bdf8; margin-bottom: 6px;"></i><br>
+            ยังไม่มีรายการใหม่เกิดขึ้นในวันนี้<br>
+            เมื่อมีการทำรายการ บันทึก หรือชำระเงิน ระบบจะแสดงประวัติที่นี่โดยอัตโนมัติ
           </div>
-          <span class="overview-card-badge badge-monthly">รายเดือน</span>
-        </div>
+        `;
+      } else {
+        softOrdersTimeline.innerHTML = logs.slice(0, 7).map((log) => {
+          let iconClass = "fa-solid fa-circle-check";
+          let colorClass = "tl-icon-emerald";
 
-        <div class="overview-hero-amount">
-          ฿${monthlyStats.totalFinanced.toLocaleString()}
-          <small>ยอดสินเชื่อรวม</small>
-        </div>
+          if (log.icon === "cart" || log.color === "pink") {
+            iconClass = "fa-solid fa-cart-shopping";
+            colorClass = "tl-icon-pink";
+          } else if (log.icon === "file" || log.color === "blue") {
+            iconClass = "fa-solid fa-file-contract";
+            colorClass = "tl-icon-blue";
+          } else if (log.icon === "warning" || log.color === "orange") {
+            iconClass = "fa-solid fa-triangle-exclamation";
+            colorClass = "tl-icon-orange";
+          } else if (log.icon === "key" || log.color === "purple") {
+            iconClass = "fa-solid fa-key";
+            colorClass = "tl-icon-purple";
+          } else if (log.icon === "shield" || log.color === "cyan") {
+            iconClass = "fa-solid fa-shield-halved";
+            colorClass = "tl-icon-cyan";
+          } else if (log.icon === "bell") {
+            iconClass = "fa-solid fa-bell";
+            colorClass = "tl-icon-emerald";
+          }
 
-        <div class="overview-metrics-grid">
-          <div class="overview-metric-item">
-            <span class="overview-metric-label">เก็บได้แล้ว</span>
-            <span class="overview-metric-val" style="color: #c084fc;">฿${monthlyStats.totalCollected.toLocaleString()} (${monthlyStats.collectionRate}%)</span>
-          </div>
-          <div class="overview-metric-item">
-            <span class="overview-metric-label">คงค้างรอเก็บ</span>
-            <span class="overview-metric-val" style="color: #fbbf24;">฿${monthlyStats.totalOutstanding.toLocaleString()}</span>
-          </div>
-        </div>
-
-        <div class="overview-status-pills">
-          <span><i class="fa-solid fa-users"></i> ทั้งหมด <strong>${monthlyStats.contractsCount}</strong> ราย</span>
-          <span style="color: #c084fc;"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว <strong>${monthlyStats.paidCustomersCount}</strong></span>
-          <span style="color: #f87171;"><i class="fa-solid fa-clock"></i> ค้างจ่าย <strong>${monthlyStats.pendingCustomersCount}</strong></span>
-        </div>
-
-        <div class="progress-track" style="height: 6px;">
-          <div class="progress-bar-fill" style="width: ${monthlyStats.collectionRate}%; background: #a855f7;"></div>
-        </div>
-
-        <div class="overview-card-actions">
-          <button class="btn-overview-action" onclick="switchTab('monthly')">
-            <i class="fa-solid fa-table-list"></i> ดูลูกค้ารายเดือน (${monthlyStats.contractsCount})
-          </button>
-          <button class="btn-overview-action" style="color: #f87171; border-color: rgba(248, 113, 113, 0.3);" onclick="switchTab('monthly'); setSubFilter('pending');">
-            <i class="fa-solid fa-triangle-exclamation"></i> ค้างจ่าย (${monthlyStats.pendingCustomersCount})
-          </button>
-        </div>
-      </div>
-
-      <!-- 4. การ์ดสรุปยอดรวมหมวดรถมอไซต์ (แยกต่างหาก) -->
-      <div class="overview-summary-card card-motorcycle-theme" style="border: 1px solid rgba(56, 189, 248, 0.35);">
-        <div class="overview-card-header">
-          <div class="overview-card-header-left">
-            <div class="overview-card-icon" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
-              <i class="fa-solid fa-motorcycle"></i>
+          return `
+            <div class="soft-timeline-item">
+              <div class="soft-timeline-icon ${colorClass}">
+                <i class="${iconClass}"></i>
+              </div>
+              <div class="soft-timeline-title">${escapeHtml(log.title)}</div>
+              <div class="soft-timeline-time">
+                <i class="fa-regular fa-clock"></i> ${escapeHtml(log.timeFormatted || log.dateFormatted || 'วันนี้')}
+              </div>
+              <div class="soft-timeline-desc">${escapeHtml(log.desc || '')}</div>
             </div>
-            <div>
-              <div class="overview-card-title" style="color: #38bdf8;">ยอดรวมหมวดรถมอไซต์</div>
-              <div class="overview-card-sub">Motorcycle Overview (ยอดแยกต่างหาก)</div>
-            </div>
-          </div>
-          <span class="overview-card-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4);">หมวดมอไซต์</span>
-        </div>
-
-        <div class="overview-hero-amount" style="color: #38bdf8;">
-          ฿${getMotorcycleStats().totalFinanced.toLocaleString()}
-          <small>ยอดสินเชื่อมอไซต์รวม</small>
-        </div>
-
-        <div class="overview-metrics-grid">
-          <div class="overview-metric-item">
-            <span class="overview-metric-label">เก็บได้แล้ว</span>
-            <span class="overview-metric-val" style="color: #38bdf8;">฿${getMotorcycleStats().totalCollected.toLocaleString()} (${getMotorcycleStats().collectionRate}%)</span>
-          </div>
-          <div class="overview-metric-item">
-            <span class="overview-metric-label">คงค้างรอเก็บ</span>
-            <span class="overview-metric-val" style="color: #fbbf24;">฿${getMotorcycleStats().totalOutstanding.toLocaleString()}</span>
-          </div>
-        </div>
-
-        <div class="overview-status-pills">
-          <span><i class="fa-solid fa-motorcycle"></i> ทั้งหมด <strong>${getMotorcycleStats().contractsCount}</strong> คัน</span>
-          <span style="color: #34d399;"><i class="fa-solid fa-circle-check"></i> ปิดสัญญา <strong>${getMotorcycleStats().paidCustomersCount}</strong></span>
-          <span style="color: #fbbf24;"><i class="fa-solid fa-clock"></i> ผ่อนอยู่ <strong>${getMotorcycleStats().pendingCustomersCount}</strong></span>
-        </div>
-
-        <div class="progress-track" style="height: 6px;">
-          <div class="progress-bar-fill" style="width: ${getMotorcycleStats().collectionRate}%; background: linear-gradient(90deg, #38bdf8 0%, #0ea5e9 100%);"></div>
-        </div>
-
-        <div class="overview-card-actions">
-          <button class="btn-overview-action" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.35);" onclick="switchTab('motorcycle')">
-            <i class="fa-solid fa-motorcycle"></i> ดูสัญญามอไซต์ (${getMotorcycleStats().contractsCount})
-          </button>
-          <button class="btn-overview-action" style="color: #fbbf24; border-color: rgba(251, 191, 36, 0.35);" onclick="switchTab('motorcycle'); setSubFilter('pending');">
-            <i class="fa-solid fa-clock"></i> ผ่อนอยู่ (${getMotorcycleStats().pendingCustomersCount})
-          </button>
-        </div>
-      </div>
-    `;
-
+          `;
+        }).join("");
+      }
+    }
   }
 
   // --- 3.2 RENDER DYNAMIC SUB-TABS (Requirement 1 & 2) ---
@@ -2871,6 +3192,18 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 4. RENDER DATA TABLE BY TAB & SUB-FILTER ---
 
   function renderActiveTabTable() {
+    const dataTableCard = document.getElementById("dataTableCard");
+    const contractsCardsContainer = document.getElementById("contractsCardsContainer");
+    const paginationContainer = document.getElementById("paginationContainer");
+
+    if (currentTab === "overview") {
+      if (dataTableCard) dataTableCard.style.display = "none";
+      if (contractsCardsContainer) contractsCardsContainer.style.display = "none";
+      if (paginationContainer) paginationContainer.style.display = "none";
+      return;
+    }
+    if (dataTableCard) dataTableCard.style.display = "";
+
     const query = adminSearchInput.value.trim().toLowerCase();
     const qClean = query.replace(/[^0-9]/g, "");
 
@@ -4216,6 +4549,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     await window.easyFinanceDB.saveContract(contractData);
+    recordActivityLog("เพิ่มสัญญาใหม่ในระบบ", `สร้างสัญญาคุณ${contractData.name} วงเงิน ฿${Number(contractData.totalAmount || 0).toLocaleString()} บาท`, "cart", "pink");
     contractModal.classList.remove("active");
     showAdminToast(`บันทึกสัญญา ${id} เรียบร้อยแล้ว`, "success");
     renderStatsCounters();
@@ -4301,6 +4635,7 @@ document.addEventListener("DOMContentLoaded", () => {
         slipData.paidAt = `${customPaidDate} 12:00:00`;
       }
       await window.easyFinanceDB.markInstallmentPaid(contractId, installmentNo, slipData);
+      recordActivityLog("บันทึกรับชำระค่างวด", `รับชำระงวดที่ ${installmentNo} สัญญา ${contractId}`, "check", "emerald");
       showAdminToast(`บันทึกรับชำระงวดที่ ${installmentNo} สำเร็จ!`, "success");
       renderStatsCounters();
       renderSubTabs();
@@ -4312,6 +4647,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.quickUnmarkPaid = async function (contractId, installmentNo) {
     if (confirm(`ต้องการยกเลิกการชำระเงินของ "งวดที่ ${installmentNo}" สัญญา ${contractId} (เปลี่ยนสถานะกลับเป็น "รอชำระ") ใช่หรือไม่?`)) {
       await window.easyFinanceDB.unmarkInstallmentPaid(contractId, installmentNo);
+      recordActivityLog("ยกเลิกรายการชำระ", `ยกเลิกชำระงวดที่ ${installmentNo} สัญญา ${contractId}`, "warning", "orange");
       showAdminToast(`ยกเลิกชำระงวดที่ ${installmentNo} แล้ว (สถานะกลับเป็นรอชำระ)`, "info");
       renderStatsCounters();
       renderSubTabs();
@@ -4547,6 +4883,7 @@ document.addEventListener("DOMContentLoaded", () => {
       slipData.paidAt = `${selectedDailyDate} 12:00:00`;
     }
     await window.easyFinanceDB.markInstallmentPaid(currentViewingContractId, installmentNo, slipData);
+    recordActivityLog("บันทึกรับชำระค่างวด", `รับชำระงวดที่ ${installmentNo} สัญญา ${currentViewingContractId}`, "check", "emerald");
     showAdminToast(`บันทึกรับชำระงวดที่ ${installmentNo} สำเร็จ (สถานะ: ชำระแล้ว)`, "success");
     openContractDetails(currentViewingContractId);
     renderStatsCounters();
@@ -4558,6 +4895,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.unmarkPaidFromDetail = async function (installmentNo) {
     if (!currentViewingContractId) return;
     await window.easyFinanceDB.unmarkInstallmentPaid(currentViewingContractId, installmentNo);
+    recordActivityLog("ยกเลิกรายการชำระ", `ยกเลิกชำระงวดที่ ${installmentNo} สัญญา ${currentViewingContractId}`, "warning", "orange");
     showAdminToast(`ยกเลิกชำระงวดที่ ${installmentNo} เรียบร้อย (สถานะกลับเป็นรอชำระ)`, "info");
     openContractDetails(currentViewingContractId);
     renderStatsCounters();
@@ -4589,6 +4927,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (confirm(`ยืนยันการ "ตัดดอก" งวดที่ ${installmentNo} สัญญา ${contract.name} เป็นยอด ฿${cutAmount.toLocaleString()}${dateNote}?\n(เงินต้นจะไม่ถูกหัก สัญญายังคงอยู่)`)) {
       await window.easyFinanceDB.markInstallmentInterestCut(currentViewingContractId, installmentNo, cutAmount, customDate);
+      recordActivityLog("บันทึกตัดดอกเบี้ย", `ตัดดอกเบี้ยคุณ${contract.name} งวดที่ ${installmentNo} ยอด ฿${cutAmount.toLocaleString()} บาท`, "shield", "cyan");
       if (!contract.interestCutAmount) {
         await window.easyFinanceDB.setContractInterestCutAmount(currentViewingContractId, cutAmount);
       }

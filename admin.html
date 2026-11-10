@@ -27,7 +27,7 @@
   <meta name="apple-mobile-web-app-title" content="EF Admin">
 
   <!-- Admin Dedicated Stylesheet -->
-  <link rel="stylesheet" href="admin.css?v=20261110_v6">
+  <link rel="stylesheet" href="admin.css?v=20261110_v11">
 
   <!-- Early script to avoid layout & theme flicker on page reload -->
   <script>
@@ -193,11 +193,13 @@
 
         <div class="sidebar-header-actions">
           <!-- Collapse Chevron Button (Desktop: ย่อ/ขยายแถบข้าง) -->
-          <button type="button" class="btn-rail-collapse" id="btnRailCollapse" title="ย่อ/ขยายแถบเมนูด้านข้าง" aria-label="ย่อแถบข้าง">
+          <button type="button" class="btn-rail-collapse" id="btnRailCollapse" title="ย่อ/ขยายแถบเมนูด้านข้าง"
+            aria-label="ย่อแถบข้าง">
             <i class="fa-solid fa-angles-left" id="railCollapseIcon"></i>
           </button>
           <!-- Close Button (Mobile Drawer) -->
-          <button type="button" class="btn-close-sidebar" id="btnCloseSidebar" title="ปิดเมนู" aria-label="ปิดเมนู" style="display: none;">
+          <button type="button" class="btn-close-sidebar" id="btnCloseSidebar" title="ปิดเมนู" aria-label="ปิดเมนู"
+            style="display: none;">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -206,11 +208,14 @@
       <!-- Quick Search Box -->
       <div class="sidebar-search-container">
         <div class="sidebar-search-box" title="ค้นหาเมนูในระบบ">
-          <button type="button" class="search-box-btn" id="btnSidebarSearchTrigger" title="ค้นหาเมนู" aria-label="ค้นหาเมนู">
+          <button type="button" class="search-box-btn" id="btnSidebarSearchTrigger" title="ค้นหาเมนู"
+            aria-label="ค้นหาเมนู">
             <i class="fa-solid fa-magnifying-glass search-icon"></i>
           </button>
-          <input type="text" id="sidebarSearchInput" placeholder="ค้นหาเมนูในระบบ..." autocomplete="off" aria-label="ค้นหาเมนู">
-          <button type="button" class="btn-clear-search" id="btnClearSearch" title="ล้างการค้นหา" aria-label="ล้างคำค้นหา">
+          <input type="text" id="sidebarSearchInput" placeholder="ค้นหาเมนูในระบบ..." autocomplete="off"
+            aria-label="ค้นหาเมนู">
+          <button type="button" class="btn-clear-search" id="btnClearSearch" title="ล้างการค้นหา"
+            aria-label="ล้างคำค้นหา">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -223,15 +228,16 @@
           <span class="sidebar-group-title"><i class="fa-solid fa-layer-group"></i> เมนูหลัก (MAIN MENU)</span>
         </div>
 
-        <!-- Overview -->
-        <a class="sidebar-item dock-btn" data-tab="overview" data-dock-tooltip="สรุปแดชบอร์ดภาพรวม (Overview)" title="สรุปแดชบอร์ดภาพรวม">
+        <!-- Overview / Dashboard -->
+        <a class="sidebar-item dock-btn active" data-tab="overview" data-dock-tooltip="แดชบอร์ดภาพรวม (Dashboard)"
+          title="แดชบอร์ดภาพรวม">
           <span class="dock-icon-wrap icon-overview"><i class="fa-solid fa-chart-pie"></i></span>
-          <span class="sidebar-item-label">สรุปแดชบอร์ด (Overview)</span>
+          <span class="sidebar-item-label">แดชบอร์ด (Dashboard)</span>
           <i class="fa-solid fa-lock" id="iconOverviewLock" style="display: none;"></i>
         </a>
 
         <!-- Daily -->
-        <a class="sidebar-item dock-btn active" data-tab="daily" data-dock-tooltip="สรุปรายวัน" title="สรุปรายวัน">
+        <a class="sidebar-item dock-btn" data-tab="daily" data-dock-tooltip="สรุปรายวัน" title="สรุปรายวัน">
           <span class="dock-icon-wrap icon-daily"><i class="fa-solid fa-calendar-day"></i></span>
           <span class="sidebar-item-label">สรุปรายวัน</span>
         </a>
@@ -249,7 +255,8 @@
         </a>
 
         <!-- Motorcycle -->
-        <a class="sidebar-item dock-btn" data-tab="motorcycle" id="menuMotorcycle" data-dock-tooltip="หมวดรถมอไซต์" title="หมวดรถมอไซต์">
+        <a class="sidebar-item dock-btn" data-tab="motorcycle" id="menuMotorcycle" data-dock-tooltip="หมวดรถมอไซต์"
+          title="หมวดรถมอไซต์">
           <span class="dock-icon-wrap icon-motorcycle"><i class="fa-solid fa-motorcycle"></i></span>
           <span class="sidebar-item-label">หมวดรถมอไซต์</span>
           <span id="motorcycleCountBadge" class="dock-badge-pill" style="display: none;">0</span>
@@ -262,14 +269,16 @@
         </a>
 
         <!-- Customer DB -->
-        <a class="sidebar-item dock-btn" id="menuCustomerDb" onclick="openCustomerDatabaseModal()" data-dock-tooltip="ฐานข้อมูลลูกค้า" title="ฐานข้อมูลลูกค้า" style="cursor: pointer;">
+        <a class="sidebar-item dock-btn" id="menuCustomerDb" onclick="openCustomerDatabaseModal()"
+          data-dock-tooltip="ฐานข้อมูลลูกค้า" title="ฐานข้อมูลลูกค้า" style="cursor: pointer;">
           <span class="dock-icon-wrap icon-customers"><i class="fa-solid fa-users"></i></span>
           <span class="sidebar-item-label">ฐานข้อมูลลูกค้า</span>
           <span id="customerCountBadge" class="dock-badge-pill" style="display: none;">0</span>
         </a>
 
         <!-- Bad Debt -->
-        <a class="sidebar-item dock-btn" data-tab="bad_debt" id="menuBadDebt" data-dock-tooltip="เช็คประวัติลูกค้า" title="เช็คประวัติลูกค้า">
+        <a class="sidebar-item dock-btn" data-tab="bad_debt" id="menuBadDebt" data-dock-tooltip="เช็คประวัติลูกค้า"
+          title="เช็คประวัติลูกค้า">
           <span class="dock-icon-wrap icon-baddebt"><i class="fa-solid fa-triangle-exclamation"></i></span>
           <span class="sidebar-item-label">เช็คประวัติลูกค้า</span>
           <span id="badDebtBadgeCount" class="dock-badge-pill" style="display: none;">0</span>
@@ -284,19 +293,22 @@
         </div>
 
         <!-- QR Settings -->
-        <a class="sidebar-item dock-btn" id="btnMenuQrSettings" data-dock-tooltip="ตั้งค่า QR รับเงิน" title="ตั้งค่า QR รับเงิน">
+        <a class="sidebar-item dock-btn" id="btnMenuQrSettings" data-dock-tooltip="ตั้งค่า QR รับเงิน"
+          title="ตั้งค่า QR รับเงิน">
           <span class="dock-icon-wrap icon-qr"><i class="fa-solid fa-qrcode"></i></span>
           <span class="sidebar-item-label">ตั้งค่า QR รับเงิน</span>
         </a>
 
         <!-- Bank API -->
-        <a class="sidebar-item dock-btn" id="btnMenuBankApi" data-dock-tooltip="ระบบตรวจสลิป (Bank API)" title="ระบบตรวจสลิป">
+        <a class="sidebar-item dock-btn" id="btnMenuBankApi" data-dock-tooltip="ระบบตรวจสลิป (Bank API)"
+          title="ระบบตรวจสลิป">
           <span class="dock-icon-wrap icon-bank"><i class="fa-solid fa-shield-halved"></i></span>
           <span class="sidebar-item-label">ระบบตรวจสลิป (Bank API)</span>
         </a>
 
         <!-- Pass Settings -->
-        <a class="sidebar-item dock-btn" id="btnMenuPassSettings" data-dock-tooltip="ตั้งรหัสหัวหน้า / พนักงาน" title="ตั้งรหัสผ่าน">
+        <a class="sidebar-item dock-btn" id="btnMenuPassSettings" data-dock-tooltip="ตั้งรหัสหัวหน้า / พนักงาน"
+          title="ตั้งรหัสผ่าน">
           <span class="dock-icon-wrap icon-pass"><i class="fa-solid fa-key"></i></span>
           <span class="sidebar-item-label">ตั้งรหัสหัวหน้า / พนักงาน</span>
         </a>
@@ -307,11 +319,13 @@
         <!-- Theme Switcher & Client Portal Row -->
         <div class="sidebar-utility-row">
           <div class="dock-island dock-island-theme" id="dockIslandTheme">
-            <button type="button" class="dock-theme-btn" id="btnDockThemeLight" data-dock-tooltip="โหมดสว่าง" title="โหมดสว่าง" aria-label="โหมดสว่าง">
+            <button type="button" class="dock-theme-btn" id="btnDockThemeLight" data-dock-tooltip="โหมดสว่าง"
+              title="โหมดสว่าง" aria-label="โหมดสว่าง">
               <i class="fa-solid fa-sun"></i>
               <span class="theme-btn-text">สว่าง</span>
             </button>
-            <button type="button" class="dock-theme-btn" id="btnDockThemeDark" data-dock-tooltip="โหมดมืด" title="โหมดมืด" aria-label="โหมดมืด">
+            <button type="button" class="dock-theme-btn" id="btnDockThemeDark" data-dock-tooltip="โหมดมืด"
+              title="โหมดมืด" aria-label="โหมดมืด">
               <i class="fa-solid fa-moon"></i>
               <span class="theme-btn-text">มืด</span>
             </button>
@@ -320,12 +334,14 @@
             <span id="sidebarThemeText" style="display: none;"></span>
           </div>
 
-          <a href="index.html" target="_blank" class="sidebar-item dock-btn client-portal-link" data-dock-tooltip="เปิดดูหน้าบ้านลูกค้า" title="เปิดดูหน้าบ้านลูกค้า">
+          <a href="index.html" target="_blank" class="sidebar-item dock-btn client-portal-link"
+            data-dock-tooltip="เปิดดูหน้าบ้านลูกค้า" title="เปิดดูหน้าบ้านลูกค้า">
             <span class="dock-icon-wrap"><i class="fa-solid fa-arrow-up-right-from-square"></i></span>
             <span class="sidebar-item-label">หน้าบ้านลูกค้า</span>
           </a>
 
-          <a class="sidebar-item dock-btn" data-pwa-install data-dock-tooltip="ติดตั้งแอปลงมือถือ" title="ติดตั้งแอปลงมือถือ" style="cursor: pointer;">
+          <a class="sidebar-item dock-btn" data-pwa-install data-dock-tooltip="ติดตั้งแอปลงมือถือ"
+            title="ติดตั้งแอปลงมือถือ" style="cursor: pointer;">
             <span class="dock-icon-wrap" style="color: #34d399;"><i class="fa-solid fa-mobile-screen-button"></i></span>
             <span class="sidebar-item-label" style="color: #34d399; font-weight: 600;">ติดตั้งแอปลงมือถือ</span>
           </a>
@@ -340,13 +356,16 @@
             <div class="user-chip-name" id="sidebarUserName">หัวหน้า (Manager)</div>
             <div class="user-chip-plan" id="sidebarUserPlan">Easy Wealth Finance</div>
           </div>
-          <button type="button" class="user-chip-action" id="btnSidebarRoleAction" title="สลับสิทธิ์การใช้งาน" aria-label="สลับสิทธิ์การใช้งาน">
+          <button type="button" class="user-chip-action" id="btnSidebarRoleAction" title="สลับสิทธิ์การใช้งาน"
+            aria-label="สลับสิทธิ์การใช้งาน">
             <i class="fa-solid fa-arrow-right-arrow-left"></i>
           </button>
         </div>
 
         <!-- Logout Button -->
-        <button type="button" class="dock-btn dock-btn-logout" id="btnDockLogout" onclick="document.getElementById('btnAdminLogout')?.click()" data-dock-tooltip="ออกจากระบบ" aria-label="ออกจากระบบ">
+        <button type="button" class="dock-btn dock-btn-logout" id="btnDockLogout"
+          onclick="document.getElementById('btnAdminLogout')?.click()" data-dock-tooltip="ออกจากระบบ"
+          aria-label="ออกจากระบบ">
           <span class="dock-icon-wrap"><i class="fa-solid fa-arrow-right-from-bracket"></i></span>
           <span class="sidebar-item-label">ออกจากระบบหลังบ้าน</span>
         </button>
@@ -368,7 +387,8 @@
 
         <div class="nav-right">
           <!-- PWA Install App Button -->
-          <button type="button" class="btn-pwa-install-nav" data-pwa-install title="ติดตั้งแอปหลังบ้านลงมือถือ" aria-label="ติดตั้งแอปลงมือถือ">
+          <button type="button" class="btn-pwa-install-nav" data-pwa-install title="ติดตั้งแอปหลังบ้านลงมือถือ"
+            aria-label="ติดตั้งแอปลงมือถือ">
             <i class="fa-solid fa-mobile-screen-button"></i>
             <span class="pwa-nav-text">ติดตั้งแอป</span>
           </button>
@@ -453,8 +473,7 @@
           <!-- Collapsible Secondary Reports & Bank Reconciliation Drawer -->
           <div class="secondary-stats-wrapper" id="secondaryStatsWrapper">
             <button type="button" class="secondary-stats-toggle-bar" id="btnToggleSecondaryStats"
-              onclick="window.toggleSecondaryStatsDrawer && window.toggleSecondaryStatsDrawer()"
-              aria-expanded="false">
+              onclick="window.toggleSecondaryStatsDrawer && window.toggleSecondaryStatsDrawer()" aria-expanded="false">
               <div class="secondary-toggle-left">
                 <span class="secondary-toggle-icon-badge"><i class="fa-solid fa-layer-group"></i></span>
                 <span class="secondary-toggle-title">การ์ดรายงานเสริม & กระทบยอดบัญชี</span>
@@ -550,7 +569,8 @@
                     <i class="fa-solid fa-calendar-check"></i> ช่องสรุปรวมต่อวัน
                   </div>
                   <div class="stat-val" id="statTotalDailyAllCategories" style="color: #c084fc;">฿0</div>
-                  <div id="statDailyAllCategoriesSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
+                  <div id="statDailyAllCategoriesSub"
+                    style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
                     รวมรับแล้วทุกหมวด (คลิกดูสรุปต่อวัน)</div>
                 </div>
                 <div class="stat-icon-box" id="statIconDailyAllCategories"
@@ -567,7 +587,8 @@
                     <i class="fa-solid fa-scale-balanced"></i> ช่องเปรียบเทียบยอดในบัญชี
                   </div>
                   <div class="stat-val" id="statTotalBankReconciliation" style="color: #14b8a6;">฿0</div>
-                  <div id="statBankReconciliationSub" style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
+                  <div id="statBankReconciliationSub"
+                    style="font-size: 0.72rem; color: var(--text-dim); margin-top: 2px;">
                     กระทบยอดเงินในธนาคาร (คลิกดูสรุป)</div>
                 </div>
                 <div class="stat-icon-box" id="statIconBankReconciliation"
@@ -603,11 +624,295 @@
           </button>
         </div>
 
-        <!-- DASHBOARD OVERVIEW SECTION (แสดงการ์ดสรุป 3 หมวดหมู่เมื่อเลือกสรุปแดชบอร์ด) -->
-        <div id="dashboardOverviewSection" class="hidden">
-          <div class="overview-cards-grid" id="overviewCardsGrid">
-            <!-- Dynamic 3 Summary Cards (รายวัน / รายอาทิตย์ / รายเดือน) -->
+        <!-- ====================================================================
+             DASHBOARD OVERVIEW SECTION (Soft UI Dashboard Architecture)
+             Ref: https://demos.creative-tim.com/soft-ui-dashboard-tailwind/pages/dashboard.html
+             ==================================================================== -->
+        <div id="dashboardOverviewSection" class="hidden soft-dashboard-wrap">
+
+          <!-- 1. ROW 1: 4 STAT CARDS (ยอดปล่อยสินเชื่อรวม, ยอดเก็บเงินได้แล้ว, ยอดคงค้างรอเก็บ, สัญญาทั่วไป) -->
+          <div class="soft-cards-grid">
+            <!-- Card 1: Today's Money -> ยอดปล่อยสินเชื่อรวม -->
+            <div class="soft-card soft-stat-card">
+              <div class="soft-stat-info">
+                <span class="soft-stat-label">ยอดปล่อยสินเชื่อรวม</span>
+                <div class="soft-stat-val" id="softStatFinanced">฿0</div>
+                <div class="soft-stat-trend">
+                  <span class="soft-trend-badge badge-emerald" id="softStatFinancedTrend">+100%</span>
+                  <span class="soft-trend-text">ยอดสินเชื่อทั่วไป</span>
+                </div>
+              </div>
+              <div class="soft-stat-icon-box soft-gradient-pink">
+                <i class="fa-solid fa-coins"></i>
+              </div>
+            </div>
+
+            <!-- Card 2: Today's Users -> ยอดเก็บเงินได้แล้ว -->
+            <div class="soft-card soft-stat-card">
+              <div class="soft-stat-info">
+                <span class="soft-stat-label">ยอดเก็บเงินได้แล้ว</span>
+                <div class="soft-stat-val" id="softStatCollected">฿0</div>
+                <div class="soft-stat-trend">
+                  <span class="soft-trend-badge badge-emerald" id="softStatCollectedRate">0%</span>
+                  <span class="soft-trend-text">ความคืบหน้าการเก็บ</span>
+                </div>
+              </div>
+              <div class="soft-stat-icon-box soft-gradient-pink">
+                <i class="fa-solid fa-globe"></i>
+              </div>
+            </div>
+
+            <!-- Card 3: New Clients -> ยอดคงค้างรอเก็บ -->
+            <div class="soft-card soft-stat-card">
+              <div class="soft-stat-info">
+                <span class="soft-stat-label">ยอดคงค้างรอเก็บ</span>
+                <div class="soft-stat-val" id="softStatOutstanding">฿0</div>
+                <div class="soft-stat-trend">
+                  <span class="soft-trend-badge badge-amber" id="softStatOutstandingPct">รอชำระ</span>
+                  <span class="soft-trend-text">ยอดคงค้างทั้งหมด</span>
+                </div>
+              </div>
+              <div class="soft-stat-icon-box soft-gradient-pink">
+                <i class="fa-solid fa-address-card"></i>
+              </div>
+            </div>
+
+            <!-- Card 4: Sales -> สัญญาทั่วไป (ไม่รวมมอไซต์) -->
+            <div class="soft-card soft-stat-card">
+              <div class="soft-stat-info">
+                <span class="soft-stat-label">สัญญาทั่วไป (ไม่รวมมอไซต์)</span>
+                <div class="soft-stat-val" id="softStatGeneralCount">0</div>
+                <div class="soft-stat-trend">
+                  <span class="soft-trend-badge badge-blue">สัญญา</span>
+                  <span class="soft-trend-text">รายวัน, อาทิตย์, เดือน</span>
+                </div>
+              </div>
+              <div class="soft-stat-icon-box soft-gradient-pink">
+                <i class="fa-solid fa-cart-shopping"></i>
+              </div>
+            </div>
           </div>
+
+          <!-- 2. ROW 2: BUILT BY DEVELOPERS (Grand Total of Daily, Weekly, Monthly, Motorcycle - Work with the rockets REMOVED) -->
+          <div class="soft-row soft-dev-row">
+            <div class="soft-card soft-dev-card">
+              <div class="soft-dev-body">
+                <div class="soft-dev-left">
+                  <div class="soft-dev-eyebrow">BUILT BY DEVELOPERS / EASY WEALTH FINANCE</div>
+                  <h2 class="soft-dev-title">ภาพรวมพอร์ตสินเชื่อทั้งหมด</h2>
+                  <p class="soft-dev-desc">สรุปยอดรวมสินเชื่อทุกหมวดหมู่ (รายวัน • รายอาทิตย์ • รายเดือน • มอเตอร์ไซค์)
+                  </p>
+
+                  <!-- 3 Grand Metrics: ยอดทั้งหมด, ยอดที่เก็บได้แล้ว, ยอดคงค้างเก็บ -->
+                  <div class="soft-dev-metrics-grid">
+                    <div class="soft-dev-metric-col">
+                      <span class="soft-dev-metric-label"><i class="fa-solid fa-wallet"></i> ยอดทั้งหมด</span>
+                      <div class="soft-dev-metric-val val-financed" id="softGrandFinanced">฿0</div>
+                    </div>
+                    <div class="soft-dev-metric-col">
+                      <span class="soft-dev-metric-label"><i class="fa-solid fa-circle-check"></i>
+                        ยอดที่เก็บได้แล้ว</span>
+                      <div class="soft-dev-metric-val val-collected" id="softGrandCollected">฿0</div>
+                    </div>
+                    <div class="soft-dev-metric-col">
+                      <span class="soft-dev-metric-label"><i class="fa-solid fa-clock"></i> ยอดคงค้างเก็บ</span>
+                      <div class="soft-dev-metric-val val-outstanding" id="softGrandOutstanding">฿0</div>
+                    </div>
+                  </div>
+
+                  <!-- 3 Counts: เก็บทั้งหมดกี่ราย, จ่ายแล้วกี่ราย, ค้างจ่ายกี่ราย -->
+                  <div class="soft-dev-counts-row">
+                    <div class="soft-count-pill pill-total">
+                      <i class="fa-solid fa-users"></i>
+                      <span>สัญญาทั้งหมด: <strong id="softGrandTotalContracts">0</strong> ราย</span>
+                    </div>
+                    <div class="soft-count-pill pill-paid">
+                      <i class="fa-solid fa-circle-check"></i>
+                      <span>จ่ายแล้ว: <strong id="softGrandPaidContracts">0</strong> ราย</span>
+                    </div>
+                    <div class="soft-count-pill pill-pending">
+                      <i class="fa-solid fa-clock-rotate-left"></i>
+                      <span>ค้างจ่าย: <strong id="softGrandPendingContracts">0</strong> ราย</span>
+                    </div>
+                  </div>
+
+                  <!-- Overall Progress Bar -->
+                  <div class="soft-dev-progress-box">
+                    <div class="soft-progress-meta">
+                      <span><i class="fa-solid fa-chart-line"></i> อัตราการจัดเก็บเงินรวมทั้งหมด</span>
+                      <strong id="softGrandCollectionRate">0%</strong>
+                    </div>
+                    <div class="soft-progress-track">
+                      <div class="soft-progress-fill" id="softGrandProgressBar" style="width: 0%;"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right Side: Official 3D Gold EW Brand Logo (Replacement for Rocket) -->
+                <div class="soft-dev-right">
+                  <div class="soft-rocket-banner soft-brand-logo-banner">
+                    <div class="soft-logo-illustration">
+                      <div class="soft-logo-glow"></div>
+                      <img src="images/logo-ew-gold.png" alt="Easy Wealth Finance" class="soft-brand-3d-img">
+                      <div class="soft-rocket-label">
+                        <span class="rocket-brand">EASY WEALTH</span>
+                        <span class="rocket-sub">FINANCE PORTAL</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. ROW 3: ACTIVE USERS (Daily, Weekly, Monthly, Motorcycle Breakdown with Dark Bar Chart - Sales overview REMOVED) -->
+          <div class="soft-row soft-active-users-row">
+            <div class="soft-card soft-active-users-card">
+              <!-- Dark Bar Chart Box on top -->
+              <div class="soft-dark-chart-box">
+                <div class="soft-chart-header">
+                  <div>
+                    <span class="soft-chart-badge"><i class="fa-solid fa-chart-column"></i> สถิติเปรียบเทียบ</span>
+                    <h3 class="soft-chart-title">ยอดปล่อยและจัดเก็บ 4 หมวดหมู่หลัก</h3>
+                  </div>
+                  <div class="soft-chart-legend">
+                    <span class="legend-item"><span class="legend-dot dot-daily"></span> รายวัน</span>
+                    <span class="legend-item"><span class="legend-dot dot-weekly"></span> รายอาทิตย์</span>
+                    <span class="legend-item"><span class="legend-dot dot-monthly"></span> รายเดือน</span>
+                    <span class="legend-item"><span class="legend-dot dot-moto"></span> มอเตอร์ไซค์</span>
+                  </div>
+                </div>
+                <!-- Dynamic Interactive Bar Chart Canvas -->
+                <div class="soft-chart-canvas-wrap" id="softCategoryChartContainer">
+                  <!-- Rendered dynamically by renderOverviewCards() -->
+                </div>
+              </div>
+
+              <!-- 4 Metric Cards below chart: รายวัน, รายอาทิตย์, รายเดือน, มอเตอร์ไซค์ -->
+              <div class="soft-active-stats-header">
+                <h4 class="soft-subcard-title">สัดส่วนตามหมวดหมู่ (Category Breakdown)</h4>
+                <p class="soft-subcard-sub">คลิกที่หมวดหมู่เพื่อกระโดดไปยังหน้ารายการของหมวดนั้นได้ทันที</p>
+              </div>
+
+              <div class="soft-categories-metrics-grid">
+                <!-- 1. รายวัน -->
+                <div class="soft-cat-col cat-daily" onclick="switchTab('daily')" title="คลิกเพื่อดูสัญญารายวัน">
+                  <div class="soft-cat-top">
+                    <div class="soft-cat-icon icon-daily">
+                      <i class="fa-solid fa-calendar-day"></i>
+                    </div>
+                    <span class="soft-cat-name">รายวัน</span>
+                  </div>
+                  <h4 class="soft-cat-amount" id="softCatDailyAmount">฿0</h4>
+                  <div class="soft-cat-meta" id="softCatDailyMeta">0 ราย (เก็บแล้ว ฿0)</div>
+                  <div class="soft-cat-progress">
+                    <div class="soft-cat-bar bar-daily" id="softCatDailyBar" style="width: 0%;"></div>
+                  </div>
+                </div>
+
+                <!-- 2. รายอาทิตย์ -->
+                <div class="soft-cat-col cat-weekly" onclick="switchTab('weekly')" title="คลิกเพื่อดูสัญญารายอาทิตย์">
+                  <div class="soft-cat-top">
+                    <div class="soft-cat-icon icon-weekly">
+                      <i class="fa-solid fa-calendar-week"></i>
+                    </div>
+                    <span class="soft-cat-name">รายอาทิตย์</span>
+                  </div>
+                  <h4 class="soft-cat-amount" id="softCatWeeklyAmount">฿0</h4>
+                  <div class="soft-cat-meta" id="softCatWeeklyMeta">0 ราย (เก็บแล้ว ฿0)</div>
+                  <div class="soft-cat-progress">
+                    <div class="soft-cat-bar bar-weekly" id="softCatWeeklyBar" style="width: 0%;"></div>
+                  </div>
+                </div>
+
+                <!-- 3. รายเดือน -->
+                <div class="soft-cat-col cat-monthly" onclick="switchTab('monthly')" title="คลิกเพื่อดูสัญญารายเดือน">
+                  <div class="soft-cat-top">
+                    <div class="soft-cat-icon icon-monthly">
+                      <i class="fa-solid fa-calendar-days"></i>
+                    </div>
+                    <span class="soft-cat-name">รายเดือน</span>
+                  </div>
+                  <h4 class="soft-cat-amount" id="softCatMonthlyAmount">฿0</h4>
+                  <div class="soft-cat-meta" id="softCatMonthlyMeta">0 ราย (เก็บแล้ว ฿0)</div>
+                  <div class="soft-cat-progress">
+                    <div class="soft-cat-bar bar-monthly" id="softCatMonthlyBar" style="width: 0%;"></div>
+                  </div>
+                </div>
+
+                <!-- 4. รถมอเตอร์ไซค์ -->
+                <div class="soft-cat-col cat-moto" onclick="switchTab('motorcycle')" title="คลิกเพื่อดูหมวดรถมอไซต์">
+                  <div class="soft-cat-top">
+                    <div class="soft-cat-icon icon-moto">
+                      <i class="fa-solid fa-motorcycle"></i>
+                    </div>
+                    <span class="soft-cat-name">หมวดรถมอไซต์</span>
+                  </div>
+                  <h4 class="soft-cat-amount" id="softCatMotoAmount">฿0</h4>
+                  <div class="soft-cat-meta" id="softCatMotoMeta">0 ราย (เก็บแล้ว ฿0)</div>
+                  <div class="soft-cat-progress">
+                    <div class="soft-cat-bar bar-moto" id="softCatMotoBar" style="width: 0%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. ROW 4: PROJECTS (Left ~65%) & ORDERS OVERVIEW (Right ~35%) -->
+          <div class="soft-row soft-bottom-row">
+            <!-- Left: Projects (รายงาน & ฟังก์ชันลัด 6 แถว) -->
+            <div class="soft-card soft-projects-card">
+              <div class="soft-card-header">
+                <div class="soft-card-header-left">
+                  <h3 class="soft-card-title">รวมสรุป</h3>
+                  <p class="soft-card-subtitle">
+                    <i class="fa-solid fa-circle-check text-emerald"></i>
+                    <span>6 รายงานและฟังก์ชันหลักในระบบ (คลิกแถวเพื่อเปิดใช้งานทันที)</span>
+                  </p>
+                </div>
+              </div>
+
+              <div class="soft-table-responsive">
+                <table class="soft-table">
+                  <thead>
+                    <tr>
+                      <th>รายการ / หมวดหมู่</th>
+                      <th>สิทธิ์การเข้าถึง</th>
+                      <th style="text-align: right;">ยอดเงินรวม</th>
+                      <th style="text-align: center;">สถานะ / จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody id="softProjectsTableBody">
+                    <!-- Row 1: ยอดรวมค่าปรับ (แทน Soft UI XD Version) -->
+                    <!-- Row 2: ยอดรวมมอไซต์ -->
+                    <!-- Row 3: ยอดรวมตัดดอก -->
+                    <!-- Row 4: ช่องรวมเงินดาวน์ -->
+                    <!-- Row 5: ช่องสรุปรวมต่อวัน -->
+                    <!-- Row 6: ช่องเปรียบเทียบยอดในบัญชี -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Right: Orders overview (Activity Timeline วันนี้) -->
+            <div class="soft-card soft-orders-card">
+              <div class="soft-card-header">
+                <div>
+                  <h3 class="soft-card-title">Orders overview</h3>
+                  <p class="soft-card-subtitle" id="softOrdersSubtitle">
+                    <i class="fa-solid fa-clock-rotate-left text-emerald"></i>
+                    <span>ประวัติการทำรายการต่างๆ บนเว็บวันนี้</span>
+                  </p>
+                </div>
+              </div>
+
+              <!-- Vertical Connected Timeline -->
+              <div class="soft-timeline" id="softOrdersTimeline">
+                <!-- Rendered dynamically by renderOverviewCards() -->
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <!-- ====================================================================
@@ -633,7 +938,8 @@
 
               <div class="action-bar-btn-group">
                 <!-- Hidden redundant buttons (already in Sidebar) kept in DOM for JS compatibility -->
-                <button id="btnOpenCustomerDb" type="button" class="btn-table-action" onclick="openCustomerDatabaseModal()" style="display: none !important;">
+                <button id="btnOpenCustomerDb" type="button" class="btn-table-action"
+                  onclick="openCustomerDatabaseModal()" style="display: none !important;">
                   <i class="fa-solid fa-address-book"></i>
                   <span>ฐานข้อมูลลูกค้า</span>
                 </button>
@@ -712,8 +1018,9 @@
                   <span class="daily-mini-chip chip-pending" id="dailyPendingAmountVal">
                     <i class="fa-solid fa-clock"></i> รอเก็บ ฿0
                   </span>
-                  <span class="daily-mini-chip chip-fine" id="dailyFineAmountVal" style="display: none; cursor: pointer;"
-                    onclick="openLateFineReportModal()" title="คลิกดูรายงานสรุปค่าปรับ">
+                  <span class="daily-mini-chip chip-fine" id="dailyFineAmountVal"
+                    style="display: none; cursor: pointer;" onclick="openLateFineReportModal()"
+                    title="คลิกดูรายงานสรุปค่าปรับ">
                     <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ฿0
                   </span>
                 </div>
@@ -758,11 +1065,13 @@
         <span class="mobile-nav-icon"><i class="fa-solid fa-calendar-days"></i></span>
         <span class="mobile-nav-label">รายเดือน</span>
       </button>
-      <button type="button" class="mobile-bottom-nav-btn" data-mobile-tab="motorcycle" onclick="switchTab('motorcycle')">
+      <button type="button" class="mobile-bottom-nav-btn" data-mobile-tab="motorcycle"
+        onclick="switchTab('motorcycle')">
         <span class="mobile-nav-icon"><i class="fa-solid fa-motorcycle"></i></span>
         <span class="mobile-nav-label">รถมอเตอร์ไซค์</span>
       </button>
-      <button type="button" class="mobile-bottom-nav-btn mobile-nav-menu-trigger" id="btnMobileBottomMenu" onclick="document.getElementById('btnSidebarToggle')?.click()">
+      <button type="button" class="mobile-bottom-nav-btn mobile-nav-menu-trigger" id="btnMobileBottomMenu"
+        onclick="document.getElementById('btnSidebarToggle')?.click()">
         <span class="mobile-nav-icon"><i class="fa-solid fa-bars"></i></span>
         <span class="mobile-nav-label">เมนูอื่น</span>
       </button>
@@ -2778,10 +3087,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <!-- Scripts -->
-  <script src="firebase-config.js?v=20261110_v6"></script>
-  <script src="bank-verification.js?v=20261110_v6"></script>
-  <script src="admin.js?v=20261110_v6"></script>
-  <script src="pwa-install.js?v=20261110_v6"></script>
+  <script src="firebase-config.js?v=20261110_v9"></script>
+  <script src="bank-verification.js?v=20261110_v9"></script>
+  <script src="admin.js?v=20261110_v10"></script>
+  <script src="pwa-install.js?v=20261110_v9"></script>
 </body>
 
 </html>
