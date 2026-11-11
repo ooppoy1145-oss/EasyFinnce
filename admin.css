@@ -10306,7 +10306,7 @@ button.btn-table-action[title*="ลบ"] {
   /* ปรับขนาดตัวหนังสือและไอคอน */
   border-radius: 8px !important;
   /* ปรับความโค้งมนของขอบปุ่ม */
-  background: rgba(16, 185, 129, 0.35) !important;
+  background: rgb(16 185 129 / 22%) !important;
   /* (ใส่หรือไม่ใส่ก็ได้) เปลี่ยนสีพื้นหลัง */
   color: #34d399 !important;
   /* (ใส่หรือไม่ใส่ก็ได้) เปลี่ยนสีตัวหนังสือ */
@@ -10325,4 +10325,921 @@ element.style {
   /* ปรับความโค้งมนของขอบปุ่ม */
   background: rgba(56, 189, 248, 0.35);
   /* (ใส่หรือไม่ใส่ก็ได้) เปลี่ยนสีพื้นหลัง */
+}
+
+/* ==========================================================================
+   CONTRACT DETAILS & INSTALLMENT SCHEDULE OVERHAUL (.modal-contract-detail)
+   Tailored Desktop (Proportional, Spacious) & Mobile (Zero Horizontal Scroll)
+   ========================================================================== */
+
+/* 1. Modal Card Sizing */
+.admin-modal-card.modal-contract-detail {
+  width: 95vw !important;
+  max-width: 1060px !important;
+  max-height: 92vh !important;
+  padding: 22px 24px !important;
+  border-radius: 20px !important;
+  background: #0f172a !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75), 0 0 30px rgba(16, 185, 129, 0.08) !important;
+}
+
+html.theme-light .admin-modal-card.modal-contract-detail,
+[data-theme="light"] .admin-modal-card.modal-contract-detail {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.15) !important;
+}
+
+/* Modal Title */
+.modal-contract-detail .admin-modal-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding-bottom: 12px !important;
+  margin-bottom: 14px !important;
+}
+
+html.theme-light .modal-contract-detail .admin-modal-header,
+[data-theme="light"] .modal-contract-detail .admin-modal-header {
+  border-bottom-color: #e2e8f0 !important;
+}
+
+.modal-contract-detail .admin-modal-title {
+  font-size: 1.08rem !important;
+  font-weight: 700 !important;
+  color: #f1f5f9 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+html.theme-light .modal-contract-detail .admin-modal-title,
+[data-theme="light"] .modal-contract-detail .admin-modal-title {
+  color: #0f172a !important;
+}
+
+/* Late Fine Alert Banner */
+.detail-late-fine-alert {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.detail-alert-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.detail-alert-content i {
+  color: #f87171;
+  font-size: 1.25rem;
+}
+
+.detail-alert-title {
+  font-weight: 700;
+  color: #fca5a5;
+  font-size: 0.92rem;
+}
+
+.detail-alert-sub {
+  font-size: 0.74rem;
+  color: #fecaca;
+}
+
+.detail-alert-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Customer Metadata Container Card */
+.detail-contract-meta-card {
+  background: rgba(17, 24, 39, 0.75) !important;
+  backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  padding: 14px 16px !important;
+  margin-bottom: 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+}
+
+html.theme-light .detail-contract-meta-card,
+[data-theme="light"] .detail-contract-meta-card {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Row 1: Identity & Credentials Strip */
+.detail-meta-identity-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+html.theme-light .detail-meta-identity-strip,
+[data-theme="light"] .detail-meta-identity-strip {
+  border-bottom-color: #e2e8f0;
+}
+
+.detail-meta-customer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.detail-avatar-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.3) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.detail-cust-name {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  line-height: 1.25;
+}
+
+html.theme-light .detail-cust-name,
+[data-theme="light"] .detail-cust-name {
+  color: #0f172a;
+}
+
+.detail-cust-phone {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.detail-meta-tags-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.detail-tag-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.tag-item-financed {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.tag-portal-login {
+  background: rgba(148, 163, 184, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tag-portal-login:hover {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.portal-pass {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-weight: 700;
+}
+
+/* Row 2: Financial Stats Cards Grid */
+.detail-meta-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.detail-stat-card {
+  background: rgba(9, 13, 22, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+html.theme-light .detail-stat-card,
+[data-theme="light"] .detail-stat-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+}
+
+.detail-stat-label {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.detail-stat-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.val-emerald { color: #34d399; }
+.val-blue { color: #38bdf8; }
+.val-purple { color: #c084fc; }
+
+.detail-stat-sub {
+  font-size: 0.72rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* Row 3: Action Toolbar Bar */
+.detail-contract-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+html.theme-light .detail-contract-actions-bar,
+[data-theme="light"] .detail-contract-actions-bar {
+  border-top-color: #e2e8f0;
+}
+
+/* Interest cut mini tool */
+.detail-interest-cut-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 10px;
+  padding: 4px 8px;
+}
+
+.interest-cut-label {
+  font-size: 0.76rem;
+  color: #38bdf8;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.interest-cut-input-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.input-currency-prefix {
+  font-size: 0.8rem;
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.interest-cut-input-wrap input {
+  width: 90px;
+  height: 30px;
+  background: rgba(15, 23, 42, 0.8);
+  color: #f8fafc;
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.btn-save-interest-cut {
+  height: 30px;
+  padding: 0 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #0284c7;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.btn-save-interest-cut:hover {
+  background: #0369a1;
+}
+
+.detail-main-btns-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-detail-action {
+  height: 34px;
+  padding: 0 13px;
+  font-size: 0.80rem;
+  font-weight: 600;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.btn-action-fine {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+.btn-action-fine:hover {
+  background: rgba(245, 158, 11, 0.25);
+  color: #fef08a;
+}
+
+.btn-action-line {
+  background: rgba(6, 199, 85, 0.15);
+  color: #22c55e;
+  border-color: rgba(6, 199, 85, 0.35);
+}
+.btn-action-line:hover {
+  background: #06c755;
+  color: #ffffff;
+}
+
+.btn-action-edit {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.35);
+}
+.btn-action-edit:hover {
+  background: rgba(56, 189, 248, 0.25);
+  color: #ffffff;
+}
+
+.btn-action-delete {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.35);
+}
+.btn-action-delete:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+/* Schedule Sub-Header */
+.detail-schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 14px 0 10px 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-schedule-title {
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+html.theme-light .detail-schedule-title,
+[data-theme="light"] .detail-schedule-title {
+  color: #0f172a;
+}
+
+.detail-schedule-count {
+  font-size: 0.78rem;
+  color: #34d399;
+  font-weight: 600;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.detail-schedule-btn-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-schedule-pic {
+  background: rgba(56, 189, 248, 0.15) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+  padding: 5px 12px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+}
+
+.btn-schedule-manual {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(52, 211, 153, 0.4) !important;
+  padding: 5px 12px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+}
+
+/* Installment Table - Desktop Styles */
+.detail-installments-table {
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+.detail-installments-table thead th {
+  padding: 10px 12px !important;
+  font-size: 0.80rem !important;
+  font-weight: 600 !important;
+  color: #94a3b8 !important;
+  background: rgba(9, 13, 22, 0.6) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.detail-installments-table tbody td {
+  padding: 10px 12px !important;
+  font-size: 0.83rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  vertical-align: middle !important;
+}
+
+.inst-no-badge {
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.inst-mobile-due-sub {
+  display: none; /* hidden on desktop */
+}
+
+.inst-mobile-paid-sub {
+  display: none; /* hidden on desktop */
+}
+
+.btn-mobile-slip-only {
+  display: none; /* hidden on desktop */
+}
+
+.inst-amount-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.amount-val {
+  color: #34d399;
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.btn-edit-inst {
+  padding: 2px 6px;
+  font-size: 0.70rem;
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  background: rgba(56, 189, 248, 0.1);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.inst-actions-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.action-done-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-done-chip {
+  color: #34d399;
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.status-done-chip.chip-pic { color: #38bdf8; }
+.status-done-chip.chip-interest { color: #c084fc; }
+
+/* ==========================================================================
+   MOBILE OVERHAUL (<= 768px): ZERO HORIZONTAL SCROLL INSTALLMENT TABLE
+   ========================================================================== */
+@media (max-width: 768px) {
+  .admin-modal-card.modal-contract-detail {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 95vh !important;
+    max-height: 95dvh !important;
+    padding: 12px 8px !important;
+    border-radius: 16px !important;
+    margin: 4px !important;
+  }
+
+  .modal-contract-detail .admin-modal-title {
+    font-size: 0.88rem !important;
+  }
+
+  .detail-contract-meta-card {
+    padding: 10px 10px !important;
+    gap: 10px !important;
+  }
+
+  /* Identity row */
+  .detail-meta-identity-strip {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .detail-meta-tags-group {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  .detail-tag-item {
+    padding: 4px 8px !important;
+    font-size: 0.74rem !important;
+  }
+
+  /* Stats grid: 2 col on mobile */
+  .detail-meta-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+  }
+
+  .detail-stat-card {
+    padding: 8px 10px !important;
+  }
+
+  .detail-stat-card.card-total {
+    grid-column: 1 / -1 !important; /* Full width for main total amount */
+  }
+
+  .detail-stat-val {
+    font-size: 1.05rem !important;
+  }
+
+  /* Actions Toolbar on Mobile: 2 tidy rows */
+  .detail-contract-actions-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .detail-interest-cut-tool {
+    width: 100% !important;
+    justify-content: space-between !important;
+    box-sizing: border-box !important;
+  }
+
+  .detail-main-btns-row {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 6px !important;
+  }
+
+  .btn-detail-action {
+    height: 32px !important;
+    padding: 0 4px !important;
+    font-size: 0.74rem !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+  }
+
+  .btn-action-fine {
+    grid-column: 1 / -1 !important; /* Late fine full row if present */
+  }
+
+  /* Schedule Header on Mobile */
+  .detail-schedule-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    margin: 10px 0 8px 0 !important;
+  }
+
+  .detail-schedule-btn-group {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+  }
+
+  .btn-schedule-pic,
+  .btn-schedule-manual {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 6px 4px !important;
+    font-size: 0.74rem !important;
+  }
+
+  /* ZERO HORIZONTAL SCROLL TABLE ARCHITECTURE */
+  .detail-schedule-table-wrap {
+    overflow-x: hidden !important; /* NO HORIZONTAL SCROLL! */
+    width: 100% !important;
+  }
+
+  .detail-installments-table {
+    table-layout: fixed !important;
+    width: 100% !important;
+  }
+
+  /* HIDE redundant 3 desktop columns on mobile */
+  .detail-installments-table th.col-inst-due,
+  .detail-installments-table td.td-inst-due,
+  .detail-installments-table th.col-inst-paid-date,
+  .detail-installments-table td.td-inst-paid-date,
+  .detail-installments-table th.col-inst-slip,
+  .detail-installments-table td.td-inst-slip {
+    display: none !important;
+  }
+
+  /* Exact width allocation for the 4 remaining columns (Total = 100%) */
+  .detail-installments-table th.col-inst-no,
+  .detail-installments-table td.td-inst-no {
+    width: 24% !important;
+    padding: 8px 4px !important;
+  }
+
+  .detail-installments-table th.col-inst-amount,
+  .detail-installments-table td.td-inst-amount {
+    width: 22% !important;
+    padding: 8px 4px !important;
+  }
+
+  .detail-installments-table th.col-inst-status,
+  .detail-installments-table td.td-inst-status {
+    width: 25% !important;
+    padding: 8px 4px !important;
+  }
+
+  .detail-installments-table th.col-inst-actions,
+  .detail-installments-table td.td-inst-actions {
+    width: 29% !important;
+    padding: 8px 4px !important;
+    text-align: right !important;
+  }
+
+  /* Typography & compact formatting in cells */
+  .inst-num-box {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+  }
+
+  .inst-no-badge {
+    font-size: 0.78rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .inst-mobile-due-sub {
+    display: block !important;
+    font-size: 0.68rem !important;
+    color: #94a3b8 !important;
+    white-space: nowrap !important;
+  }
+
+  .amount-val {
+    font-size: 0.80rem !important;
+  }
+
+  .btn-edit-inst {
+    padding: 1px 4px !important;
+    font-size: 0.65rem !important;
+  }
+
+  .inst-status-wrap {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+  }
+
+  .detail-installments-table .status-badge {
+    padding: 2px 5px !important;
+    font-size: 0.68rem !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    justify-content: center !important;
+  }
+
+  .inst-mobile-paid-sub {
+    display: block !important;
+    font-size: 0.65rem !important;
+    color: #34d399 !important;
+    white-space: nowrap !important;
+  }
+
+  .inst-actions-cluster {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 4px !important;
+    width: 100% !important;
+  }
+
+  .btn-mobile-slip-only {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 26px !important;
+    height: 26px !important;
+    padding: 0 !important;
+    border-radius: 6px !important;
+    font-size: 0.72rem !important;
+    color: #38bdf8 !important;
+    background: rgba(56, 189, 248, 0.15) !important;
+    border: 1px solid rgba(56, 189, 248, 0.4) !important;
+  }
+
+  .btn-action-trigger {
+    padding: 4px 7px !important;
+    font-size: 0.72rem !important;
+    height: 26px !important;
+    border-radius: 6px !important;
+  }
+
+  .status-done-chip {
+    font-size: 0.70rem !important;
+  }
+
+  .btn-unmark-paid,
+  .btn-unmark-interest {
+    width: 24px !important;
+    height: 24px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 5px !important;
+    font-size: 0.68rem !important;
+  }
+}
+
+
+/* ==========================================================================
+   RESTORED 7 CONTRACT METADATA FIELDS (Exact 3-column layout match)
+   ========================================================================== */
+.detail-contract-info-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px 18px !important;
+  font-size: 0.86rem !important;
+  line-height: 1.6 !important;
+  padding: 4px 0 !important;
+}
+
+.meta-field-item {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: baseline !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+}
+
+.meta-field-label {
+  color: #f1f5f9 !important;
+  font-weight: 700 !important;
+  font-size: 0.88rem !important;
+}
+
+html.theme-light .meta-field-label,
+[data-theme="light"] .meta-field-label {
+  color: #0f172a !important;
+}
+
+.meta-field-val {
+  color: #cbd5e1 !important;
+  font-size: 0.85rem !important;
+}
+
+html.theme-light .meta-field-val,
+[data-theme="light"] .meta-field-val {
+  color: #334155 !important;
+}
+
+.meta-password-chip {
+  background: rgba(34, 197, 94, 0.15) !important;
+  color: #4ade80 !important;
+  border: 1px solid rgba(34, 197, 94, 0.35) !important;
+  padding: 2px 8px !important;
+  border-radius: 6px !important;
+  font-family: monospace !important;
+  font-weight: 700 !important;
+  display: inline-block !important;
+  width: fit-content !important;
+}
+
+.meta-total-wrap {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: baseline !important;
+  gap: 6px !important;
+  flex-wrap: wrap !important;
+}
+
+.meta-total-amount {
+  color: #38bdf8 !important;
+  font-size: 1rem !important;
+  font-weight: 800 !important;
+}
+
+.meta-total-sub {
+  color: #38bdf8 !important;
+  font-size: 0.76rem !important;
+  opacity: 0.9 !important;
+}
+
+@media (max-width: 768px) {
+  .detail-contract-info-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px 10px !important;
+    font-size: 0.78rem !important;
+  }
+  .meta-field-item.meta-field-total {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+
+/* Ensure labels and values are strictly inline with neat spacing */
+.detail-contract-info-grid .meta-field-item {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: baseline !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+}
+
+.detail-contract-info-grid .meta-field-label {
+  white-space: nowrap !important;
+  display: inline !important;
+}
+
+.detail-contract-info-grid .meta-field-val {
+  display: inline-flex !important;
+  align-items: baseline !important;
+  gap: 5px !important;
+  flex-wrap: wrap !important;
+}
+
+.detail-contract-info-grid .meta-total-wrap {
+  display: inline-flex !important;
+  align-items: baseline !important;
+  gap: 6px !important;
+  flex-wrap: wrap !important;
 }

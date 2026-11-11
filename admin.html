@@ -27,7 +27,7 @@
   <meta name="apple-mobile-web-app-title" content="EF Admin">
 
   <!-- Admin Dedicated Stylesheet -->
-  <link rel="stylesheet" href="admin.css?v=20261110_v11">
+  <link rel="stylesheet" href="admin.css?v=20261111_v5">
 
   <!-- Early script to avoid layout & theme flicker on page reload -->
   <script>
@@ -1376,7 +1376,7 @@
        MODAL 3: CONTRACT DETAILS & INSTALLMENT SCHEDULE (ดูตารางงวด & สลิป)
        ==================================================================== -->
   <div id="contractDetailModal" class="admin-modal-overlay">
-    <div class="admin-modal-card" style="max-width: 750px;">
+    <div class="admin-modal-card modal-contract-detail">
       <div class="admin-modal-header">
         <div class="admin-modal-title">
           <i class="fa-solid fa-file-invoice-dollar" style="color: var(--primary);"></i>
@@ -1387,30 +1387,28 @@
         </button>
       </div>
 
-      <div id="detailContractMeta"
-        style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--admin-border); border-radius: var(--radius-md); padding: 14px; margin-bottom: 18px;">
+      <div id="detailContractMeta" class="detail-contract-meta-card">
         <!-- Dynamic Contract Metadata -->
       </div>
 
-      <div
-        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-        <h4 style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin: 0;">
-          รายการงวดการชำระเงินทั้งหมด
+      <div class="detail-schedule-header">
+        <h4 class="detail-schedule-title">
+          <i class="fa-solid fa-calendar-check" style="color: var(--primary);"></i>
+          <span>รายการงวดการชำระเงินทั้งหมด</span>
+          <span class="detail-schedule-count" id="detailScheduleCount"></span>
         </h4>
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <button type="button" class="btn-table-action" id="btnOpenPrincipalInterestCut"
-            onclick="openPrincipalInterestCutModal()"
-            style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 5px 12px; font-size: 0.8rem; font-weight: 600; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
-            <i class="fa-solid fa-scale-balanced"></i> ตัดต้น / ตัดดอก
+        <div class="detail-schedule-btn-group">
+          <button type="button" class="btn-table-action btn-schedule-pic" id="btnOpenPrincipalInterestCut"
+            onclick="openPrincipalInterestCutModal()">
+            <i class="fa-solid fa-scale-balanced"></i> <span>ตัดต้น / ตัดดอก</span>
           </button>
-          <button type="button" class="btn-table-action" id="btnOpenAddManualInstallment"
-            onclick="openAddManualInstallmentModal()"
-            style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.4); padding: 5px 12px; font-size: 0.8rem; font-weight: 600; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
-            <i class="fa-solid fa-plus-circle"></i> + คีย์งวดแมนนวล
+          <button type="button" class="btn-table-action btn-schedule-manual" id="btnOpenAddManualInstallment"
+            onclick="openAddManualInstallmentModal()">
+            <i class="fa-solid fa-plus-circle"></i> <span>+ คีย์งวดแมนนวล</span>
           </button>
         </div>
       </div>
-      <div class="table-responsive">
+      <div class="table-responsive detail-schedule-table-wrap">
         <table class="admin-table detail-installments-table" id="detailInstallmentsTable">
           <thead>
             <tr>
@@ -3089,7 +3087,7 @@
   <!-- Scripts -->
   <script src="firebase-config.js?v=20261110_v9"></script>
   <script src="bank-verification.js?v=20261110_v9"></script>
-  <script src="admin.js?v=20261110_v10"></script>
+  <script src="admin.js?v=20261111_v5"></script>
   <script src="pwa-install.js?v=20261110_v9"></script>
 </body>
 

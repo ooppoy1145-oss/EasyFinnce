@@ -3457,7 +3457,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <span>สรุปประจำวันที่ <strong>${dateDisplay}</strong>:</span>
         <span class="date-stat-chip chip-paid"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว ${paidCount} ราย</span>
         <span class="date-stat-chip chip-pending"><i class="fa-solid fa-clock"></i> ค้างจ่าย ${pendingCount} ราย</span>
-        ${dailyFineCount > 0 ? `<span class="date-stat-chip" style="background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.35);"><i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ${dailyFineCount} ราย (฿${dailyFineAmount.toLocaleString()})</span>` : ""}
       `;
     }
     updateDateFilterProgress(paidCount, pendingCount);
@@ -3632,7 +3631,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <span>สรุปประจำวันที่ <strong>${dateDisplay}</strong>:</span>
         <span class="date-stat-chip chip-paid"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว ${paidCount} ราย (฿${weeklyPaidAmount.toLocaleString()})</span>
         <span class="date-stat-chip chip-pending"><i class="fa-solid fa-clock"></i> รอชำระ ${pendingCount} ราย</span>
-        ${weeklyFineCount > 0 ? `<span class="date-stat-chip" style="background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.35);"><i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ${weeklyFineCount} ราย (฿${weeklyFineAmount.toLocaleString()})</span>` : ""}
       `;
     }
     updateDateFilterProgress(paidCount, pendingCount);
@@ -3819,7 +3817,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <span>สรุปประจำวันที่ <strong>${dateDisplay}</strong>:</span>
         <span class="date-stat-chip chip-paid"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว ${paidCount} ราย (฿${monthlyPaidAmount.toLocaleString()})</span>
         <span class="date-stat-chip chip-pending"><i class="fa-solid fa-clock"></i> รอชำระ ${pendingCount} ราย</span>
-        ${monthlyFineCount > 0 ? `<span class="date-stat-chip" style="background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.35);"><i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ${monthlyFineCount} ราย (฿${monthlyFineAmount.toLocaleString()})</span>` : ""}
       `;
     }
     updateDateFilterProgress(paidCount, pendingCount);
@@ -4107,7 +4104,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <span>สรุปประจำวันที่ <strong>${dateDisplay}</strong>:</span>
         <span class="date-stat-chip chip-paid"><i class="fa-solid fa-circle-check"></i> จ่ายแล้ว ${paidCount} ราย</span>
         <span class="date-stat-chip chip-pending"><i class="fa-solid fa-clock"></i> ค้างจ่าย ${pendingCount} ราย</span>
-        ${mcFineCount > 0 ? `<span class="date-stat-chip" style="background: rgba(251, 146, 60, 0.15); color: #fb923c; border: 1px solid rgba(251, 146, 60, 0.35);"><i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ ${mcFineCount} ราย (฿${mcFineAmount.toLocaleString()})</span>` : ""}
       `;
     }
     updateDateFilterProgress(paidCount, pendingCount);
@@ -4673,60 +4669,106 @@ document.addEventListener("DOMContentLoaded", () => {
     currentViewingContractId = contractId;
     detailModalTitle.textContent = `ตารางงวดสัญญา: ${contract.id} (${contract.name})`;
 
-    // Render metadata
+    const totalWithDown = (Number(contract.totalAmount) + Number(contract.downPayment || 0));
+    const downPaymentNum = Number(contract.downPayment || 0);
+    const installmentsCount = (contract.installments || []).length;
+    const paidInstallmentsCount = (contract.installments || []).filter(i => i.status === "paid").length;
+
+    const detailScheduleCount = document.getElementById("detailScheduleCount");
+    if (detailScheduleCount) {
+      detailScheduleCount.textContent = `(${paidInstallmentsCount}/${installmentsCount} งวด)`;
+    }
+
+    // Render metadata - FULL 7 CORE FIELDS RESTORED EXACTLY AS ORIGINAL
     detailContractMeta.innerHTML = `
       ${Number(contract.lateFine) > 0 ? `
-        <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.45); border-radius: 8px; padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <i class="fa-solid fa-triangle-exclamation" style="color: #f87171; font-size: 1.3rem;"></i>
+        <div class="detail-late-fine-alert">
+          <div class="detail-alert-content">
+            <i class="fa-solid fa-triangle-exclamation"></i>
             <div>
-              <div style="font-weight: 700; color: #fca5a5; font-size: 0.96rem;">มีค่าปรับค้างชำระ: ฿${Number(contract.lateFine).toLocaleString()}</div>
-              <div style="font-size: 0.76rem; color: #fecaca; margin-top: 1px;">${contract.lateFineReason ? `หมายเหตุ: ${contract.lateFineReason}` : "ลูกค้ามีค่าปรับค้างชำระ เกินกำหนด"}</div>
+              <div class="detail-alert-title">มีค่าปรับค้างชำระ: ฿${Number(contract.lateFine).toLocaleString()}</div>
+              <div class="detail-alert-sub">${contract.lateFineReason ? `หมายเหตุ: ${escapeHtml(contract.lateFineReason)}` : "ลูกค้ามีค่าปรับค้างชำระ เกินกำหนด"}</div>
             </div>
           </div>
-          <div style="display: flex; gap: 6px; align-items: center;">
-            <button type="button" class="btn-penalty-action has-fine" onclick="openPenaltyModal('${contract.id}')" style="padding: 5px 12px; font-size: 0.8rem;">
+          <div class="detail-alert-actions">
+            <button type="button" class="btn-penalty-action has-fine" onclick="openPenaltyModal('${contract.id}')">
               <i class="fa-solid fa-pen-to-square"></i> บันทึกรับ / ปรับยอด
             </button>
-            <button type="button" class="btn-table-action btn-cancel-fine" onclick="cancelCustomerLateFine('${contract.id}')" style="padding: 5px 12px; font-size: 0.8rem;">
-              <i class="fa-solid fa-ban"></i> ยกเลิกค่าปรับ (ล้างเป็น 0)
+            <button type="button" class="btn-table-action btn-cancel-fine" onclick="cancelCustomerLateFine('${contract.id}')">
+              <i class="fa-solid fa-ban"></i> ยกเลิกค่าปรับ
             </button>
           </div>
         </div>
       ` : ""}
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 0.85rem;">
-        <div><strong>ลูกค้า:</strong> ${contract.name} (${contract.phone})</div>
-        <div><strong>อีเมลเข้าใช้งาน:</strong> ${contract.email}</div>
-        <div><strong>รหัสผ่านลูกค้า:</strong> <code style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; color: #34d399;">${contract.password}</code></div>
-        <div><strong>สิ่งที่ผ่อน:</strong> ${contract.itemFinanced}</div>
-        <div><strong>ยอดรวมสัญญา (รวมดาวน์):</strong> ฿${(Number(contract.totalAmount) + Number(contract.downPayment || 0)).toLocaleString()}${Number(contract.downPayment) > 0 ? ` <span style="color: #38bdf8;">(เงินดาวน์ ฿${Number(contract.downPayment).toLocaleString()} + ผ่อน ฿${Number(contract.totalAmount).toLocaleString()})</span>` : ""}</div>
-        <div><strong>กำหนดชำระ:</strong> ${contract.dueSchedule} (${contract.duration})</div>
-        <div><strong>วันที่เริ่มชำระ:</strong> ${formatDateThai(contract.firstPaymentDate || (contract.installments && contract.installments[0]?.dueDate))}</div>
+
+      <!-- 7 Contract Metadata Fields (Original Layout 100% Intact) -->
+      <div class="detail-contract-info-grid">
+        <div class="meta-field-item">
+          <strong class="meta-field-label">ลูกค้า:</strong>
+          <span class="meta-field-val">${escapeHtml(contract.name)} (${escapeHtml(contract.phone || "-")})</span>
+        </div>
+        <div class="meta-field-item">
+          <strong class="meta-field-label">อีเมลเข้าใช้งาน:</strong>
+          <span class="meta-field-val">${escapeHtml(contract.email || "-")}</span>
+        </div>
+        <div class="meta-field-item">
+          <strong class="meta-field-label">รหัสผ่านลูกค้า:</strong>
+          <code class="meta-password-chip">${escapeHtml(contract.password || "-")}</code>
+        </div>
+        <div class="meta-field-item">
+          <strong class="meta-field-label">สิ่งที่ผ่อน:</strong>
+          <span class="meta-field-val">${escapeHtml(contract.itemFinanced || "-")}</span>
+        </div>
+        <div class="meta-field-item meta-field-total">
+          <strong class="meta-field-label">ยอดรวมสัญญา (รวมดาวน์):</strong>
+          <span class="meta-total-wrap">
+            <strong class="meta-total-amount">฿${totalWithDown.toLocaleString()}</strong>
+            ${downPaymentNum > 0 ? `<span class="meta-total-sub">(เงินดาวน์ ฿${downPaymentNum.toLocaleString()} + ผ่อน ฿${Number(contract.totalAmount).toLocaleString()})</span>` : ""}
+          </span>
+        </div>
+        <div class="meta-field-item">
+          <strong class="meta-field-label">กำหนดชำระ:</strong>
+          <span class="meta-field-val">${escapeHtml(contract.dueSchedule || "-")} (${escapeHtml(contract.duration || "-")})</span>
+        </div>
+        <div class="meta-field-item meta-field-start">
+          <strong class="meta-field-label">วันที่เริ่มชำระ:</strong>
+          <span class="meta-field-val">${formatDateThai(contract.firstPaymentDate || (contract.installments && contract.installments[0]?.dueDate))}</span>
+        </div>
       </div>
-      <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--admin-border); display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
-        <!-- ช่องยอดตัดดอกข้างปุ่ม คัดลอกลิงก์ส่ง LINE ให้ลูกค้า (Requirement 3) -->
-        <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 6px; padding: 4px 8px;">
-          <label for="detailInterestCutInput" style="font-size: 0.78rem; color: #38bdf8; font-weight: 600; white-space: nowrap;">
-            <i class="fa-solid fa-percent"></i> ยอดตัดดอก (บาท):
+
+      <!-- Actions Toolbar Strip -->
+      <div class="detail-contract-actions-bar">
+        <div class="detail-interest-cut-tool">
+          <label for="detailInterestCutInput" class="interest-cut-label">
+            <i class="fa-solid fa-percent"></i>
+            <span>ยอดตัดดอก (บาท):</span>
           </label>
-          <input type="number" id="detailInterestCutInput" value="${contract.interestCutAmount !== undefined && contract.interestCutAmount !== null ? contract.interestCutAmount : ""}" placeholder="ระบุยอดตัดดอก" min="0" step="any" style="width: 105px; background: var(--admin-card-bg, #0f172a); color: var(--text-main); border: 1.5px solid rgba(56, 189, 248, 0.5); border-radius: 4px; padding: 3px 6px; font-size: 0.82rem; font-weight: 600;" onchange="saveContractInterestCutAmount('${contract.id}', this.value)" />
-          <button type="button" class="btn-table-action" onclick="saveContractInterestCutAmount('${contract.id}', document.getElementById('detailInterestCutInput').value)" style="padding: 3px 8px; font-size: 0.75rem; background: #0284c7; color: #fff; border: none; border-radius: 4px; cursor: pointer;">
-            บันทึก
-          </button>
+          <div class="interest-cut-input-wrap">
+            <input type="number" id="detailInterestCutInput" value="${contract.interestCutAmount !== undefined && contract.interestCutAmount !== null ? contract.interestCutAmount : ""}" placeholder="ระบุยอดตัดดอก" min="0" step="any" onchange="saveContractInterestCutAmount('${contract.id}', this.value)" />
+            <button type="button" class="btn-save-interest-cut" onclick="saveContractInterestCutAmount('${contract.id}', document.getElementById('detailInterestCutInput').value)">
+              บันทึก
+            </button>
+          </div>
         </div>
 
-        <button type="button" class="btn-table-action" onclick="openPenaltyModal('${contract.id}')" style="padding: 6px 14px; font-size: 0.8rem; background: ${Number(contract.lateFine) > 0 ? "rgba(239, 68, 68, 0.18)" : "rgba(245, 158, 11, 0.15)"}; color: ${Number(contract.lateFine) > 0 ? "#f87171" : "#fbbf24"}; border: 1px solid ${Number(contract.lateFine) > 0 ? "rgba(239, 68, 68, 0.4)" : "rgba(245, 158, 11, 0.35)"};">
-          <i class="fa-solid fa-triangle-exclamation"></i> ค่าปรับ${Number(contract.lateFine) > 0 ? ` (฿${Number(contract.lateFine).toLocaleString()})` : ""}
-        </button>
-        <button type="button" class="btn-table-action" onclick="copyClientLineLink('${contract.id}')" style="padding: 6px 14px; font-size: 0.8rem; background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3);">
-          <i class="fa-solid fa-share-nodes"></i> คัดลอกลิงก์ส่ง LINE ให้ลูกค้า
-        </button>
-        <button type="button" class="btn-table-action" onclick="contractDetailModal.classList.remove('active'); editContract('${contract.id}');" style="padding: 6px 14px; font-size: 0.8rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
-          <i class="fa-solid fa-pen-to-square"></i> แก้ไขสัญญานี้
-        </button>
-        <button type="button" class="btn-table-action" onclick="contractDetailModal.classList.remove('active'); deleteContractConfirm('${contract.id}');" style="padding: 6px 14px; font-size: 0.8rem; background: rgba(248, 113, 113, 0.15); color: #f87171;">
-          <i class="fa-solid fa-trash"></i> ลบสัญญา
-        </button>
+        <div class="detail-main-btns-row">
+          <button type="button" class="btn-detail-action btn-action-fine" onclick="openPenaltyModal('${contract.id}')">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span>ค่าปรับ${Number(contract.lateFine) > 0 ? ` (฿${Number(contract.lateFine).toLocaleString()})` : ""}</span>
+          </button>
+          <button type="button" class="btn-detail-action btn-action-line" onclick="copyClientLineLink('${contract.id}')">
+            <i class="fa-solid fa-share-nodes"></i>
+            <span>คัดลอกลิงก์ส่ง LINE ให้ลูกค้า</span>
+          </button>
+          <button type="button" class="btn-detail-action btn-action-edit" onclick="contractDetailModal.classList.remove('active'); editContract('${contract.id}');">
+            <i class="fa-solid fa-pen-to-square"></i>
+            <span>แก้ไขสัญญานี้</span>
+          </button>
+          <button type="button" class="btn-detail-action btn-action-delete" onclick="contractDetailModal.classList.remove('active'); deleteContractConfirm('${contract.id}');">
+            <i class="fa-solid fa-trash"></i>
+            <span>ลบสัญญา</span>
+          </button>
+        </div>
       </div>
     `;
 
@@ -4742,99 +4784,105 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       tr.innerHTML = `
-        <td>
-          <strong style="color: var(--text-main);">งวดที่ ${inst.installmentNo}</strong>
-          ${isPIC ? '<span style="font-size: 0.72rem; color: #38bdf8; display: block; font-weight: 500;"><i class="fa-solid fa-scale-balanced"></i> ตัดต้น/ดอก</span>' : ""}
+        <td class="td-inst-no">
+          <div class="inst-num-box">
+            <strong class="inst-no-badge">งวดที่ ${inst.installmentNo}</strong>
+            <span class="inst-mobile-due-sub"><i class="fa-regular fa-calendar"></i> ${inst.dueDate || "-"}</span>
+            ${isPIC ? '<span class="inst-pic-tag"><i class="fa-solid fa-scale-balanced"></i> ตัดต้น/ดอก</span>' : ""}
+          </div>
         </td>
-        <td>${inst.dueDate}</td>
-        <td>
+        <td class="td-inst-due">${inst.dueDate}</td>
+        <td class="td-inst-amount">
           ${isPIC
-          ? `<div>
-                   <strong style="color: #38bdf8;">ตัดต้น: ฿${Number(inst.principalCutAmount !== undefined ? inst.principalCutAmount : inst.amount).toLocaleString()}</strong>
-                   ${Number(inst.interestAmount) > 0 ? `<div style="font-size: 0.74rem; color: #c084fc; font-weight: 600; margin-top: 2px;">ตัดดอก: ฿${Number(inst.interestAmount).toLocaleString()}</div>` : ""}
-                 </div>`
-          : `<div style="display: inline-flex; align-items: center; gap: 6px;">
-                   <strong style="color: var(--primary-light);">฿${Number(inst.amount).toLocaleString()}</strong>
-                   <button type="button" class="btn-table-action" onclick="openEditInstallmentModal('${contract.id}', ${inst.installmentNo}, ${inst.amount}, '${inst.dueDate || ""}')" title="แก้ไขยอดชำระหรือกำหนดชำระของงวดนี้" style="padding: 2px 6px; font-size: 0.72rem; color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.1); border-radius: 4px; cursor: pointer;">
-                     <i class="fa-solid fa-pen-to-square"></i>
+          ? `<div class="inst-amount-pic">
+               <strong class="amount-principal">ตัดต้น: ฿${Number(inst.principalCutAmount !== undefined ? inst.principalCutAmount : inst.amount).toLocaleString()}</strong>
+               ${Number(inst.interestAmount) > 0 ? `<div class="amount-interest">ตัดดอก: ฿${Number(inst.interestAmount).toLocaleString()}</div>` : ""}
+             </div>`
+          : `<div class="inst-amount-box">
+               <strong class="amount-val">฿${Number(inst.amount).toLocaleString()}</strong>
+               <button type="button" class="btn-edit-inst" onclick="openEditInstallmentModal('${contract.id}', ${inst.installmentNo}, ${inst.amount}, '${inst.dueDate || ""}')" title="แก้ไขยอดชำระหรือกำหนดชำระของงวดนี้">
+                 <i class="fa-solid fa-pen-to-square"></i>
+               </button>
+             </div>`
+        }
+        </td>
+        <td class="td-inst-status">
+          <div class="inst-status-wrap">
+            ${isPIC
+            ? (isPaid
+              ? '<span class="status-badge badge-paid badge-pic"><i class="fa-solid fa-circle-check"></i> ชำระแล้ว</span>'
+              : '<span class="status-badge badge-pending badge-pic"><i class="fa-solid fa-clock"></i> รอชำระ</span>'
+            )
+            : (isPaid
+              ? '<span class="status-badge badge-paid"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
+              : isInterestCut
+                ? `<span class="status-badge badge-interest" title="ตัดเฉพาะดอกเบี้ย ยอด ฿${Number(inst.interestAmount || 0).toLocaleString()}"><i class="fa-solid fa-percent"></i> ตัดดอก (฿${Number(inst.interestAmount || 0).toLocaleString()})</span>`
+                : '<span class="status-badge badge-pending">รอชำระ</span>'
+            )
+          }
+            ${isPaid && inst.paidAt ? `<span class="inst-mobile-paid-sub"><i class="fa-solid fa-clock"></i> ${inst.paidAt.split(' ')[0]}</span>` : ""}
+          </div>
+        </td>
+        <td class="td-inst-paid-date"><span class="inst-paid-date-text">${inst.paidAt || "-"}</span></td>
+        <td class="td-inst-slip">
+          ${inst.slipUrl
+          ? `<button class="btn-table-action btn-view-slip-desk" onclick="viewSlip('${inst.slipUrl}', 'งวดที่ ${inst.installmentNo} - Ref: ${inst.transactionRef || "-"}')">
+               <i class="fa-solid fa-image"></i> ดูสลิป
+             </button>`
+          : (isPaid ? `<span class="inst-ref-text">${inst.transactionRef || (isPIC ? "ตัดต้น/ดอกเรียบร้อย" : "บันทึกโดยแอดมิน")}</span>` : (isInterestCut ? `<span class="inst-ref-text text-cut">ตัดดอก ฿${Number(inst.interestAmount || 0).toLocaleString()}</span>` : "-"))
+        }
+        </td>
+        <td class="td-inst-actions">
+          <div class="inst-actions-cluster">
+            ${inst.slipUrl ? `
+              <button class="btn-table-action btn-mobile-slip-only" onclick="viewSlip('${inst.slipUrl}', 'งวดที่ ${inst.installmentNo} - Ref: ${inst.transactionRef || "-"}')" title="ดูสลิป">
+                <i class="fa-solid fa-image"></i>
+              </button>
+            ` : ""}
+            ${isPIC
+            ? (isPaid
+              ? `<div class="action-done-box">
+                   <span class="status-done-chip chip-pic"><i class="fa-solid fa-circle-check"></i> ตัดแล้ว</span>
+                   <button class="btn-table-action btn-unmark-paid" onclick="unmarkPaidFromDetail(${inst.installmentNo})" title="ยกเลิก">
+                     <i class="fa-solid fa-rotate-left"></i>
                    </button>
                  </div>`
-        }
-        </td>
-        <td>
-          ${isPIC
-          ? (isPaid
-            ? '<span class="status-badge badge-paid" style="background: rgba(56, 189, 248, 0.18); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4);"><i class="fa-solid fa-circle-check"></i> ชำระแล้ว (ตัดต้น/ดอก)</span>'
-            : '<span class="status-badge badge-pending" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);"><i class="fa-solid fa-clock"></i> รอชำระ (ตัดต้น/ดอก)</span>'
-          )
-          : (isPaid
-            ? '<span class="status-badge badge-paid"><i class="fa-solid fa-check"></i> ชำระแล้ว</span>'
-            : isInterestCut
-              ? `<span class="status-badge badge-interest" title="ตัดเฉพาะดอกเบี้ย ยอด ฿${Number(inst.interestAmount || 0).toLocaleString()}"><i class="fa-solid fa-percent"></i> ตัดดอก (฿${Number(inst.interestAmount || 0).toLocaleString()})</span>`
-              : '<span class="status-badge badge-pending">รอชำระ</span>'
-          )
-        }
-        </td>
-        <td><span style="font-size: 0.75rem; color: var(--text-dim);">${inst.paidAt || "-"}</span></td>
-        <td>
-          ${inst.slipUrl
-          ? `<button class="btn-table-action" onclick="viewSlip('${inst.slipUrl}', 'งวดที่ ${inst.installmentNo} - Ref: ${inst.transactionRef || "-"}')">
-                    <i class="fa-solid fa-image"></i> ดูสลิป
-                   </button>`
-          : (isPaid ? `<span style="font-size: 0.72rem; color: var(--text-dim);">${inst.transactionRef || (isPIC ? "ตัดต้น/ดอกเรียบร้อย" : "บันทึกโดยแอดมิน")}</span>` : (isInterestCut ? `<span style="font-size: 0.72rem; color: #38bdf8;">ตัดดอก ฿${Number(inst.interestAmount || 0).toLocaleString()}</span>` : "-"))
-        }
-        </td>
-        <td>
-          ${isPIC
-          ? (isPaid
-            ? `<div style="display: inline-flex; align-items: center; gap: 8px;">
-                       <span style="color: #38bdf8; font-size: 0.82rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
-                         <i class="fa-solid fa-circle-check"></i> ตัดแล้ว
-                       </span>
-                       <button class="btn-table-action btn-unmark-paid" onclick="unmarkPaidFromDetail(${inst.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนสถานะกลับเป็นรอชำระ (คืนยอดรวมสัญญาและยอดตัดดอก)" style="padding: 4px 9px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
-                         <i class="fa-solid fa-rotate-left"></i> ยกเลิก
+              : `<button type="button" class="btn-table-action btn-mark-paid btn-pic-mark" onclick="markPaidFromDetail(${inst.installmentNo})" title="มาร์คชำระ">
+                   <i class="fa-solid fa-check"></i> มาร์คชำระ
+                 </button>`
+            )
+            : (isPaid
+              ? `<div class="action-done-box">
+                   <span class="status-done-chip"><i class="fa-solid fa-circle-check"></i> สมบูรณ์</span>
+                   <button class="btn-table-action btn-unmark-paid" onclick="unmarkPaidFromDetail(${inst.installmentNo})" title="ยกเลิกเพื่อเปลี่ยนสถานะกลับเป็นรอชำระ">
+                     <i class="fa-solid fa-rotate-left"></i>
+                   </button>
+                 </div>`
+              : isInterestCut
+                ? `<div class="action-done-box">
+                     <span class="status-done-chip chip-interest"><i class="fa-solid fa-percent"></i> ตัดดอกแล้ว</span>
+                     <button class="btn-table-action btn-unmark-interest" onclick="unmarkInterestCutFromDetail(${inst.installmentNo})" title="ยกเลิกตัดดอก">
+                       <i class="fa-solid fa-rotate-left"></i>
+                     </button>
+                   </div>`
+                : `<div class="action-dropdown" id="actionDropdown_${inst.installmentNo}">
+                     <button type="button" class="btn-table-action btn-action-trigger" onclick="toggleActionDropdown(event, ${inst.installmentNo})" title="จัดการงวดนี้">
+                       <span>จัดการ</span> <i class="fa-solid fa-chevron-down"></i>
+                     </button>
+                     <div class="action-dropdown-menu" id="dropdownMenu_${inst.installmentNo}">
+                       <button type="button" class="action-dropdown-item item-paid" onclick="markPaidFromDetail(${inst.installmentNo})">
+                         <i class="fa-solid fa-circle-check" style="color: #22c55e;"></i>
+                         <span>มาร์คชำระ (เต็มงวด ฿${Number(inst.amount).toLocaleString()})</span>
                        </button>
-                     </div>`
-            : `<button type="button" class="btn-table-action btn-mark-paid" onclick="markPaidFromDetail(${inst.installmentNo})" title="คลิกเพื่อมาร์คชำระ (ลดเงินต้น ฿${Number(inst.principalCutAmount !== undefined ? inst.principalCutAmount : inst.amount).toLocaleString()} และบันทึกตัดดอก)" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.45); background: rgba(56, 189, 248, 0.12); padding: 5px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border-radius: 6px; display: inline-flex; align-items: center; gap: 5px;">
-                       <i class="fa-solid fa-check"></i> มาร์คชำระ
-                     </button>`
-          )
-          : (isPaid
-            ? `<div style="display: inline-flex; align-items: center; gap: 8px;">
-                       <span style="color: #34d399; font-size: 0.82rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
-                         <i class="fa-solid fa-circle-check"></i> สมบูรณ์
-                       </span>
-                       <button class="btn-table-action btn-unmark-paid" onclick="unmarkPaidFromDetail(${inst.installmentNo})" title="กดยกเลิกเพื่อเปลี่ยนสถานะกลับเป็นรอชำระ" style="padding: 4px 9px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
-                         <i class="fa-solid fa-rotate-left"></i> ยกเลิก
+                       <button type="button" class="action-dropdown-item item-interest" onclick="markInterestCutFromDetail(${inst.installmentNo})">
+                         <i class="fa-solid fa-percent" style="color: #38bdf8;"></i>
+                         <span>ตัดดอก ${contract.interestCutAmount ? `(฿${Number(contract.interestCutAmount).toLocaleString()})` : "(ระบุยอด)"}</span>
                        </button>
-                     </div>`
-            : isInterestCut
-              ? `<div style="display: inline-flex; align-items: center; gap: 8px;">
-                         <span style="color: #38bdf8; font-size: 0.82rem; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
-                           <i class="fa-solid fa-percent"></i> ตัดดอกแล้ว
-                         </span>
-                         <button class="btn-table-action" onclick="unmarkInterestCutFromDetail(${inst.installmentNo})" title="กดยกเลิกตัดดอก เพื่อเปลี่ยนสถานะกลับเป็นรอชำระ" style="padding: 4px 9px; font-size: 0.75rem; font-weight: 500; cursor: pointer; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; color: #f87171; border-color: rgba(248, 113, 113, 0.35); background: rgba(248, 113, 113, 0.1);">
-                           <i class="fa-solid fa-rotate-left"></i> ยกเลิก
-                         </button>
-                       </div>`
-              : `<!-- Dropdown จัดการ (Requirement 3.1: ลูกศรชี้ลงในปุ่ม มี 2 ตัวเลือก มาร์คชำระ / ตัดดอก) -->
-                       <div class="action-dropdown" id="actionDropdown_${inst.installmentNo}">
-                         <button type="button" class="btn-table-action" onclick="toggleActionDropdown(event, ${inst.installmentNo})" title="คลิกเพื่อเลือกการจัดการ (มาร์คชำระ หรือ ตัดดอก)" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4); font-weight: 600; padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
-                           <span>จัดการ</span> <i class="fa-solid fa-chevron-down" style="font-size: 0.72rem;"></i>
-                         </button>
-                         <div class="action-dropdown-menu" id="dropdownMenu_${inst.installmentNo}">
-                           <button type="button" class="action-dropdown-item item-paid" onclick="markPaidFromDetail(${inst.installmentNo})">
-                             <i class="fa-solid fa-circle-check" style="color: #22c55e;"></i>
-                             <span>มาร์คชำระ (เต็มงวด ฿${Number(inst.amount).toLocaleString()})</span>
-                           </button>
-                           <button type="button" class="action-dropdown-item item-interest" onclick="markInterestCutFromDetail(${inst.installmentNo})">
-                             <i class="fa-solid fa-percent" style="color: #38bdf8;"></i>
-                             <span>ตัดดอก ${contract.interestCutAmount ? `(฿${Number(contract.interestCutAmount).toLocaleString()})` : "(ระบุยอด)"}</span>
-                           </button>
-                         </div>
-                       </div>`
-          )
-        }
+                     </div>
+                   </div>`
+            )
+          }
+          </div>
         </td>
       `;
       detailInstallmentsBody.appendChild(tr);
