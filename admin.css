@@ -10576,9 +10576,17 @@ html.theme-light .detail-stat-card,
   line-height: 1.2;
 }
 
-.val-emerald { color: #34d399; }
-.val-blue { color: #38bdf8; }
-.val-purple { color: #c084fc; }
+.val-emerald {
+  color: #34d399;
+}
+
+.val-blue {
+  color: #38bdf8;
+}
+
+.val-purple {
+  color: #c084fc;
+}
 
 .detail-stat-sub {
   font-size: 0.72rem;
@@ -10690,6 +10698,7 @@ html.theme-light .detail-contract-actions-bar,
   color: #fbbf24;
   border-color: rgba(245, 158, 11, 0.35);
 }
+
 .btn-action-fine:hover {
   background: rgba(245, 158, 11, 0.25);
   color: #fef08a;
@@ -10700,6 +10709,7 @@ html.theme-light .detail-contract-actions-bar,
   color: #22c55e;
   border-color: rgba(6, 199, 85, 0.35);
 }
+
 .btn-action-line:hover {
   background: #06c755;
   color: #ffffff;
@@ -10710,6 +10720,7 @@ html.theme-light .detail-contract-actions-bar,
   color: #38bdf8;
   border-color: rgba(56, 189, 248, 0.35);
 }
+
 .btn-action-edit:hover {
   background: rgba(56, 189, 248, 0.25);
   color: #ffffff;
@@ -10720,6 +10731,7 @@ html.theme-light .detail-contract-actions-bar,
   color: #f87171;
   border-color: rgba(239, 68, 68, 0.35);
 }
+
 .btn-action-delete:hover {
   background: #ef4444;
   color: #ffffff;
@@ -10815,15 +10827,18 @@ html.theme-light .detail-schedule-title,
 }
 
 .inst-mobile-due-sub {
-  display: none; /* hidden on desktop */
+  display: none;
+  /* hidden on desktop */
 }
 
 .inst-mobile-paid-sub {
-  display: none; /* hidden on desktop */
+  display: none;
+  /* hidden on desktop */
 }
 
 .btn-mobile-slip-only {
-  display: none; /* hidden on desktop */
+  display: none;
+  /* hidden on desktop */
 }
 
 .inst-amount-box {
@@ -10870,8 +10885,13 @@ html.theme-light .detail-schedule-title,
   white-space: nowrap;
 }
 
-.status-done-chip.chip-pic { color: #38bdf8; }
-.status-done-chip.chip-interest { color: #c084fc; }
+.status-done-chip.chip-pic {
+  color: #38bdf8;
+}
+
+.status-done-chip.chip-interest {
+  color: #c084fc;
+}
 
 /* ==========================================================================
    MOBILE OVERHAUL (<= 768px): ZERO HORIZONTAL SCROLL INSTALLMENT TABLE
@@ -10925,7 +10945,8 @@ html.theme-light .detail-schedule-title,
   }
 
   .detail-stat-card.card-total {
-    grid-column: 1 / -1 !important; /* Full width for main total amount */
+    grid-column: 1 / -1 !important;
+    /* Full width for main total amount */
   }
 
   .detail-stat-val {
@@ -10961,7 +10982,8 @@ html.theme-light .detail-schedule-title,
   }
 
   .btn-action-fine {
-    grid-column: 1 / -1 !important; /* Late fine full row if present */
+    grid-column: 1 / -1 !important;
+    /* Late fine full row if present */
   }
 
   /* Schedule Header on Mobile */
@@ -10989,7 +11011,8 @@ html.theme-light .detail-schedule-title,
 
   /* ZERO HORIZONTAL SCROLL TABLE ARCHITECTURE */
   .detail-schedule-table-wrap {
-    overflow-x: hidden !important; /* NO HORIZONTAL SCROLL! */
+    overflow-x: hidden !important;
+    /* NO HORIZONTAL SCROLL! */
     width: 100% !important;
   }
 
@@ -11117,8 +11140,8 @@ html.theme-light .detail-schedule-title,
     font-size: 0.70rem !important;
   }
 
-  .btn-unmark-paid,
-  .btn-unmark-interest {
+  .modal-contract-detail .btn-unmark-paid,
+  .modal-contract-detail .btn-unmark-interest {
     width: 24px !important;
     height: 24px !important;
     padding: 0 !important;
@@ -11210,6 +11233,7 @@ html.theme-light .meta-field-val,
     gap: 8px 10px !important;
     font-size: 0.78rem !important;
   }
+
   .meta-field-item.meta-field-total {
     grid-column: 1 / -1 !important;
   }
@@ -11242,4 +11266,31 @@ html.theme-light .meta-field-val,
   align-items: baseline !important;
   gap: 6px !important;
   flex-wrap: wrap !important;
+}
+
+/* ==========================================================================
+   ปุ่ม "ยกเลิก" ในตารางหลัก (หน้าสรุปรายวัน / สัญญา)
+   ========================================================================== */
+#dataTableCard .btn-unmark-paid,
+.btn-table-action.btn-unmark-paid {
+  width: auto !important;
+  height: auto !important;
+  padding: 3px 8px !important;
+  font-size: 0.72rem !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  border-radius: 6px !important;
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  cursor: pointer !important;
+  line-height: 1.2 !important;
+}
+
+#dataTableCard .btn-unmark-paid:hover,
+.btn-table-action.btn-unmark-paid:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
 }
